@@ -1,7 +1,7 @@
 // Brings a Tripo GLB down to the budget of its sheet (TRIPO.md, src/data/modelos.json) and writes it to public/models/.
 //   node tools/optimize_model.mjs <original.glb> <name>     e.g.  node tools/optimize_model.mjs ~/Downloads/x.glb heroi
 // Meshopt simplification to the triangle budget, textures resized to the budget and re-encoded as WebP, geometry
-// quantized and meshopt-compressed (the game's GLTFLoader has the decoder). The original is not changed.
+// quantized (KHR_mesh_quantization, read by GLTFLoader without WebAssembly). The original is not changed.
 import { execFileSync } from "node:child_process";
 import { readFileSync, statSync } from "node:fs";
 import { NodeIO } from "@gltf-transform/core";
@@ -27,7 +27,7 @@ const out = new URL(`../${spec.arquivo.replace(/^models\//, "public/models/")}`,
 let ratio = Math.min(1, spec.triangulos_max / before);
 for (let pass = 0; pass < 4; pass++) {
   execFileSync("npx", ["gltf-transform", "optimize", src, out, "--simplify-ratio", String(ratio), "--simplify-error", "0.02",
-    "--texture-compress", "webp", "--texture-size", String(spec.textura_max), "--compress", "meshopt"], { stdio: "inherit" });
+    "--texture-compress", "webp", "--texture-size", String(spec.textura_max), "--compress", "quantize"], { stdio: "inherit" });
   const after = await triangles(out);
   console.log(`pass ${pass + 1}: ratio ${ratio.toFixed(5)} -> ${after} triangles (budget ${spec.triangulos_max})`);
   if (after <= spec.triangulos_max * 1.02) break;

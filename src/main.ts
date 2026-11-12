@@ -11,7 +11,6 @@ import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 import { bakedGeometry, rigPerson, type ModelSpec } from "./rig.ts";
 import modelos from "./data/modelos.json";
 
@@ -21,6 +20,20 @@ const DEBUG = params.has("debug");
 // tests on a software renderer (1-2 fps) let game time follow real time: ?debug&dtmax=0.5
 const DT_MAX = DEBUG && params.has("dtmax") ? Number(params.get("dtmax")) : 0.05;
 const $ = (id: string) => document.getElementById(id)!;
+
+/** The bytes of a GLB. Hosts that do not serve .glb (the claude.ai page) get <name>.glb.json = { b64 } instead. */
+async function fetchModel(url: string): Promise<ArrayBuffer> {
+  const isGlb = (b: ArrayBuffer) => b.byteLength > 12 && new TextDecoder().decode(new Uint8Array(b, 0, 4)) === "glTF";
+  const r = await fetch(url).catch(() => null);
+  if (r?.ok) { const b = await r.arrayBuffer(); if (isGlb(b)) return b; }
+  const j = await fetch(`${url}.json`);
+  if (!j.ok) throw new Error(`${url}: not found (${j.status})`);
+  const bin = atob(((await j.json()) as { b64: string }).b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  if (!isGlb(out.buffer)) throw new Error(`${url}.json: not a GLB`);
+  return out.buffer;
+}
 
 async function load() {
   const base = import.meta.env.BASE_URL;
@@ -36,7 +49,9 @@ async function load() {
 async function main() {
   const canvas = $("c") as HTMLCanvasElement;
   const touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
-  const quality = params.get("q") ?? (touch ? "low" : "high");
+  // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
+  const hash = location.hash.slice(1);
+  const quality = params.get("q") ?? (hash === "alta" ? "high" : hash === "baixa" ? "low" : touch ? "low" : "high");
   const q = quality === "low" ? 0.55 : 1;
 
   // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
@@ -127,8 +142,7 @@ async function main() {
   let heroSource = "formas";
   try {
     const spec = (modelos as Record<string, ModelSpec & { arquivo: string }>).heroi;
-    const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
-    const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}${spec.arquivo}`);
+    const gltf = await new GLTFLoader().parseAsync(await fetchModel(`${import.meta.env.BASE_URL}${spec.arquivo}`), "");
     if (gltf.animations.length) throw new Error("heroi.glb tem animações próprias: falta ligar o AnimationMixer (rig.ts é só para malha sem rig)");
     const { geometry, material } = bakedGeometry(gltf.scene, spec);
     hero = rigPerson(geometry, material, spec.altura);
@@ -205,7 +219,7 @@ async function main() {
   let last = performance.now(), fpsFrames = 0, fpsT = 0;
   const fpsLog: number[] = [];
   const fpsEl = $("fps");
-  if (DEBUG || params.has("fps")) fpsEl.hidden = false;
+  if (DEBUG || params.has("fps") || hash === "fps") fpsEl.hidden = false;
   let t = 0;
 
   const frame = () => {

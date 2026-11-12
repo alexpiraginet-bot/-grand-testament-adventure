@@ -13,8 +13,8 @@ o arquivo circula entre quem trabalha nele. Sem o arquivo, o jogo usa as formas 
 
 | | Original (fora do git, `assets-src/heroi-original.glb`) | No jogo (`public/models/heroi.glb`) |
 |---|---|---|
-| SHA-256 | `a0135b61f1cbccd94b8aea31a3a51316d295c9e778dd9c35abe7ec66beaef613` | `b1dd708bd05ce9dd7f09ea52fc0cb44e97988c2700c7a540947dc63ad4cab10c` |
-| Bytes | 22.328.008 | 867.416 |
+| SHA-256 | `a0135b61f1cbccd94b8aea31a3a51316d295c9e778dd9c35abe7ec66beaef613` | `f886eaa0b4095d463fb40781324658397ff4ba80a9ace7d42266845bbdf7869e` |
+| Bytes | 22.328.008 | 1.112.912 (sem meshopt: o jogo não depende de WebAssembly) |
 | Gerador | gltfpack 1.2 (exportação do Tripo); exige `KHR_mesh_quantization` e `EXT_meshopt_compression` | gltf-transform 4.5.1 (`tools/optimize_model.mjs`) |
 | Malhas / materiais | 1 / 1 | 1 / 1 |
 | Triângulos | 1.959.077 | 17.991 (orçamento 18.000) |

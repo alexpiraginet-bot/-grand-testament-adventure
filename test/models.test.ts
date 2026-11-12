@@ -17,6 +17,9 @@ test("every mesh fits its triangle and texture budget", async () => {
     const path = new URL(`../public/${m.arquivo}`, import.meta.url).pathname;
     if (!existsSync(path)) { console.log(`# ${name}: ${m.arquivo} ausente (malha fora do git), não conferida`); continue; }
     const doc = await io.read(path);
+    // the game loads meshes without the meshopt decoder (its WebAssembly may be blocked by the host)
+    const required = doc.getRoot().listExtensionsRequired().map((e) => e.extensionName);
+    assert.ok(!required.includes("EXT_meshopt_compression"), `${name}: needs EXT_meshopt_compression; run tools/optimize_model.mjs`);
     let tris = 0;
     for (const mesh of doc.getRoot().listMeshes()) for (const p of mesh.listPrimitives()) tris += (p.getIndices()?.getCount() ?? p.getAttribute("POSITION")!.getCount()) / 3;
     assert.ok(tris <= m.triangulos_max * 1.02, `${name}: ${tris} triangles > ${m.triangulos_max}`);
