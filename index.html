@@ -46,7 +46,7 @@
     <button id="novo" class="sec" type="button" hidden>Começar do zero</button>
   </div>
   <p class="savenote" id="savenote" hidden></p>
-  <button id="outro" class="link" type="button" hidden>Continuar em outro aparelho</button>
+  <button id="outro" class="link" type="button" hidden>Apelido e outro aparelho</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação. Modelos 3D provisórios. <a href="#" id="credlink">Créditos</a></p>
 </div>
@@ -62,8 +62,13 @@
 </div>
 
 <div class="card credits nuvem" id="nuvem" hidden role="dialog" aria-labelledby="nuvemh">
-  <h2 id="nuvemh">Continuar em outro aparelho</h2>
+  <h2 id="nuvemh">Apelido e outro aparelho</h2>
   <div class="nbody">
+    <h4>Seu apelido</h4>
+    <label for="nick" class="lbl">É o nome que os outros jogadores veem. De 3 a 16 letras, números, _ ou ponto.</label>
+    <input id="nick" type="text" maxlength="16" autocomplete="nickname" autocapitalize="off" spellcheck="false" placeholder="Ex.: PedroDaGalileia">
+    <button id="nicksave" type="button">Salvar apelido</button>
+    <p class="nmsg" id="nickmsg" role="status"></p>
     <h4>Seu código de recuperação</h4>
     <p>Guarde este código. Em outro celular ou computador, abra o jogo e digite-o: o progresso volta. Quem tiver o código continua o seu jogo, então não o publique.</p>
     <p class="code" id="ncode">…</p>

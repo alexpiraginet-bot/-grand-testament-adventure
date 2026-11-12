@@ -8,7 +8,7 @@ import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
-import { Cloud, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
+import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
 import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
@@ -193,6 +193,9 @@ async function main() {
   const CODE_KEY = "gta:cloud-code";
   const readCode = () => { try { return localStorage.getItem(CODE_KEY); } catch { return null; } };
   const writeCode = (c: string) => { try { localStorage.setItem(CODE_KEY, c); } catch { /* the panel still shows it */ } };
+  const NICK_KEY = "gta:nick";
+  let nick: string | null = (() => { try { return localStorage.getItem(NICK_KEY); } catch { return null; } })();
+  const keepNick = (n: string | null) => { nick = n; try { if (n) localStorage.setItem(NICK_KEY, n); } catch { /* shown this session */ } };
   let cloudPushedAt = 0, cloudState: "off" | "synced" | "offline" = cloud.enabled ? "offline" : "off";
   const pushCloud = (keepalive: boolean) => {
     if (!cloud.enabled) return;
@@ -204,7 +207,7 @@ async function main() {
   if (cloud.enabled && readCode()) {
     // meet the cloud copy before the start card, so "Continuar" shows the furthest mission (at most 4 s)
     const r = await Promise.race([syncOnce(save, readCode()!, cloud), new Promise<null>((ok) => setTimeout(() => ok(null), 4000))]);
-    if (r) { save = r.save; cloudState = r.status; if (r.status === "synced") store.write(save); }
+    if (r) { save = r.save; cloudState = r.status; if (r.status === "synced") { store.write(save); if (r.nick) keepNick(r.nick); } }
   }
   addEventListener("pagehide", () => { persist(false); pushCloud(true); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(false); });
@@ -269,7 +272,8 @@ async function main() {
     prog = episodeProgress(save, ep.id);
     resumable = prog.missionsDone > 0 && prog.missionsDone < total;
     const where = cloudState === "synced" ? "neste aparelho e na nuvem" : "neste aparelho";
-    const note = store.status === "ok" ? `O progresso fica salvo automaticamente ${where}.`
+    const who = nick ? `Jogando como ${nick}. ` : "";
+    const note = store.status === "ok" ? `${who}O progresso fica salvo automaticamente ${where}.`
       : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
       : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
     if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
@@ -280,7 +284,7 @@ async function main() {
   if (cloud.enabled) setupCloudPanel({
     ensureCode: async () => {
       let code = readCode();
-      if (!code && Object.keys(save.episodes).length === 0) return null;   // nothing to keep yet: no empty row in the cloud
+      if (!code && Object.keys(save.episodes).length === 0 && !nick) return null;   // nothing to keep yet: no empty row in the cloud
       if (!code) { code = newCode(); writeCode(code); }
       await cloud.put(code, save); cloudState = "synced";
       return code;
@@ -289,12 +293,25 @@ async function main() {
       try {
         const remote = await cloud.get(code);
         if (!remote) return "notfound";
-        save = mergeSaves(save, remote);
+        save = mergeSaves(save, remote.save);
         writeCode(code); store.write(save); await cloud.put(code, save); cloudState = "synced";
+        keepNick(remote.nick);
         return "ok";
       } catch { return "offline"; }
     },
     onRestored: showStartCard,
+    nick: () => nick,
+    checkNick: async (n) => { try { return NICK_MESSAGE[await cloud.nickCheck(n)] ?? "Não deu para conferir agora."; } catch { return "Sem conexão agora."; } },
+    setNick: async (n) => {
+      try {
+        let code = readCode();
+        if (!code) { code = newCode(); writeCode(code); }
+        await cloud.put(code, save);                       // the nickname lives with the save
+        const r = await cloud.nickSet(code, n);
+        if (r === "ok") { keepNick(n); cloudState = "synced"; }
+        return { ok: r === "ok", message: NICK_MESSAGE[r] ?? "Não deu para salvar agora." };
+      } catch { return { ok: false, message: "Sem conexão agora. Tente de novo em instantes." }; }
+    },
   });
   const go = $("go") as HTMLButtonElement, novo = $("novo") as HTMLButtonElement;
   go.addEventListener("click", () => beginPlay(resumable));

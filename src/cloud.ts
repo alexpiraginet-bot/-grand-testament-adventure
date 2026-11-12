@@ -4,6 +4,16 @@
 import { mergeSaves, parseSave, type Save } from "./save.ts";
 
 export type CloudConfig = { enabled: boolean; url: string; key: string };
+export type NickAnswer = "livre" | "ocupado" | "formato" | "reservado" | "ofensivo";
+
+/** The same format rule as the server (gta_nick_problem), to answer at once while the player types. */
+export const nickFormatOk = (nick: string) => /^[A-Za-z0-9_.À-ÖØ-öø-ÿ]{3,16}$/.test(nick);
+
+export const NICK_MESSAGE: Record<NickAnswer | "ok" | "sem-save", string> = {
+  livre: "Disponível.", ok: "Apelido salvo.", ocupado: "Esse apelido já tem dono.",
+  formato: "Use de 3 a 16 letras, números, _ ou ponto, sem espaço.", reservado: "Esse nome é reservado. Escolha outro.",
+  ofensivo: "Escolha outro apelido.", "sem-save": "Jogue um pouco antes: o apelido fica junto do seu progresso.",
+};
 type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
 const ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";      // Crockford base32: no I, L, O, U
@@ -44,13 +54,24 @@ export class Cloud {
     return r.json();
   }
 
-  /** The cloud copy for a code: a checked Save, null when there is none, or an error when unreachable/invalid. */
-  async get(code: string): Promise<Save | null> {
-    const data = await this.rpc("gta_save_get", { p_code: code });
+  /** The cloud copy for a code: a checked Save and its nickname, null when there is none, or an error when
+   * unreachable or invalid. */
+  async get(code: string): Promise<{ save: Save; nick: string | null } | null> {
+    const data = (await this.rpc("gta_save_get", { p_code: code })) as { save?: unknown; nick?: unknown } | null;
     if (data === null) return null;
-    const r = parseSave(JSON.stringify(data));
+    const r = parseSave(JSON.stringify(data.save ?? null));
     if (r.kind !== "ok") throw new Error(`cloud save ${r.kind}`);
-    return r.save;
+    return { save: r.save, nick: typeof data.nick === "string" ? data.nick : null };
+  }
+
+  /** Whether a nickname can be taken: "livre", "ocupado", "formato", "reservado" or "ofensivo" (decided by the server). */
+  async nickCheck(nick: string): Promise<NickAnswer> {
+    return (await this.rpc("gta_nick_check", { p_nick: nick })) as NickAnswer;
+  }
+
+  /** Gives this code's save a nickname. The save must be in the cloud already (put first). */
+  async nickSet(code: string, nick: string): Promise<NickAnswer | "ok" | "sem-save"> {
+    return (await this.rpc("gta_nick_set", { p_code: code, p_nick: nick })) as NickAnswer | "ok" | "sem-save";
   }
 
   async put(code: string, save: Save, keepalive = false): Promise<void> {
@@ -58,15 +79,15 @@ export class Cloud {
   }
 }
 
-export type SyncResult = { save: Save; status: "synced" | "offline"; error?: string };
+export type SyncResult = { save: Save; status: "synced" | "offline"; nick?: string | null; error?: string };
 
 /** Pull, merge, push: the local and the cloud copies meet (nothing finished is lost) and both end the same. */
 export async function syncOnce(local: Save, code: string, cloud: Cloud): Promise<SyncResult> {
   try {
     const remote = await cloud.get(code);
-    const merged = remote ? mergeSaves(local, remote) : local;
+    const merged = remote ? mergeSaves(local, remote.save) : local;
     await cloud.put(code, merged);
-    return { save: merged, status: "synced" };
+    return { save: merged, status: "synced", nick: remote?.nick ?? null };
   } catch (e) {
     return { save: local, status: "offline", error: String(e) };
   }
