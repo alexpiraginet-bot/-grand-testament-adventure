@@ -220,5 +220,6 @@ O Codex leu os termos (https://www.tripo3d.ai/terms) e a ajuda
 em plano pago, condicionado aos direitos sobre o que se usa como entrada. Isso não garante exclusividade nem direito
 autoral sobre a saída da IA. Eu não li essas páginas.
 
-As malhas são do Alex: entram no repositório próprio do jogo, nunca no biblia-conectada (que só aceita fontes livres),
-e não ficam sob a licença MIT do código.
+As malhas são do Alex e ficam **fora do git**: o repositório do jogo é público e só o código é aberto (MIT). Elas nunca
+vão para o biblia-conectada (que só aceita fontes livres). O registro de cada uma (hash, métricas, origem) fica em
+`ASSETS.md`.

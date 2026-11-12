@@ -1,10 +1,15 @@
 # Malhas recebidas e divisão do trabalho
 
+As malhas 3D são geradas no Tripo pela conta do Alex e têm licença própria, separada da do código: **não entram neste
+repositório público** (`.gitignore`: `public/models/*.glb`). Cada uma é registrada aqui com hash, métricas e origem;
+o arquivo circula entre quem trabalha nele. Sem o arquivo, o jogo usa as formas simples.
+
 ## Malhas recebidas
 
-### `heroi.glb` (recebido do Alex em 12/11/2026, "robe-clad man 3d model.glb")
+### `heroi.glb`, teste (do Alex, 12/11/2026, "robe-clad man 3d model.glb")
 
-**Status: provisório no jogo, não aprovado.** Entrou porque é melhor que as formas simples, mas falta o rig de verdade.
+**Status: teste, não é o de produção** (o Alex confirmou). Ele serviu para ligar o carregamento de GLB no jogo. O
+`heroi.glb` de produção, rigado, vem do Codex. O rig provisório de `src/rig.ts` não recebe mais trabalho.
 
 | | Original (fora do git, `assets-src/heroi-original.glb`) | No jogo (`public/models/heroi.glb`) |
 |---|---|---|
@@ -30,19 +35,26 @@ cinto de corda, manto terracota sobre o ombro **esquerdo** e pelas costas, sand�
    geometria. Ele anda e abaixa os braços, mas o manto e as mangas deformam junto com os ossos dos braços.
 2. Frente em +Z e escala em metros no próprio arquivo, para não depender de correção no código.
 
-**Regra:** um GLB com esqueleto próprio **não** passa por `bakedGeometry` (o código recusa e cai nas formas simples, com
-aviso no console). Falta ligar o `AnimationMixer` quando chegar o primeiro arquivo rigado, testado contra ele.
+**Regra:** um GLB com esqueleto próprio **não** passa por `bakedGeometry`: o código recusa e cai nas formas simples,
+com aviso no console. O `AnimationMixer` vai ser ligado quando chegar o primeiro arquivo rigado, e testado contra ele.
 
-## Divisão de arquivos (Claude × Codex)
+### `heroi.glb`, produção (Codex, em andamento)
 
-Branch base `main`; cada um na sua branch (`claude/...`, `codex/...`), PR em rascunho. Antes de mexer na área do
-outro, avise na PR.
+Gerado pelo Codex no site do Tripo (geração `6e66af13-ed12-46ee-9240-19b1d627a830`, privada). Segundo ele, o site mostra
+17.481 triângulos e o original estático exportado tem 3.756.732 bytes. O Codex ainda vai rigar e conferir a pele e
+as animações. **Não conferido aqui; não está pronto.**
+
+## Divisão de arquivos
+
+Branch base `main`; cada um na sua (`claude/...`, `codex/...`, `feature/...` de quem mais vier), com PR em rascunho.
+Antes de mexer na área de outra pessoa, avise na PR dela.
 
 | Área | Arquivos | Quem |
 |---|---|---|
 | Jogo, missões, HUD, controles, som | `src/main.ts`, `src/missions.ts`, `src/episode.ts`, `src/hud.ts`, `src/hud.css`, `src/input.ts`, `src/audio.ts`, `src/credits.ts`, `index.html` | Claude |
 | Mundo a partir dos dados (relevo, margem, radar, textos) | `tools/build_world.py`, `src/terrain.ts`, `public/world/*`, `src/data/mc-pescadores.json`, `src/data/attribution.json`, `data/terrain-tiles.sha256` | Claude |
-| Testes e prints do jogo | `test/*`, `tools/shots.mjs` | Claude (o Codex acrescenta testes de malha em arquivo próprio) |
-| Malhas e manifesto | `public/models/**`, `src/data/modelos.json`, `ASSETS.md` (seção "Malhas recebidas"), `TRIPO.md` | Codex |
+| Integração das malhas no jogo (carregar, esqueleto, `AnimationMixer`, posição na cena) | `src/rig.ts`, `src/people.ts`, o trecho de carregamento em `src/main.ts` | Claude |
+| Testes e prints do jogo | `test/*`, `tools/shots.mjs` | Claude (testes de malha novos em arquivo próprio, de quem os escrever) |
+| Produção das malhas: geração no Tripo, rig, animações, validação, manifesto | arquivos GLB (fora do git), esta seção "Malhas recebidas", `TRIPO.md`, orçamentos em `src/data/modelos.json` | Codex |
 | Ferramentas de malha | `tools/optimize_model.mjs`, `tools/check_model.mjs`, `tools/viewer/`, `src/viewer.ts` | Codex (Claude escreveu a primeira versão) |
-| Integração visual: personagens, rig, materiais, cenário, LOD, instancing | `src/people.ts`, `src/rig.ts`, `src/world.ts` | Codex, depois de avisar; Claude só corrige bug, avisando na PR |
+| Visual e desempenho do cenário: materiais, LOD, instancing, menos chamadas de desenho | `src/world.ts` | Codex propõe na branch dele, medindo antes e depois; Claude revisa |

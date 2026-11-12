@@ -7,7 +7,13 @@ Jogo de navegador em terceira pessoa com as missões da vida de Jesus, a partir 
 relevo real; três missões: descer até a praia, chamar Simão e André, chamar Tiago e João. HUD no desenho dos reels,
 falas literais da Bíblia Livre, créditos das fontes no jogo.
 
+**Código aberto, feito em conjunto.** Qualquer pessoa pode rodar, propor mudanças e abrir PR: veja
+[CONTRIBUTING.md](CONTRIBUTING.md). O código é MIT; os dados seguem as licenças das fontes; as malhas 3D não estão neste
+repositório (seção Licenças).
+
 ## Rodar
+
+Precisa de Node 22 (e Python 3 com numpy, scipy, opencv, scikit-image e Pillow só para refazer o mundo).
 
 ```bash
 npm ci
@@ -19,8 +25,11 @@ npm run world        # refaz public/world/ e src/data/ a partir das fontes (prec
 ```
 
 `?q=low|high` muda a qualidade (padrão: low no celular, high no PC); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
-`?debug` liga os ganchos de teste (`window.__gta`; `&dtmax=0.25` deixa o tempo do jogo andar no renderizador por software). `tools/shots.mjs` joga o episódio com o Chromium do ambiente e
-tira os prints em 1280×800 e 390×844 (precisa do `vite preview` rodando).
+`?debug` liga os ganchos de teste (`window.__gta`; `&dtmax=0.25` deixa o tempo do jogo andar no renderizador por software). 
+`tools/shots.mjs` joga o episódio com o Playwright e tira os prints em 1280×800 e 390×844 (precisa do `vite preview`
+rodando e do Playwright instalado à parte: `npm i -g playwright && npx playwright install chromium`).
+
+Sem as malhas (elas não vêm no git), o jogo roda com as formas simples. Quem tiver o `heroi.glb` põe em `public/models/`.
 
 ## Controles
 
@@ -55,15 +64,21 @@ quantos empregados estão no barco (2; Marcos 1:20 não diz), o ponto de partida
 
 ## Malhas
 
-Recebidas, métricas e divisão de arquivos entre Claude e Codex: [ASSETS.md](ASSETS.md). Para pôr uma malha nova:
+Recebidas, métricas e quem cuida de quê: [ASSETS.md](ASSETS.md). Para pôr uma malha nova:
 `node tools/optimize_model.mjs <original.glb> <nome>` (orçamento em `src/data/modelos.json`), depois `npx vite` e
 `node tools/check_model.mjs /models/<nome>.glb <altura> shots/modelo/<nome>` (fotos dos 4 lados). Originais ficam em
 `assets-src/`, fora do git.
 
-
-Ficha das 24 malhas para o Tripo em [TRIPO.md](TRIPO.md) (prompt, orçamento, rig, checklist). Até chegarem, tudo é forma simples.
+Ficha das 24 malhas para o Tripo em [TRIPO.md](TRIPO.md) (prompt, orçamento, rig, checklist).
 
 ## Licenças
 
-Código: MIT ([LICENSE](LICENSE)). Créditos das fontes: [ATTRIBUTION.md](ATTRIBUTION.md). As malhas do Tripo, quando
-chegarem, são do Alex e não entram sob a MIT.
+- **Código** (`src/`, `tools/`, `test/`, configuração): MIT, [LICENSE](LICENSE).
+- **Dados** (`public/world/`, `src/data/`, `data/`): derivados de fontes abertas, que pedem crédito. Ficam sob as
+  licenças delas: [LICENSE-DATA.md](LICENSE-DATA.md) e [ATTRIBUTION.md](ATTRIBUTION.md). A MIT não se aplica a eles.
+- **Fontes tipográficas** (`public/fonts/`): SIL Open Font License 1.1, com as licenças ao lado.
+- **Malhas 3D**: geradas no Tripo pela conta do Alex, com licença própria. **Não estão neste repositório** e não são
+  relicenciadas como código aberto (ver [ASSETS.md](ASSETS.md)).
+- **Dependências**: no jogo publicado só entra o three.js (MIT). As ferramentas de build trazem pacotes MIT, ISC,
+  Apache-2.0, BSD, BlueOak, MPL-2.0 (lightningcss, do Vite) e LGPL-3.0 (libvips, via sharp, do gltf-transform); elas
+  rodam só na máquina de quem constrói e não vão para o `dist/`.

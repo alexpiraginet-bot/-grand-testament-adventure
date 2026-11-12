@@ -27,6 +27,6 @@ suavização da faixa da margem são nossos.
 
 ## Malhas 3D
 
-`public/models/heroi.glb`: gerado no Tripo pela conta Pro do Alex e reduzido aqui (`ASSETS.md`). As malhas são do
-Alex: ficam neste repositório privado e **não** estão sob a licença MIT do código nem sob as licenças das fontes acima.
-Nunca vão para o biblia-conectada. O resto (pessoas, casas, barco, plantas) ainda é feito de formas simples no código.
+Geradas no Tripo pela conta do Alex, com licença própria. **Não estão neste repositório público**, não ficam sob a MIT
+do código nem sob as licenças das fontes acima, e nunca vão para o biblia-conectada. Registro, hashes e origem em
+`ASSETS.md`. Sem elas, o jogo usa formas simples feitas no código.
