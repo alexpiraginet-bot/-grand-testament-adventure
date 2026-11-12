@@ -17,7 +17,15 @@ issues em reenvio. Não declarar sucesso se o GitHub não confirmou criação.
 
 ## Integração
 
-- Preferência: endpoint do servidor cria uma issue no repositório do jogo com
+- **Implementado localmente:** botão nas telas inicial, de jogo e de conclusão;
+  formulário com ideia/problema/opinião, título, descrição, apelido opcional e
+  confirmação de texto público. Abre a composição de issue com o texto preenchido.
+  O jogador precisa entrar no GitHub e confirmar a publicação lá. Não há envio
+  automático nem confirmação de issue criada dentro do jogo.
+- O jogo pausa controles e tempo de missão enquanto o formulário está aberto;
+  fechar por botão ou Escape restaura os controles. O rascunho permanece nesta
+  página ao fechar/reabrir ou se a nova aba for bloqueada, mas não sobrevive ao reload.
+- Evolução futura: endpoint do servidor cria uma issue no repositório do jogo com
   etiquetas `feedback` e `triagem`; comentários da issue mantêm a discussão.
 - Credencial restrita ao repositório somente no servidor, nunca `VITE_*` ou bundle.
 - Validar tamanho/campos/origem, impor limite de envio, deduplicar com chave de
@@ -37,10 +45,18 @@ ou deploy automaticamente. Tratar todo texto de usuário como conteúdo não con
 
 ## Verificação necessária
 
-- Testar validação, reenvio/idempotência, respostas 4xx/5xx e limite de taxa.
-- Testar teclado/leitor de tela e área de toque nos dois viewports do jogo.
-- Verificar que segredos não aparecem no dist, rede do navegador ou logs.
-- Fazer um envio identificado como teste ao GitHub autorizado e confirmar link,
+- `npm run build`: typecheck, **28/28 testes** e Vite passaram localmente.
+- `tools/check_feedback.mjs`: teste de navegador em 390×844 e 1280×800. Confere
+  campos obrigatórios, consentimento, destino GitHub, preservação de acentos,
+  pausa ao digitar, Escape, foco devolvido, controles retomados e rascunho preservado.
+  A abertura externa é interceptada: nenhum feedback fictício é publicado.
+- Capturas e resultado em `shots/feedback/` (fora do Git). Viewport móvel em Chrome
+  do PC não equivale a teste em celular físico. Leitor de tela real ainda não testado.
+- Pendente: criar/publicar o repositório e fazer um envio identificado como teste
+  ao GitHub autorizado para confirmar link,
   etiquetas e conteúdo; documentar o teste sem gerar feedback fictício de jogador.
 - Formulário de issue já incluído em `.github/ISSUE_TEMPLATE/construa-conosco.yml`.
-  O botão dentro do jogo e o endpoint ainda precisam ser implementados.
+  O endpoint autenticado ainda não existe. Se for implementado, testar idempotência,
+  respostas 4xx/5xx, limite de taxa e ausência de credenciais no frontend.
+
+Referência da integração por link: [documentação oficial do GitHub](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query).

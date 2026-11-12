@@ -13,26 +13,34 @@ export class Input {
   private lookId: number | null = null;
   private lookLast = { x: 0, y: 0 };
   private dragging = false;
+  private suspended = false;
+  private resetControls: () => void;
 
   constructor(canvas: HTMLCanvasElement, joy: HTMLElement, knob: HTMLElement, actionBtn: HTMLElement) {
     this.touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+    this.resetControls = () => {
+      this.keys.clear(); this.actionQueued = false; this.dragging = false;
+      this.joyId = null; this.lookId = null; this.move = { x: 0, y: 0 }; this.run = false;
+      this.look = { dx: 0, dy: 0 }; knob.style.transform = ""; joy.classList.remove("on");
+    };
     addEventListener("keydown", (e) => {
-      if (e.repeat) return;
+      if (this.suspended || e.repeat || (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable]"))) return;
       this.keys.add(e.code);
-      if (e.code === "KeyE" || e.code === "Enter") this.actionQueued = true;
+      if ((e.code === "KeyE" || e.code === "Enter") && !(e.target instanceof Element && e.target.closest("button, a"))) this.actionQueued = true;
     });
     addEventListener("keyup", (e) => this.keys.delete(e.code));
-    addEventListener("blur", () => this.keys.clear());
+    addEventListener("blur", () => this.resetControls());
 
-    canvas.addEventListener("mousedown", (e) => { if (e.button === 0 || e.button === 2) this.dragging = true; });
+    canvas.addEventListener("mousedown", (e) => { if (!this.suspended && (e.button === 0 || e.button === 2)) this.dragging = true; });
     addEventListener("mouseup", () => { this.dragging = false; });
     addEventListener("mousemove", (e) => {
-      if (document.pointerLockElement === canvas || this.dragging) { this.look.dx += e.movementX; this.look.dy += e.movementY; }
+      if (!this.suspended && (document.pointerLockElement === canvas || this.dragging)) { this.look.dx += e.movementX; this.look.dy += e.movementY; }
     });
-    canvas.addEventListener("dblclick", () => { if (!this.touch) canvas.requestPointerLock?.(); });
+    canvas.addEventListener("dblclick", () => { if (!this.suspended && !this.touch) canvas.requestPointerLock?.(); });
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
 
     const t = (e: TouchEvent) => {
+      if (this.suspended) return;
       for (const p of Array.from(e.changedTouches)) {
         if (e.type === "touchstart") {
           if (p.clientX < innerWidth * 0.45 && this.joyId === null) {
@@ -63,12 +71,12 @@ export class Input {
       if (e.cancelable) e.preventDefault();
     };
     for (const ev of ["touchstart", "touchmove", "touchend", "touchcancel"] as const) canvas.addEventListener(ev, t, { passive: false });
-    actionBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.actionQueued = true; });
+    actionBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.queueAction(); });
   }
 
   /** Reads the keyboard into move/run (the joystick writes them directly). */
   poll() {
-    if (this.joyId !== null) return;
+    if (this.suspended || this.joyId !== null) return;
     const k = this.keys;
     const x = (k.has("KeyD") || k.has("ArrowRight") ? 1 : 0) - (k.has("KeyA") || k.has("ArrowLeft") ? 1 : 0);
     const y = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0);
@@ -81,7 +89,9 @@ export class Input {
     const a = this.actionQueued; this.actionQueued = false; return a;
   }
 
-  queueAction() { this.actionQueued = true; }
+  queueAction() { if (!this.suspended) this.actionQueued = true; }
+
+  setSuspended(suspended: boolean) { this.suspended = suspended; this.resetControls(); }
 
   takeLook() {
     const l = { ...this.look }; this.look.dx = 0; this.look.dy = 0; return l;

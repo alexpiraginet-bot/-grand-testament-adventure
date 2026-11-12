@@ -46,6 +46,12 @@ está em [docs/ALTO-NIVEL.md](docs/ALTO-NIVEL.md). Os arquivos que ela importa s
 
 ## Controles
 
+**Construa conosco:** no início, durante a partida e na conclusão, o botão abre um
+formulário de ideias, opiniões e problemas. O jogo fica pausado enquanto você escreve.
+O texto abre preenchido no GitHub, onde você revisa e confirma a publicação com sua
+conta. As propostas passam por análise; alterações no jogo dependem de aprovação.
+Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
+
 - PC: WASD ou setas, Shift corre, arrastar o mouse olha (duplo clique trava o cursor), **E** age.
 - Celular: arraste no lado esquerdo para andar (joystick aparece onde o dedo toca), no lado direito para olhar, botão
   redondo para agir.

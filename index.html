@@ -31,7 +31,10 @@
     <div class="bar" id="bar"></div>
     <div class="plate" id="plate"></div>
   </div>
-  <button class="credbtn" id="credbtn" type="button">Créditos</button>
+  <nav class="hud-links" aria-label="Comunidade e créditos">
+    <button class="credbtn community-btn" data-feedback-open type="button">Construa conosco</button>
+    <button class="credbtn" id="credbtn" type="button">Créditos</button>
+  </nav>
   <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
   <button class="act" id="act" type="button" hidden>E</button>
 </div>
@@ -47,6 +50,7 @@
   </div>
   <p class="savenote" id="savenote" hidden></p>
   <button id="outro" class="link" type="button" hidden>Apelido e outro aparelho</button>
+  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação. Modelos 3D provisórios. <a href="#" id="credlink">Créditos</a></p>
 </div>
@@ -59,6 +63,7 @@
   <p class="endcount" id="endc"></p>
   <ul class="cred" id="endcred"></ul>
   <button id="again" type="button">Jogar de novo</button>
+  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
 </div>
 
 <div class="card credits nuvem" id="nuvem" hidden role="dialog" aria-labelledby="nuvemh">
@@ -89,6 +94,41 @@
 </div>
 
 <div class="fps" id="fps" hidden></div>
+<dialog class="feedback" id="feedback" aria-labelledby="feedback-heading" aria-describedby="feedback-intro">
+  <p class="eyebrow">GRAND TESTAMENT ADVENTURE · COMUNIDADE</p>
+  <h2 id="feedback-heading" tabindex="-1">Construa conosco</h2>
+  <p class="intro" id="feedback-intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
+  <form id="feedback-form">
+    <label class="field" for="feedback-kind">Quero compartilhar
+      <select id="feedback-kind" required>
+        <option value="idea">Uma ideia de melhoria</option>
+        <option value="problem">Um problema no jogo</option>
+        <option value="opinion">Minha opinião</option>
+      </select>
+    </label>
+    <label class="field" for="feedback-title">Título
+      <input id="feedback-title" type="text" minlength="4" required placeholder="Um resumo da sua contribuição">
+    </label>
+    <label class="field" for="feedback-description">Conte um pouco mais
+      <textarea id="feedback-description" rows="4" minlength="10" required placeholder="Se algo deu errado, conte o que fez e o que esperava acontecer."></textarea>
+    </label>
+    <label class="field" for="feedback-nickname"><span>Seu apelido <span class="optional">(opcional)</span></span>
+      <input id="feedback-nickname" type="text" autocomplete="off" placeholder="Como quer ser chamado?">
+    </label>
+    <label class="consent" for="feedback-public">
+      <input id="feedback-public" type="checkbox" required>
+      <span>Entendo que meu texto será público no GitHub. Não incluí dados pessoais nem meu código de recuperação.</span>
+    </label>
+    <p class="notice">Você revisa e publica na próxima aba, com sua conta GitHub. <strong>A equipe analisa cada proposta; mudanças no jogo dependem de aprovação.</strong></p>
+    <p class="message" id="feedback-error" role="alert"></p>
+    <p class="message" id="feedback-status" role="status"></p>
+    <div class="actions">
+      <button id="feedback-close" type="button">Voltar ao jogo</button>
+      <button type="submit">Abrir no GitHub ↗</button>
+    </div>
+  </form>
+  <p class="community-footer"><a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a></p>
+</dialog>
 <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

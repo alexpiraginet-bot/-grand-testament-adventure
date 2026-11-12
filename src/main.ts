@@ -10,6 +10,7 @@ import { distanceToGoal, initialState, restoreState, start as startEpisode, step
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
+import { setupFeedbackPanel } from "./feedbackui.ts";
 import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
@@ -161,6 +162,7 @@ async function main() {
   const cam = { yaw: player.heading, pitch: 0.2, dist: touch && innerHeight > innerWidth ? 5.2 : 4.4, idle: 0 };
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
+  const feedback = setupFeedbackPanel((open) => input.setSuspended(open));
   const sfx = new Sfx();
   const hud = new Hud(ep, meta, img, input.touch);
   const goals = makeGoals(meta);
@@ -350,13 +352,14 @@ async function main() {
   const frame = () => {
     const now = performance.now();
     const real = (now - last) / 1000; last = now;
-    const dt = Math.min(DT_MAX, real); t += dt;         // game time: at most 50 ms per frame (slow motion below 20 fps)
+    const paused = feedback.isOpen();
+    const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // feedback pauses mission time as well as controls
     fpsFrames++; fpsT += real;                           // the FPS counter uses real time
     if (fpsT >= 1) { fpsLog.push(fpsFrames / fpsT); if (fpsLog.length > 120) fpsLog.shift(); fpsEl.textContent = `${backend}\n${(fpsFrames / fpsT).toFixed(0)} fps`; fpsFrames = 0; fpsT = 0; }
 
     input.poll();
     const look = input.takeLook();
-    const playing = state.phase === "play" || state.phase === "line";
+    const playing = !paused && (state.phase === "play" || state.phase === "line");
     if (playing || ended) {
       cam.yaw += look.dx * 0.0042;
       cam.pitch = Math.max(-0.25, Math.min(0.85, cam.pitch + look.dy * 0.003));
@@ -391,10 +394,10 @@ async function main() {
     animate(hero, mv, dt, t);
 
     // mission logic
-    if (state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
+    if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
     else input.takeAction();
     // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)
-    if (state.phase === "play" || state.phase === "line") {
+    if (!paused && (state.phase === "play" || state.phase === "line")) {
       playedSince += real; sinceSave += dt;
       if (sinceSave > 15 && Math.hypot(player.pos.x - savedAt.x, player.pos.z - savedAt.z) > 3) persist(false);
     }

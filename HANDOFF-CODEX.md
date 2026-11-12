@@ -65,6 +65,21 @@ imediata; nenhuma nova geração deve começar só para gastar esse restante.
 5. Mostrar teste real do DLSS 5. Tentativa executada, mas falhou no servidor de
    recursos da demo; não existe comparação ON/OFF válida até aqui.
 
+### Construa conosco implementado pelo Codex
+
+Branch `codex/construa-conosco`: formulário no jogo, integração por link de issue
+preenchida (publicação confirmada no GitHub), pausa de controles/tempo de missão,
+rascunho preservado durante a página e testes de navegador. Build com **28/28 testes**.
+Não há endpoint nem token no frontend; a publicação do repositório e o envio real
+de uma issue continuam dependendo da autenticação GitHub. Os prints ficam em
+`shots/feedback/`. A sessão Claude Code local ainda depende do login na conta paga
+correta; não confundir estes arquivos preparados com uma sessão já iniciada.
+
+Amostra local do jogo com formas provisórias: Chrome/WebGPU em aproximadamente
+100 FPS nos dois viewports durante a verificação, cerca de 579 kB transferidos
+(documento e recursos, cache novo). É uma amostra curta no PC, não benchmark de
+celular nem do jogo com todas as malhas. Resultado completo: `shots/feedback/report.json`.
+
 ## Divisão de trabalho
 
 O Codex recuperou o bundle e entregou os assets. Claude Code assume implementação
