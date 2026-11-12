@@ -44,6 +44,12 @@ Gerado pelo Codex no site do Tripo (geração `6e66af13-ed12-46ee-9240-19b1d627a
 17.481 triângulos e o original estático exportado tem 3.756.732 bytes. O Codex ainda vai rigar e conferir a pele e
 as animações. **Não conferido aqui; não está pronto.**
 
+## Referências visuais
+
+| Arquivo (fora do git) | SHA-256 | O que é |
+|---|---|---|
+| `assets-src/referencias/conceito-visual-01.png` | `ea81dd752e8342e9737f62bcc65d21128ac625811fb26ad9e50021dbe859bee6` | conceito em imagem gerada, enviado pelo Alex em 12/11/2026 como referência final; análise em `docs/ALTO-NIVEL.md` |
+
 ## Divisão de arquivos
 
 Branch base `main`; cada um na sua (`claude/...`, `codex/...`, `feature/...` de quem mais vier), com PR em rascunho.

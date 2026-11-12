@@ -31,6 +31,18 @@ rodando e do Playwright instalado à parte: `npm i -g playwright && npx playwrig
 
 Sem as malhas (elas não vêm no git), o jogo roda com as formas simples. Quem tiver o `heroi.glb` põe em `public/models/`.
 
+## Progresso salvo
+
+O jogo salva sozinho no aparelho (`src/save.ts`): a cada missão concluída, a cada 15 s andando e quando a página sai da
+tela. O save tem versão e é conferido toda vez que é lido; um save quebrado fica guardado à parte e volta a cópia
+anterior. A cópia na nuvem, sem cadastro, usa um código de recuperação para continuar em outro aparelho
+(`src/cloud.ts`, `supabase/migrations/`). Ela está **desligada** em `src/data/nuvem.json` até a migração ser aplicada.
+
+## Alto nível (PC com RTX)
+
+O DLSS só existe em jogo nativo. O plano para uma versão em Unreal Engine 5, que herda mundo, missões e save daqui,
+está em [docs/ALTO-NIVEL.md](docs/ALTO-NIVEL.md). Os arquivos que ela importa saem de `python3 -I tools/export_engine.py`.
+
 ## Controles
 
 - PC: WASD ou setas, Shift corre, arrastar o mouse olha (duplo clique trava o cursor), **E** age.

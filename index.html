@@ -46,6 +46,7 @@
     <button id="novo" class="sec" type="button" hidden>Começar do zero</button>
   </div>
   <p class="savenote" id="savenote" hidden></p>
+  <button id="outro" class="link" type="button" hidden>Continuar em outro aparelho</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação. Modelos 3D provisórios. <a href="#" id="credlink">Créditos</a></p>
 </div>
@@ -58,6 +59,22 @@
   <p class="endcount" id="endc"></p>
   <ul class="cred" id="endcred"></ul>
   <button id="again" type="button">Jogar de novo</button>
+</div>
+
+<div class="card credits nuvem" id="nuvem" hidden role="dialog" aria-labelledby="nuvemh">
+  <h2 id="nuvemh">Continuar em outro aparelho</h2>
+  <div class="nbody">
+    <h4>Seu código de recuperação</h4>
+    <p>Guarde este código. Em outro celular ou computador, abra o jogo e digite-o: o progresso volta. Quem tiver o código continua o seu jogo, então não o publique.</p>
+    <p class="code" id="ncode">…</p>
+    <button id="ncopy" type="button" class="sec">Copiar código</button>
+    <h4>Tenho um código de outro aparelho</h4>
+    <label for="nin" class="lbl">Código (32 letras e números; traços e espaços não importam)</label>
+    <input id="nin" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" inputmode="text" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX">
+    <button id="nuse" type="button">Usar este código</button>
+    <p class="nmsg" id="nmsg" role="status"></p>
+  </div>
+  <button id="nclose" type="button" class="sec">Fechar</button>
 </div>
 
 <div class="card credits" id="credits" hidden role="dialog" aria-labelledby="credh">

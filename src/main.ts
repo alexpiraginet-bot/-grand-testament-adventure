@@ -7,7 +7,10 @@ import { boat as makeBoat, castNet, farMesh, groundMesh, houses, props, sky, wat
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
-import { episodeProgress, LocalSaveStore, recordMission, restartEpisode } from "./save.ts";
+import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
+import { Cloud, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
+import { setupCloudPanel } from "./cloudui.ts";
+import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
@@ -182,8 +185,28 @@ async function main() {
       current: state.phase === "done" ? null : { episode: ep.id, mission: state.mission, pos: { ...player.pos }, heading: player.heading } };
     playedSince = 0; sinceSave = 0; savedAt = { ...player.pos };
     if (store.write(save) && show) hud.flashSaved();
+    if (show || now - cloudPushedAt > 60_000) pushCloud(false);     // a ticked mission at once; walking, once a minute
   };
-  addEventListener("pagehide", () => persist(false));
+
+  // ---- the cloud copy (cloud.ts): off until src/data/nuvem.json is switched on (tests: ?debug&nuvem=1)
+  const cloud = new Cloud({ ...(nuvem as CloudConfig), enabled: (nuvem as CloudConfig).enabled || (DEBUG && params.get("nuvem") === "1") });
+  const CODE_KEY = "gta:cloud-code";
+  const readCode = () => { try { return localStorage.getItem(CODE_KEY); } catch { return null; } };
+  const writeCode = (c: string) => { try { localStorage.setItem(CODE_KEY, c); } catch { /* the panel still shows it */ } };
+  let cloudPushedAt = 0, cloudState: "off" | "synced" | "offline" = cloud.enabled ? "offline" : "off";
+  const pushCloud = (keepalive: boolean) => {
+    if (!cloud.enabled) return;
+    let code = readCode();
+    if (!code) { code = newCode(); writeCode(code); }
+    cloudPushedAt = Date.now();
+    cloud.put(code, save, keepalive).then(() => { cloudState = "synced"; }, () => { cloudState = "offline"; });
+  };
+  if (cloud.enabled && readCode()) {
+    // meet the cloud copy before the start card, so "Continuar" shows the furthest mission (at most 4 s)
+    const r = await Promise.race([syncOnce(save, readCode()!, cloud), new Promise<null>((ok) => setTimeout(() => ok(null), 4000))]);
+    if (r) { save = r.save; cloudState = r.status; if (r.status === "synced") store.write(save); }
+  }
+  addEventListener("pagehide", () => { persist(false); pushCloud(true); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(false); });
 
   /** Those called so far walk with him (Mark 1:18, 1:20); `near` puts them beside him at once (a resumed game). */
@@ -220,8 +243,8 @@ async function main() {
 
   // the start card: continue a run in progress, or start one (a finished episode starts a new run, keeping its record)
   const total = ep.missoes.length;
-  const prog = episodeProgress(save, ep.id);
-  const resumable = prog.missionsDone > 0 && prog.missionsDone < total;
+  let prog = episodeProgress(save, ep.id);
+  let resumable = prog.missionsDone > 0 && prog.missionsDone < total;
   const beginPlay = (resume: boolean) => {
     sfx.start();
     hud.show();
@@ -242,12 +265,37 @@ async function main() {
     }
     persist(false);
   };
-  const note = store.status === "ok" ? "O progresso fica salvo automaticamente neste aparelho."
-    : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
-    : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
-  if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
-  else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
-  else hud.startCard({ primary: "Começar", note });
+  const showStartCard = () => {
+    prog = episodeProgress(save, ep.id);
+    resumable = prog.missionsDone > 0 && prog.missionsDone < total;
+    const where = cloudState === "synced" ? "neste aparelho e na nuvem" : "neste aparelho";
+    const note = store.status === "ok" ? `O progresso fica salvo automaticamente ${where}.`
+      : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
+      : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
+    if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
+    else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
+    else hud.startCard({ primary: "Começar", note });
+  };
+  showStartCard();
+  if (cloud.enabled) setupCloudPanel({
+    ensureCode: async () => {
+      let code = readCode();
+      if (!code && Object.keys(save.episodes).length === 0) return null;   // nothing to keep yet: no empty row in the cloud
+      if (!code) { code = newCode(); writeCode(code); }
+      await cloud.put(code, save); cloudState = "synced";
+      return code;
+    },
+    useCode: async (code) => {
+      try {
+        const remote = await cloud.get(code);
+        if (!remote) return "notfound";
+        save = mergeSaves(save, remote);
+        writeCode(code); store.write(save); await cloud.put(code, save); cloudState = "synced";
+        return "ok";
+      } catch { return "offline"; }
+    },
+    onRestored: showStartCard,
+  });
   const go = $("go") as HTMLButtonElement, novo = $("novo") as HTMLButtonElement;
   go.addEventListener("click", () => beginPlay(resumable));
   // starting over erases a run in progress: the button asks once more, in place
@@ -391,7 +439,7 @@ async function main() {
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
-      start: () => beginPlay(resumable), save: () => save, persist: () => persist(false),
+      start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;

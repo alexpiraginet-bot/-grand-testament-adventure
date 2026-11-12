@@ -120,3 +120,17 @@ button { font: inherit; cursor: pointer; }
   animation: savedfade 2.2s ease forwards; }
 @keyframes savedfade { 0% { opacity: .2; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .saved { animation: none; } }
+
+/* the recovery code panel */
+.card button.link { margin-top: 10px; padding: 6px 4px; background: none; border: none; color: var(--gold); font: 700 13px "Space Mono", monospace;
+  letter-spacing: .5px; text-decoration: underline; text-underline-offset: 3px; text-transform: none; }
+.nuvem .nbody { width: min(560px, 100%); text-align: left; font-size: 14px; line-height: 1.55; }
+.nuvem h4 { margin: 18px 0 6px; font: 700 12px "Space Mono", monospace; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; }
+.nuvem .code { margin: 10px 0; padding: 12px; border: 1px dashed rgba(255,207,115,.7); border-radius: 8px; font: 700 clamp(13px, 3.6vw, 18px) "Space Mono", monospace;
+  letter-spacing: 1px; text-align: center; word-break: break-all; user-select: all; -webkit-user-select: all; }
+.nuvem .lbl { display: block; font: 400 12px "Space Mono", monospace; opacity: .85; margin-bottom: 6px; }
+.nuvem input { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid rgba(255,248,236,.5); background: rgba(14,16,14,.6); color: var(--cream);
+  font: 700 15px "Space Mono", monospace; letter-spacing: 1px; }
+.nuvem input:focus-visible, .card button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.nuvem .nbody button { margin-top: 12px; }
+.nuvem .nmsg { min-height: 1.5em; margin: 10px 0 0; font: 400 13px "Space Mono", monospace; }

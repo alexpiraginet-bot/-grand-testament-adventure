@@ -11,3 +11,4 @@ assets-src/
 # meshes from Tripo are the Alex's, licensed apart from the code: never in this public repository
 public/models/*.glb
 public/models/*.gltf
+export/

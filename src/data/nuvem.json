@@ -1,0 +1,6 @@
+{
+ "enabled": false,
+ "url": "https://upidmpzzcpotuwetherp.supabase.co",
+ "key": "sb_publishable_Z52AMjZW8IOIqJKPmroKhQ_m9Uz2JXj",
+ "nota": "Chave publicável (feita para ir no navegador). Desligado até a migração supabase/migrations/20261112210000_gta_saves_v1.sql ser aplicada com autorização do Alex."
+}
