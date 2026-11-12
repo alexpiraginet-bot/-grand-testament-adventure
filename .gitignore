@@ -12,3 +12,8 @@ assets-src/
 public/models/*.glb
 public/models/*.gltf
 export/
+
+# Assets keep their own license, including nested integration directories.
+*.glb
+*.gltf
+.claude.local/

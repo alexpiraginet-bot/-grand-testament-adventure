@@ -1,0 +1,39 @@
+name: Construa conosco
+description: Compartilhe uma ideia, opinião ou problema do Grand Testament Adventure.
+title: "[Comunidade] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por construir este jogo conosco. Este conteúdo será público.
+        Não inclua dados pessoais, senhas ou seu código de recuperação.
+        A equipe analisa cada proposta; mudanças dependem de aprovação e revisão.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Tipo de contribuição
+      options:
+        - Ideia de melhoria
+        - Problema encontrado
+        - Opinião
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Conte sua ideia ou o que aconteceu
+      description: Em caso de problema, descreva como reproduzir e o resultado esperado.
+    validations:
+      required: true
+  - type: input
+    id: nickname
+    attributes:
+      label: Apelido (opcional)
+      description: Não é necessário informar seu nome real.
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Publicação
+      options:
+        - label: Entendo que este texto será público e removi informações pessoais e códigos de recuperação.
+          required: true

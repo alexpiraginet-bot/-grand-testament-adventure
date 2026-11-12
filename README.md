@@ -40,7 +40,8 @@ anterior. A cópia na nuvem, sem cadastro, usa um código de recuperação para 
 
 ## Alto nível (PC com RTX)
 
-O DLSS só existe em jogo nativo. O plano para uma versão em Unreal Engine 5, que herda mundo, missões e save daqui,
+O DLSS 5 ainda não foi validado neste jogo; o teste experimental WebGPU e seus impedimentos estão em
+[docs/DLSS5-STATUS.md](docs/DLSS5-STATUS.md). O plano para uma versão em Unreal Engine 5, que herda mundo, missões e save daqui,
 está em [docs/ALTO-NIVEL.md](docs/ALTO-NIVEL.md). Os arquivos que ela importa saem de `python3 -I tools/export_engine.py`.
 
 ## Controles

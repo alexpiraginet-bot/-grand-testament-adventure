@@ -1,0 +1,77 @@
+# Transferência Codex → Claude Code local — 12/11/2026
+
+## Estado recuperado
+
+O bundle final do Claude web tem `main` em
+`84443a71eb7376565c1139efdf56176b8a41560a`. A cópia antiga `1ad6154` não é a base.
+Os 24 testes/build informados no HANDOFF original são evidência da sessão de
+origem; a validação local deve ser repetida e registrada.
+
+Validação local feita pelo Codex em 12/11/2026: `npm run build` passou, incluindo
+typecheck, 24/24 testes e Vite. As malhas ainda não foram integradas ao carregador;
+o teste atual informa explicitamente que `public/models/heroi.glb` está ausente.
+`npm ci --ignore-scripts` precisou de `NODE_USE_SYSTEM_CA=1` para usar a CA confiada
+do Windows; a verificação TLS não foi desativada. O audit registra 4 vulnerabilidades
+moderadas na cadeia de ferramentas `@gltf-transform/cli`/caporal/glob/minimatch,
+sem altas/críticas. Não aplicar `npm audit fix --force` sem avaliar a mudança major.
+
+## Malhas entregues no disco
+
+`assets-src/tripo-r1/` contém cópias conferidas por SHA-256:
+
+- `source/`: 21 GLBs fonte (20 modelos distintos; herói estático e animado).
+- `candidate/heroi-walk.glb`: candidato normalizado, totalizando 22 GLBs.
+- `handoff/MANIFEST.json`: inventário, SHA-256, tamanhos, origem e pendências.
+- `handoff/LEIA-ME-CLAUDE.md`: contrato de integração detalhado.
+- `transfer-sha256.json`: verificação das cópias locais.
+- `qa/hero-browser/`: captura e medidas reais do viewer Three.js.
+- `qa/dlss5-experiment/`: captura e relatório do experimento que falhou.
+
+Modelos: herói, Simão, André, Tiago, João, Zebedeu, empregado, barco, casas A/B/C,
+oliveiras A/B, árvore espinhosa, arbusto seco, junco, pedras de basalto, muro,
+rede amontoada e rede lançada. Todos exportados do site Tripo, sem API.
+
+**Validação estrutural:** os 22 GLBs passaram no Khronos glTF Validator com zero
+erros. Há avisos de tangentes não armazenadas e, nos arquivos rigados, nó de
+SkinnedMesh não raiz. Isso não é aprovação visual de todo o lote nem de desempenho
+no jogo. Escalas/pivôs/texturas de cenário ainda precisam de revisão e otimização.
+
+### Herói animado
+
+- SHA-256 candidato: `9e4bf02069342b2668703dd92398db69f006b8aef446702235fc3f7d69b46898`.
+- 4.000.952 bytes; 17.481 triângulos; 13.003 vértices; 65 ossos; 1 material.
+- Clip `walk`, duração 2,33333325 s, caminhada sem deslocamento de raiz.
+- 1,76 m em repouso, Y para cima, frente +Z, pés no chão em repouso.
+- Normalização feita num ancestral comum da malha e do esqueleto. Preserve ambos.
+- `idle`, `run`, `beckon` **não foram entregues**. Os seis outros humanos estão
+  estáticos em pose A e ainda precisam de rig.
+- O viewer foi conferido em 1280×800 e 390×844, frente/costas e quatro tempos do
+  clip, sem erros de carregamento e com limites finitos. Cerca de 100 FPS nesse
+  viewer simples na RTX 5060 Ti **não mede o desempenho do jogo**.
+
+### Créditos
+
+Teto autorizado do primeiro lote: 1.200 créditos existentes, sem compra.
+Gasto atribuível: 920; mais 105 de diferença não atribuída; total conservador
+1.025. Saldo observado: 2.190. Restam 175 do teto, mas Alex pediu transferência
+imediata; nenhuma nova geração deve começar só para gastar esse restante.
+
+## Novas instruções de Alex
+
+1. Levar a sessão para Claude Code **local**, modelo mais capaz disponível e esforço máximo.
+2. Criar/publicar o repositório público, preservar histórico e aceitar contribuições.
+3. Entregar todas as malhas ao ambiente local; seus binários mantêm licença separada.
+4. Incluir **Construa conosco**, detalhado em `docs/CONSTRUA-CONOSCO.md`.
+5. Mostrar teste real do DLSS 5. Tentativa executada, mas falhou no servidor de
+   recursos da demo; não existe comparação ON/OFF válida até aqui.
+
+## Divisão de trabalho
+
+O Codex recuperou o bundle e entregou os assets. Claude Code assume implementação
+do jogo e integração; não há outra sessão autorizada a editar esses mesmos fontes
+simultaneamente. O projeto de assets original foi preservado em pasta separada.
+
+Antes de declarar publicação: verificar conta, URL remota, visibilidade pública,
+SHA remoto e arquivos versionados. Antes de declarar feature concluída: executar
+testes reais e demonstrar o comportamento. Nenhum token deve ser copiado do
+ambiente de outra aplicação para contornar login.
