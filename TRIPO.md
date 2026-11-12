@@ -39,7 +39,7 @@ Texturas: 2048² só no herói; 1024² nas pessoas e no barco; 512² no resto.
 
 | # | Arquivo | O que é | Triângulos | Textura | Rig |
 |---|---|---|---|---|---|
-| 1 | `heroi.glb` | Jesus, o jogador (visto sempre de costas) | 18 mil | 2048² + normal | sim |
+| 1 | `heroi.glb` | Jesus, o jogador (visto sempre de costas). **Recebido sem rig: falta exportar rigado e com animações** (ver `ASSETS.md`) | 18 mil | 2048² + normal | sim |
 | 2 | `pescador-simao.glb` | Simão | 12 mil | 1024² | sim |
 | 3 | `pescador-andre.glb` | André, irmão de Simão | 12 mil | 1024² | sim |
 | 4 | `pescador-tiago.glb` | Tiago, filho de Zebedeu | 12 mil | 1024² | sim |
@@ -214,6 +214,11 @@ Não consegui ler os termos do Tripo desta sessão: o site recusou o acesso. As 
 então **não afirmo** nada sobre o plano Pro. Antes de publicar o jogo, confira nos Termos de Serviço do Tripo, logado
 na conta Pro: (1) se o plano pago dá uso comercial e a propriedade dos modelos; (2) se os modelos ficam privados;
 (3) se modelos gerados quando a conta estava no plano grátis entram nisso.
+
+O Codex leu os termos (https://www.tripo3d.ai/terms) e a ajuda
+(https://www.tripo3d.ai/help/privacy-policy/can-i-use-models-commercially): segundo ele, a ajuda confirma uso comercial
+em plano pago, condicionado aos direitos sobre o que se usa como entrada. Isso não garante exclusividade nem direito
+autoral sobre a saída da IA. Eu não li essas páginas.
 
 As malhas são do Alex: entram no repositório próprio do jogo, nunca no biblia-conectada (que só aceita fontes livres),
 e não ficam sob a licença MIT do código.

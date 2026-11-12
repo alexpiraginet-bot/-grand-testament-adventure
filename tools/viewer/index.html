@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualizador de malhas</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #c9ccc2; font: 12px/1.4 monospace; }
+  canvas { width: 100vw; height: 100vh; display: block; }
+  pre { position: fixed; left: 8px; top: 8px; margin: 0; padding: 6px 8px; background: rgba(14, 16, 14, .78); color: #fff8ec; border-radius: 4px; max-width: 46vw; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<pre id="stats">carregando…</pre>
+<script type="module" src="/src/viewer.ts"></script>
+</body>
+</html>

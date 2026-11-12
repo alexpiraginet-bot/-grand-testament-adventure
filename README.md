@@ -55,6 +55,12 @@ quantos empregados estão no barco (2; Marcos 1:20 não diz), o ponto de partida
 
 ## Malhas
 
+Recebidas, métricas e divisão de arquivos entre Claude e Codex: [ASSETS.md](ASSETS.md). Para pôr uma malha nova:
+`node tools/optimize_model.mjs <original.glb> <nome>` (orçamento em `src/data/modelos.json`), depois `npx vite` e
+`node tools/check_model.mjs /models/<nome>.glb <altura> shots/modelo/<nome>` (fotos dos 4 lados). Originais ficam em
+`assets-src/`, fora do git.
+
+
 Ficha das 24 malhas para o Tripo em [TRIPO.md](TRIPO.md) (prompt, orçamento, rig, checklist). Até chegarem, tudo é forma simples.
 
 ## Licenças

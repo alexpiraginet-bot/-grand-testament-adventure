@@ -7,7 +7,7 @@ export const BLIVRE_NOTICE =
 // short lines for the end card, as in the reels' end card
 export const SHORT = [
   "Texto: Bíblia Livre (CC BY 4.0 BR) · Geocodificação: OpenBible.info (CC BY 4.0)",
-  "Relevo: SRTM/GMTED2010 (USGS), ETOPO1 (NOAA), Mapzen · Formas provisórias, sem modelos 3D finais",
+  "Relevo: SRTM/GMTED2010 (USGS), ETOPO1 (NOAA), Mapzen · Modelos 3D provisórios",
 ];
 
 export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
@@ -18,11 +18,14 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Relevo", p: [
     "AWS Terrain Tiles (Mapzen): SRTM e GMTED2010 (USGS), ETOPO1 (NOAA). O chão e o horizonte vêm desses dados; o fundo do lago é nosso (os dados só têm a superfície da água).",
   ] },
+  { h: "Modelos 3D", p: [
+    "O jogador é um modelo gerado no Tripo, ainda provisório (esqueleto feito no código até chegar o modelo animado). Os outros personagens, as casas, o barco e as plantas ainda são formas simples.",
+  ] },
   { h: "Código e fontes tipográficas", p: [
     "three.js (MIT). Space Grotesk e Space Mono (SIL Open Font License 1.1).",
   ] },
   { h: "O que é recriação", p: [
-    "Este jogo é uma recriação, não uma reconstituição histórica. Pessoas, casas, barco e plantas são formas provisórias até chegarem os modelos 3D.",
+    "Este jogo é uma recriação, não uma reconstituição histórica.",
     "Onde ficam Simão e André na praia, a distância de \"um pouco mais adiante\" (Marcos 1:19) e quantos empregados estão no barco (Marcos 1:20 não diz) são escolhas do jogo.",
   ] },
 ];

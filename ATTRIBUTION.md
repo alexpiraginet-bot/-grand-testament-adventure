@@ -27,5 +27,6 @@ suavização da faixa da margem são nossos.
 
 ## Malhas 3D
 
-Nenhuma ainda: pessoas, casas, barco e plantas são formas simples feitas no código. As malhas do Tripo, quando
-chegarem, são do Alex.
+`public/models/heroi.glb`: gerado no Tripo pela conta Pro do Alex e reduzido aqui (`ASSETS.md`). As malhas são do
+Alex: ficam neste repositório privado e **não** estão sob a licença MIT do código nem sob as licenças das fontes acima.
+Nunca vão para o biblia-conectada. O resto (pessoas, casas, barco, plantas) ainda é feito de formas simples no código.

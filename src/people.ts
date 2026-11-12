@@ -42,9 +42,11 @@ function mesh(g: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) {
 export type Person = {
   root: THREE.Group;        // placed on the ground; rotation.y = facing
   body: THREE.Group;        // scaled to height, bobs when walking
-  legL: THREE.Group; legR: THREE.Group; armL: THREE.Group; armR: THREE.Group;
+  legL: THREE.Object3D; legR: THREE.Object3D; armL: THREE.Object3D; armR: THREE.Object3D;   // pivots: groups or bones
   phase: number;
   pose: "stand" | "net" | "sit";
+  armRestL?: number;        // rotation (about z) that brings an A-pose arm down along the body (rigged meshes)
+  armRestR?: number;
 };
 
 /** A person facing -z (north) at rotation 0. */
@@ -138,7 +140,7 @@ export function animate(p: Person, speed: number, dt: number, t: number) {
     p.body.position.y = -0.42;
     p.legL.rotation.x = p.legR.rotation.x = -1.35;
     p.armL.rotation.x = p.armR.rotation.x = -0.9;
-    p.armL.rotation.z = 0.25; p.armR.rotation.z = -0.25;
+    p.armL.rotation.z = (p.armRestL ?? 0) + 0.25; p.armR.rotation.z = (p.armRestR ?? 0) - 0.25;
     p.armL.rotation.x += Math.sin(t * 2.1) * 0.12;      // hands busy with the nets (Mark 1:19)
     p.armR.rotation.x += Math.sin(t * 2.1 + 1.3) * 0.12;
     return;
@@ -148,12 +150,12 @@ export function animate(p: Person, speed: number, dt: number, t: number) {
     p.body.position.y = 0;
     p.legL.rotation.x = p.legR.rotation.x = 0;
     p.armL.rotation.x = p.armR.rotation.x = -0.9 - 0.35 * s;
-    p.armL.rotation.z = 0.15; p.armR.rotation.z = -0.15;
+    p.armL.rotation.z = (p.armRestL ?? 0) + 0.15; p.armR.rotation.z = (p.armRestR ?? 0) - 0.15;
     p.body.rotation.x = -0.12 - 0.06 * s;
     return;
   }
   p.body.rotation.x = 0;
-  p.armL.rotation.z = 0.06; p.armR.rotation.z = -0.06;
+  p.armL.rotation.z = (p.armRestL ?? 0) + 0.06; p.armR.rotation.z = (p.armRestR ?? 0) - 0.06;
   const amp = Math.min(1, speed / 2.6);
   p.phase += dt * (2.2 + speed * 1.6);
   const s = Math.sin(p.phase);

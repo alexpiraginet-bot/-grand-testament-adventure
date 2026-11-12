@@ -10,6 +10,10 @@ import { distanceToGoal, initialState, start as startEpisode, step, type Episode
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+import { bakedGeometry, rigPerson, type ModelSpec } from "./rig.ts";
+import modelos from "./data/modelos.json";
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -118,7 +122,20 @@ async function main() {
     scene.add(net);
   }
 
-  const hero = makePerson(PALETTES.heroi);
+  // the player: the Tripo mesh when it loads (with the provisional rig of rig.ts), the simple shapes otherwise
+  let hero: Person = makePerson(PALETTES.heroi);
+  let heroSource = "formas";
+  try {
+    const spec = (modelos as Record<string, ModelSpec & { arquivo: string }>).heroi;
+    const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+    const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}${spec.arquivo}`);
+    if (gltf.animations.length) throw new Error("heroi.glb tem animações próprias: falta ligar o AnimationMixer (rig.ts é só para malha sem rig)");
+    const { geometry, material } = bakedGeometry(gltf.scene, spec);
+    hero = rigPerson(geometry, material, spec.altura);
+    heroSource = spec.arquivo;
+  } catch (e) {
+    console.warn("heroi.glb não carregou; o jogador fica com as formas simples", e);
+  }
   scene.add(hero.root);
   const player = { pos: pt(P.start), heading: Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1])), speed: 0 };
 
@@ -294,7 +311,7 @@ async function main() {
 
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
-      backend, state, player, meta, goals, fpsLog, cam,
+      backend, state, player, meta, goals, fpsLog, cam, heroSource,
       start: beginPlay,
       act: () => input.queueAction(),
       teleport: (x: number, z: number, heading?: number) => {
