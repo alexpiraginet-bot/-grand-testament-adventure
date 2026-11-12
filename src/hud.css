@@ -108,3 +108,15 @@ button { font: inherit; cursor: pointer; }
 .credits #credbody blockquote { margin: 4px 0 8px; padding-left: 12px; border-left: 3px solid var(--gold); }
 .fps { position: fixed; right: 8px; top: 40%; font: 700 11px "Space Mono"; background: rgba(0,0,0,.6); padding: 4px 6px; border-radius: 4px; z-index: 8; white-space: pre; }
 @media (prefers-reduced-motion: reduce) { .joy { transition: none; } }
+
+/* saving: the start card's choice and the "saved" pill */
+.startbtns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 28px; }
+.startbtns button { margin-top: 0; }
+.card button.sec { background: transparent; color: var(--cream); border-color: rgba(255,248,236,.7); }
+.card button.sec.armed { border-color: var(--gold); color: var(--gold); }
+.savenote { margin: 12px 0 0; font: 400 12px "Space Mono", monospace; opacity: .85; }
+.saved { display: inline-block; margin: 10px 0 0 2px; padding: 4px 10px; background: rgba(14,16,14,.72); border: 1px solid rgba(255,207,115,.6);
+  border-radius: 999px; font: 700 11px "Space Mono", monospace; letter-spacing: 1px; color: var(--gold); text-transform: uppercase;
+  animation: savedfade 2.2s ease forwards; }
+@keyframes savedfade { 0% { opacity: .2; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .saved { animation: none; } }

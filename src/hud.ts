@@ -50,6 +50,23 @@ export class Hud {
 
   show() { $("hud").hidden = false; $("start").hidden = true; }
 
+  /** The start card's buttons and the line about saving. */
+  startCard(o: { primary: string; secondary?: string; note: string }) {
+    const go = $("go") as HTMLButtonElement, novo = $("novo") as HTMLButtonElement, note = $("savenote");
+    go.disabled = false; go.textContent = o.primary;
+    novo.hidden = !o.secondary; if (o.secondary) novo.textContent = o.secondary;
+    note.hidden = !o.note; note.textContent = o.note;
+  }
+
+  /** The "Progresso salvo" pill, for a moment. */
+  flashSaved() {
+    const el = $("saved");
+    el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
+    clearTimeout(this.savedTimer);
+    this.savedTimer = setTimeout(() => { el.hidden = true; }, 2300);
+  }
+  private savedTimer: ReturnType<typeof setTimeout> | undefined;
+
   update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number) {
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);

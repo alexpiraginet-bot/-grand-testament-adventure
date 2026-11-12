@@ -126,3 +126,20 @@ export function step(s: State, ep: EpisodeData, goals: Goal[], input: Input, dt:
   }
   return ev;
 }
+
+/** The state of an episode resumed after `missionsDone` ticked missions: the next mission in play, the counter as the
+ * last ticked mission left it, and everyone called so far following. missionsDone >= the number of missions resumes
+ * nothing (the episode was finished): the caller starts a new run instead. */
+export function restoreState(ep: EpisodeData, goals: Goal[], missionsDone: number): State {
+  const s = initialState();
+  const k = Math.max(0, Math.min(missionsDone, ep.missoes.length - 1));
+  s.phase = "play";
+  s.mission = k;
+  s.filled = k > 0 ? ep.missoes[k - 1].conta : 0;
+  for (let i = 0; i < k; i++) {
+    s.completedAt.push(0);
+    const g = goals[i];
+    if (g.kind === "call") s.followers.push(...g.npcs);
+  }
+  return s;
+}

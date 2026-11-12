@@ -22,6 +22,7 @@
     <div class="mk" id="mk"></div>
     <div class="obj" id="obj"><i class="ic"></i><span id="objt"></span><b id="dist"></b></div>
     <div class="counter" id="counter"></div>
+    <div class="saved" id="saved" role="status" hidden>Progresso salvo</div>
   </section>
   <div class="prompt" id="prompt" hidden><kbd id="key">E</kbd><span id="promptt"></span></div>
   <div class="sub" id="sub" hidden><p id="subt"></p><cite id="subr"></cite></div>
@@ -40,7 +41,11 @@
   <h1 id="title"></h1>
   <i class="rule"></i>
   <p class="ref" id="ref"></p>
-  <button id="go" type="button" disabled>Carregando…</button>
+  <div class="startbtns">
+    <button id="go" type="button" disabled>Carregando…</button>
+    <button id="novo" class="sec" type="button" hidden>Começar do zero</button>
+  </div>
+  <p class="savenote" id="savenote" hidden></p>
   <p class="how" id="how"></p>
   <p class="foot">Recriação. Modelos 3D provisórios. <a href="#" id="credlink">Créditos</a></p>
 </div>

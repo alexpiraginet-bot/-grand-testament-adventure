@@ -6,7 +6,8 @@ import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terr
 import { boat as makeBoat, castNet, farMesh, groundMesh, houses, props, sky, water, type Segment } from "./world.ts";
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, type NpcSpec } from "./episode.ts";
-import { distanceToGoal, initialState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
+import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
+import { episodeProgress, LocalSaveStore, recordMission, restartEpisode } from "./save.ts";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
@@ -170,36 +171,95 @@ async function main() {
     camera.updateProjectionMatrix();
   });
 
+  // ---- saved progress (save.ts): this browser's copy, autosaved
+  const store = new LocalSaveStore();
+  let save = store.load(Date.now());
+  let savedAt = { x: player.pos.x, z: player.pos.z }, sinceSave = 0, playedSince = 0;
+  const persist = (show: boolean) => {
+    if (state.phase === "intro") return;
+    const now = Date.now();
+    save = { ...save, updatedAt: now, playSeconds: save.playSeconds + playedSince,
+      current: state.phase === "done" ? null : { episode: ep.id, mission: state.mission, pos: { ...player.pos }, heading: player.heading } };
+    playedSince = 0; sinceSave = 0; savedAt = { ...player.pos };
+    if (store.write(save) && show) hud.flashSaved();
+  };
+  addEventListener("pagehide", () => persist(false));
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(false); });
+
+  /** Those called so far walk with him (Mark 1:18, 1:20); `near` puts them beside him at once (a resumed game). */
+  const follow = (ids: string[], near = false) => {
+    const already = npcList.filter((n) => n.following >= 0).length;
+    ids.forEach((id, i) => {
+      const n = npcList.find((x) => x.spec.id === id)!;
+      n.following = already + i;
+      n.person.pose = "stand";
+      n.inBoat = false;
+      if (near) { n.pos.x = player.pos.x + (i % 2 ? 1.6 : -1.6); n.pos.z = player.pos.z + 1.5 + already; n.y = terrain.heightAt(n.pos.x, n.pos.z); }
+    });
+  };
+
   const handle = (evs: Event[]) => {
     for (const e of evs) {
       if (e.type === "mission-start") sfx.thump(e.mission ? 0.28 : 0.55);
       if (e.type === "line") sfx.line();
       if (e.type === "mission-done" && e.mission < ep.missoes.length - 1) sfx.done();
-      if (e.type === "follow") {
-        const already = npcList.filter((n) => n.following >= 0).length;
-        e.npcs.forEach((id, i) => {
-          const n = npcList.find((x) => x.spec.id === id)!;
-          n.following = already + i;
-          n.person.pose = "stand";
-          if (n.inBoat) { n.inBoat = false; }
-        });
+      if (e.type === "follow") follow(e.npcs);
+      if (e.type === "mission-done") {
+        save = recordMission(save, ep.id, e.mission, ep.missoes.length, Date.now());
+        persist(true);
       }
       if (e.type === "episode-done") {
         sfx.finale();
         ended = true;
+        save = { ...save, current: null };
+        persist(false);
         setTimeout(() => hud.end(state.filled), 1200);
       }
     }
   };
 
-  const beginPlay = () => {
+  // the start card: continue a run in progress, or start one (a finished episode starts a new run, keeping its record)
+  const total = ep.missoes.length;
+  const prog = episodeProgress(save, ep.id);
+  const resumable = prog.missionsDone > 0 && prog.missionsDone < total;
+  const beginPlay = (resume: boolean) => {
     sfx.start();
     hud.show();
-    handle(startEpisode(state));
+    if (resume) {
+      Object.assign(state, restoreState(ep, goals, prog.missionsDone));
+      const c = save.current;
+      const k = state.mission;
+      const checkpoint = k === 0 ? pt(P.start) : goals[k - 1].at;
+      const ok = c && c.episode === ep.id && c.mission === k && terrain.inside(c.pos.x, c.pos.z, 60) && !blocked(c.pos.x, c.pos.z);
+      player.pos.x = ok ? c.pos.x : checkpoint.x; player.pos.z = ok ? c.pos.z : checkpoint.z;
+      player.heading = ok ? c.heading : Math.atan2(goals[k].at.x - player.pos.x, -(goals[k].at.z - player.pos.z));
+      cam.yaw = player.heading;
+      follow(state.followers, true);
+      handle([{ type: "mission-start", mission: k }]);
+    } else {
+      save = restartEpisode(save, ep.id, Date.now());
+      handle(startEpisode(state));
+    }
+    persist(false);
   };
-  const go = $("go") as HTMLButtonElement;
-  go.disabled = false; go.textContent = "Começar";
-  go.addEventListener("click", beginPlay);
+  const note = store.status === "ok" ? "O progresso fica salvo automaticamente neste aparelho."
+    : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
+    : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
+  if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
+  else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
+  else hud.startCard({ primary: "Começar", note });
+  const go = $("go") as HTMLButtonElement, novo = $("novo") as HTMLButtonElement;
+  go.addEventListener("click", () => beginPlay(resumable));
+  // starting over erases a run in progress: the button asks once more, in place
+  let armed: ReturnType<typeof setTimeout> | undefined;
+  novo.addEventListener("click", () => {
+    if (!armed) {
+      novo.textContent = "Apagar a missão em andamento? Toque de novo"; novo.classList.add("armed");
+      armed = setTimeout(() => { armed = undefined; novo.textContent = "Começar do zero"; novo.classList.remove("armed"); }, 4000);
+      return;
+    }
+    clearTimeout(armed); beginPlay(false);
+  });
   ($("again") as HTMLButtonElement).addEventListener("click", () => location.reload());
 
   // ---- movement
@@ -268,6 +328,11 @@ async function main() {
     // mission logic
     if (state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
     else input.takeAction();
+    // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)
+    if (state.phase === "play" || state.phase === "line") {
+      playedSince += real; sinceSave += dt;
+      if (sinceSave > 15 && Math.hypot(player.pos.x - savedAt.x, player.pos.z - savedAt.z) > 3) persist(false);
+    }
 
     // people: the boat bobs; followers walk behind him
     const bob = Math.sin(t * 1.1) * 0.05;
@@ -326,7 +391,7 @@ async function main() {
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
-      start: beginPlay,
+      start: () => beginPlay(resumable), save: () => save, persist: () => persist(false),
       act: () => input.queueAction(),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;
