@@ -65,7 +65,7 @@ try {
     assert.equal(opens.length, 1);
     const issue = new URL(opens[0].url);
     assert.equal(issue.origin, "https://github.com");
-    assert.equal(issue.pathname, "/alexpiraginet-bot/grand-testament-adventure/issues/new");
+    assert.equal(issue.pathname, "/alexpiraginet-bot/-grand-testament-adventure/issues/new");
     assert.match(issue.searchParams.get("body"), /confortável/);
     assert.equal(opens[0].features, "noopener,noreferrer");
     assert.match(await page.locator("#feedback-status").innerText(), /Confirme a publicação/);

@@ -5,7 +5,7 @@ Leia `HANDOFF.md`, `HANDOFF-CODEX.md`, `README.md`, `ASSETS.md` e
 foi recuperado do commit `84443a71eb7376565c1139efdf56176b8a41560a`.
 
 Alex pediu uma sessão **local do Claude Code**, esforço máximo, ligada ao
-repositório público `alexpiraginet-bot/grand-testament-adventure`. O trabalho da
+repositório público `alexpiraginet-bot/-grand-testament-adventure`. O trabalho da
 sessão web foi encerrado para transferência; não recrie o jogo do zero.
 
 - Converse em PT-BR. Feche cada rodada com O que mudou / Como verifiquei / Riscos / Próximo passo.

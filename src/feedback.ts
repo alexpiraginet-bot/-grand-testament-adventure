@@ -1,6 +1,6 @@
 // Only explicit form fields leave the game, after the player's confirmation.
 // No save, recovery code, nickname from storage, device data or credential is read here.
-export const COMMUNITY_REPO = "https://github.com/alexpiraginet-bot/grand-testament-adventure";
+export const COMMUNITY_REPO = "https://github.com/alexpiraginet-bot/-grand-testament-adventure";
 export const FEEDBACK_LIMITS = { title: 90, description: 1000, nickname: 32, url: 7000 } as const;
 export const FEEDBACK_KINDS = { idea: "Ideia de melhoria", problem: "Problema encontrado", opinion: "Opinião" } as const;
 

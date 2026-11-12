@@ -1,0 +1,9 @@
+assets-src/
+shots/
+export/
+.claude.local/
+.env
+.env.*
+*.bundle
+*.zip
+tools/.cache/

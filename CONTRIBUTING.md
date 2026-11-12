@@ -6,7 +6,8 @@ regras do projeto não se negociam sem o Alex.
 ## Começar
 
 ```bash
-git clone <este repositório> && cd grand-testament-adventure
+git clone https://github.com/alexpiraginet-bot/-grand-testament-adventure.git grand-testament-adventure
+cd grand-testament-adventure
 npm ci
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + testes + build: tem de passar antes de abrir PR

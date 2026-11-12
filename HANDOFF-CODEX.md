@@ -1,5 +1,13 @@
 # Transferência Codex → Claude Code local — 12/11/2026
 
+## Repositório criado por Alex
+
+Endereço real: https://github.com/alexpiraginet-bot/-grand-testament-adventure
+(há um hífen no início do nome). O `origin` local e o formulário Construa conosco
+usam esse endereço. Referências sem o hífen no `HANDOFF.md` original são históricas.
+Alex também autorizou importar e publicar o jogo na Vercel; a evidência de conclusão
+deve constar no relatório de publicação, sem confundir configuração com deploy pronto.
+
 ## Estado recuperado
 
 O bundle final do Claude web tem `main` em
