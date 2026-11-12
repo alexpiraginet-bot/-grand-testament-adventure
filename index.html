@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0e100e">
+<title>Grand Testament Adventure</title>
+<meta name="description" content="Fatia jogável: Pescadores de gente (Marcos 1:16–20), na margem do mar da Galileia em Cafarnaum. Recriação.">
+<link rel="preload" href="./fonts/SpaceGrotesk-VF.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="./fonts/SpaceMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/src/hud.css">
+</head>
+<body>
+<canvas id="c" aria-label="Margem do mar da Galileia em Cafarnaum"></canvas>
+
+<div id="hud" hidden>
+  <header class="top">
+    <span>GRAND TESTAMENT ADVENTURE</span>
+    <span>RECRIAÇÃO</span>
+  </header>
+  <section class="mission" aria-live="polite">
+    <div class="mk" id="mk"></div>
+    <div class="obj" id="obj"><i class="ic"></i><span id="objt"></span><b id="dist"></b></div>
+    <div class="counter" id="counter"></div>
+  </section>
+  <div class="prompt" id="prompt" hidden><kbd id="key">E</kbd><span id="promptt"></span></div>
+  <div class="sub" id="sub" hidden><p id="subt"></p><cite id="subr"></cite></div>
+  <div class="radarbox">
+    <div class="radar"><canvas id="radar" width="300" height="300"></canvas><span class="n">N</span></div>
+    <div class="bar" id="bar"></div>
+    <div class="plate" id="plate"></div>
+  </div>
+  <button class="credbtn" id="credbtn" type="button">Créditos</button>
+  <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
+  <button class="act" id="act" type="button" hidden>E</button>
+</div>
+
+<div class="card" id="start">
+  <p class="hook">E SE EXISTISSE UM JOGO COM AS<br>MISSÕES DA VIDA DE JESUS?</p>
+  <h1 id="title"></h1>
+  <i class="rule"></i>
+  <p class="ref" id="ref"></p>
+  <button id="go" type="button" disabled>Carregando…</button>
+  <p class="how" id="how"></p>
+  <p class="foot">Recriação. Formas provisórias no lugar dos modelos 3D. <a href="#" id="credlink">Créditos</a></p>
+</div>
+
+<div class="card end" id="end" hidden>
+  <svg viewBox="0 0 120 120" width="108" height="108" aria-hidden="true"><circle cx="60" cy="60" r="54" fill="none" stroke="#ffcf73" stroke-width="6"/><path d="M36 62 L54 80 L86 42" fill="none" stroke="#ffcf73" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/></svg>
+  <h2>MISSÃO CONCLUÍDA</h2>
+  <h3 id="endt"></h3>
+  <p class="ref" id="endr"></p>
+  <p class="endcount" id="endc"></p>
+  <ul class="cred" id="endcred"></ul>
+  <button id="again" type="button">Jogar de novo</button>
+</div>
+
+<div class="card credits" id="credits" hidden role="dialog" aria-labelledby="credh">
+  <h2 id="credh">Créditos</h2>
+  <div id="credbody"></div>
+  <button id="credclose" type="button">Fechar</button>
+</div>
+
+<div class="fps" id="fps" hidden></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

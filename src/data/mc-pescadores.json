@@ -1,0 +1,92 @@
+{
+ "id": "mc-pescadores",
+ "titulo": "Pescadores de gente",
+ "ref": "Mark.1.16-20",
+ "ref_pt": "Marcos 1:16–20",
+ "lugar": "mar da Galileia",
+ "lugar_ref": "Mc 1:16",
+ "contador": {
+  "rotulo": "Discípulos",
+  "prova": [
+   {
+    "ref": "Mark.1.16",
+    "nome": "Simão"
+   },
+   {
+    "ref": "Mark.1.16",
+    "nome": "André"
+   },
+   {
+    "ref": "Mark.1.19",
+    "nome": "Tiago"
+   },
+   {
+    "ref": "Mark.1.19",
+    "nome": "João"
+   }
+  ]
+ },
+ "personagens": [
+  {
+   "id": "simao",
+   "ref": "Mark.1.16",
+   "nome": "Simão"
+  },
+  {
+   "id": "andre",
+   "ref": "Mark.1.16",
+   "nome": "André"
+  },
+  {
+   "id": "tiago",
+   "ref": "Mark.1.19",
+   "nome": "Tiago"
+  },
+  {
+   "id": "joao",
+   "ref": "Mark.1.19",
+   "nome": "João"
+  },
+  {
+   "id": "zebedeu",
+   "ref": "Mark.1.20",
+   "nome": "Zebedeu"
+  }
+ ],
+ "missoes": [
+  {
+   "objetivo": "Desça até a praia",
+   "acao": null,
+   "fala": null,
+   "conta": 0
+  },
+  {
+   "objetivo": "Chame Simão e André",
+   "acao": "Chamar",
+   "fala": {
+    "texto": "Vinde após mim, e farei serdes pescadores de gente.",
+    "ref": "Marcos 1:17"
+   },
+   "conta": 2
+  },
+  {
+   "objetivo": "Chame Tiago e João",
+   "acao": "Chamar",
+   "fala": {
+    "texto": "eles deixaram o seu pai Zebedeu no barco com os empregados, foram após ele.",
+    "ref": "Marcos 1:20"
+   },
+   "conta": 4
+  }
+ ],
+ "versiculos": {
+  "Mark.1.16": "E enquanto andava junto ao mar da Galileia, ele viu Simão e seu irmão André, que lançavam uma rede ao mar, porque eram pescadores;",
+  "Mark.1.17": "Jesus lhes disse: Vinde após mim, e farei serdes pescadores de gente.",
+  "Mark.1.18": "Então logo deixaram suas redes, e o seguiram.",
+  "Mark.1.19": "E passando dali um pouco mais adiante, viu Tiago filho de Zebedeu, e seu irmão João, que estavam no barco, consertando as redes.",
+  "Mark.1.20": "E logo os chamou; então eles deixaram o seu pai Zebedeu no barco com os empregados, foram após ele.",
+  "Mark.1.21": "Eles entraram em Cafarnaum; e assim que chegou o sábado, Jesus entrou na sinagoga e começou a ensinar."
+ },
+ "fonte_texto": "Bíblia Livre (BLIVRE), CC BY 4.0 BR",
+ "origem": "biblia-conectada, estudos/biblia-grand-testament-adventure/data/passagens.json (tools/check.py)"
+}

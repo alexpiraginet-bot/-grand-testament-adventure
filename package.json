@@ -1,0 +1,23 @@
+{
+  "name": "grand-testament-adventure",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "world": "python3 -I tools/build_world.py",
+    "dev": "vite",
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && node --test test/*.test.ts && vite build",
+    "preview": "vite preview --port 4173"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.1",
+    "@types/three": "0.186.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}
