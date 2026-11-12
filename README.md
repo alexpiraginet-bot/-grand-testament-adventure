@@ -55,7 +55,7 @@ quantos empregados estão no barco (2; Marcos 1:20 não diz), o ponto de partida
 
 ## Malhas
 
-Lista para o Tripo em [TRIPO.md](TRIPO.md). Até chegarem, tudo é forma simples.
+Ficha das 24 malhas para o Tripo em [TRIPO.md](TRIPO.md) (prompt, orçamento, rig, checklist). Até chegarem, tudo é forma simples.
 
 ## Licenças
 
