@@ -30,6 +30,8 @@ Prioridade inicial: integrar o herói animado, conferir o lote, habilitar o flux
 contribuições, verificar Construa conosco no GitHub real e continuar as pendências do
 handoff original. Qualquer bloqueio de login/deploy deve ficar explícito.
 
-Ao assumir este checkout, preserve a branch `codex/construa-conosco`. Ela contém o
-formulário e os testes; crie sua nova `claude/...` a partir dela para não perder a
-revisão. O push/PR ainda está pendente de autenticação no GitHub.
+O código e o formulário já estão publicados em `main`. A Vercel está ligada ao
+repositório correto, com o hífen inicial. Leia `docs/PUBLICACAO.md` para evidências
+e limitações. Crie a próxima `claude/...` a partir da `main` atual e use PR em rascunho;
+preserve a branch histórica `codex/construa-conosco`. A sessão Claude Code local
+ainda depende de autenticação na conta paga correta; não afirmar que foi iniciada.

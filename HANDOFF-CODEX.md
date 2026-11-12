@@ -5,8 +5,10 @@
 Endereço real: https://github.com/alexpiraginet-bot/-grand-testament-adventure
 (há um hífen no início do nome). O `origin` local e o formulário Construa conosco
 usam esse endereço. Referências sem o hífen no `HANDOFF.md` original são históricas.
-Alex também autorizou importar e publicar o jogo na Vercel; a evidência de conclusão
-deve constar no relatório de publicação, sem confundir configuração com deploy pronto.
+Alex também autorizou importar e publicar o jogo na Vercel. **Publicado e testado**
+em https://grand-testament-adventure-lexprojects.vercel.app/ . A `main` foi enviada
+ao GitHub preservando o histórico. Evidências, método de teste e limitações em
+`docs/PUBLICACAO.md`. O `HANDOFF.md` original descreve o estado anterior à publicação.
 
 ## Estado recuperado
 
@@ -78,8 +80,8 @@ imediata; nenhuma nova geração deve começar só para gastar esse restante.
 Branch `codex/construa-conosco`: formulário no jogo, integração por link de issue
 preenchida (publicação confirmada no GitHub), pausa de controles/tempo de missão,
 rascunho preservado durante a página e testes de navegador. Build com **28/28 testes**.
-Não há endpoint nem token no frontend; a publicação do repositório e o envio real
-de uma issue continuam dependendo da autenticação GitHub. Os prints ficam em
+Não há endpoint nem token no frontend. O repositório está publicado; o envio real
+de uma issue ainda precisa ser confirmado por uma conta GitHub. Os prints ficam em
 `shots/feedback/`. A sessão Claude Code local ainda depende do login na conta paga
 correta; não confundir estes arquivos preparados com uma sessão já iniciada.
 

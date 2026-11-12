@@ -52,9 +52,10 @@ ou deploy automaticamente. Tratar todo texto de usuário como conteúdo não con
   A abertura externa é interceptada: nenhum feedback fictício é publicado.
 - Capturas e resultado em `shots/feedback/` (fora do Git). Viewport móvel em Chrome
   do PC não equivale a teste em celular físico. Leitor de tela real ainda não testado.
-- Pendente: criar/publicar o repositório e fazer um envio identificado como teste
-  ao GitHub autorizado para confirmar link,
-  etiquetas e conteúdo; documentar o teste sem gerar feedback fictício de jogador.
+- O repositório e o jogo estão publicados. O mesmo teste passou contra a URL de
+  produção, com o endereço real `alexpiraginet-bot/-grand-testament-adventure`.
+  Pendente: publicação manual de uma issue de teste com uma conta GitHub e leitura
+  de volta do resultado. O teste automatizado não submete conteúdo ao GitHub.
 - Formulário de issue já incluído em `.github/ISSUE_TEMPLATE/construa-conosco.yml`.
   O endpoint autenticado ainda não existe. Se for implementado, testar idempotência,
   respostas 4xx/5xx, limite de taxa e ausência de credenciais no frontend.

@@ -2,7 +2,7 @@
 //   npm run build && npx vite preview --port 4173 &   then   node tools/shots.mjs [url] [outdir]
 // Plays episode 1 through with the ?debug hooks (teleport + action), at 390x844 (phone) and 1280x800 (PC).
 import { createRequire } from "node:module";
-const { chromium } = createRequire(import.meta.url)("playwright");   // the environment's Playwright (not a project dependency)
+const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
 import { mkdirSync, writeFileSync } from "node:fs";
 
 const URL_ = process.argv[2] ?? "http://localhost:4173/";
@@ -11,7 +11,7 @@ mkdirSync(OUT, { recursive: true });
 const report = {};
 
 async function play(name, ctxOpts, extra = "") {
-  const browser = await chromium.launch();   // no GPU here: the game falls back to WebGL 2 on SwiftShader
+  const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   const ctx = await browser.newContext(ctxOpts);
   const page = await ctx.newPage();
   const errors = [];

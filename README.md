@@ -11,6 +11,10 @@ falas literais da Bíblia Livre, créditos das fontes no jogo.
 [CONTRIBUTING.md](CONTRIBUTING.md). O código é MIT; os dados seguem as licenças das fontes; as malhas 3D não estão neste
 repositório (seção Licenças).
 
+**Jogar:** https://grand-testament-adventure-lexprojects.vercel.app/
+Publicação conectada à branch `main` deste repositório. Estado e limitações em
+[docs/PUBLICACAO.md](docs/PUBLICACAO.md).
+
 ## Rodar
 
 Precisa de Node 22 (e Python 3 com numpy, scipy, opencv, scikit-image e Pillow só para refazer o mundo).
