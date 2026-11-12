@@ -75,9 +75,9 @@ export class Hud {
 
     const pr = $("prompt"), act = $("act");
     const label = m.acao ?? "";
-    pr.hidden = !(s.promptVisible && s.phase === "play");
-    if (!pr.hidden) $("promptt").textContent = label;
-    act.hidden = !touch || pr.hidden;
+    pr.hidden = !(s.promptVisible && s.phase === "play") || touch;     // on a phone the round button is the prompt
+    $("promptt").textContent = label;
+    act.hidden = !touch || !(s.promptVisible && s.phase === "play");
     if (!act.hidden) act.textContent = label;
 
     const sub = $("sub");

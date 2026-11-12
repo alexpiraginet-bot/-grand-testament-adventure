@@ -32,6 +32,7 @@ button { font: inherit; cursor: pointer; }
 .obj .ic { width: 14px; height: 14px; margin-left: 8px; background: var(--gold); transform: rotate(45deg); flex: none; }
 .obj.done { border-color: var(--gold); color: var(--gold); }
 .obj.done .ic { background: none; transform: none; width: 18px; height: 14px; border: solid var(--gold); border-width: 0 0 4px 4px; transform: rotate(-45deg) translate(2px, -2px); }
+#objt { min-width: 0; flex: 1; }
 .obj b { margin-left: auto; padding-left: 14px; font: 700 13px "Space Mono", monospace; color: var(--gold); letter-spacing: 0; white-space: nowrap; }
 .counter { display: flex; align-items: center; gap: 8px; margin: 10px 0 0 2px; font: 700 13px "Space Mono", monospace; letter-spacing: 2px; text-shadow: var(--edge); }
 .counter i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--cream); background: rgba(14,16,14,.6); }
@@ -70,8 +71,8 @@ button { font: inherit; cursor: pointer; }
 /* phones: the radar goes up to the right, under the header, so the thumbs keep the bottom corners */
 @media (pointer: coarse), (max-width: 700px) {
   .mission { max-width: calc(100vw - 2 * var(--pad) - 128px); }
-  .obj { font-size: 15px; padding: 8px 10px 8px 12px; gap: 9px; flex-wrap: wrap; }
-  .obj b { padding-left: 0; font-size: 12px; }
+  .obj { font-size: 15px; padding: 8px 10px 8px 12px; gap: 9px; }
+  .obj b { padding-left: 4px; font-size: 12px; }
   .radarbox { left: auto; right: var(--pad); bottom: auto; top: calc(max(12px, env(safe-area-inset-top)) + 30px); grid-template-columns: auto; }
   .radar, .bar { width: 116px; }
   .radar { height: 116px; }

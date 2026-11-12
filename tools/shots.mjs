@@ -27,7 +27,7 @@ async function play(name, ctxOpts, extra = "") {
     } catch { /* redirects */ }
   });
   const t0 = Date.now();
-  await page.goto(URL_ + "?debug=1&dtmax=0.5" + extra, { waitUntil: "networkidle" });
+  await page.goto(URL_ + "?debug=1&dtmax=0.25" + extra, { waitUntil: "networkidle" });
   await page.waitForFunction(() => !document.getElementById("go").disabled, null, { timeout: 60000 });
   const ready = Date.now() - t0;
   await page.waitForTimeout(3000);
@@ -56,7 +56,8 @@ async function play(name, ctxOpts, extra = "") {
   await waitGame(1.6);
   await page.screenshot({ path: `${OUT}/${name}-3-chamar.png` });
   await g(() => window.__gta.act());
-  await waitGame(1.6);
+  await page.waitForFunction(() => window.__gta.state.phase === "line", null, { timeout: 120000 });
+  await waitGame(1.0);
   await page.screenshot({ path: `${OUT}/${name}-4-fala.png` });
   await page.waitForFunction(() => window.__gta.state.mission === 2, null, { timeout: 240000 });
   // mission 3: at the shore by the boat
@@ -65,7 +66,8 @@ async function play(name, ctxOpts, extra = "") {
   await waitGame(1.6);
   await page.screenshot({ path: `${OUT}/${name}-5-barco.png` });
   await g(() => window.__gta.act());
-  await waitGame(3.5);
+  await page.waitForFunction(() => window.__gta.state.phase === "line", null, { timeout: 120000 });
+  await waitGame(2.0);
   await page.screenshot({ path: `${OUT}/${name}-6-fala2.png` });
   await page.waitForFunction(() => window.__gta.state.phase === "done", null, { timeout: 240000 });
   await page.waitForSelector("#end:not([hidden])", { timeout: 60000 });

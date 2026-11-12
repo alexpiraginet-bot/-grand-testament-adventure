@@ -13,7 +13,9 @@ Everything the game puts on the ground or on the screen as a fact comes out of t
            game's tests can check that every line shown is a literal fragment of its verse.
 
   python3 -I tools/build_world.py [path to a biblia-conectada checkout on branch claude/grand-testament-adventure]
-  -> public/world/cafarnaum.bin   heights, int16 centimetres above the lake surface, N x N, row 0 = north
+  -> public/world/cafarnaum-heights.json  heights, int16 centimetres above the lake surface, N x N, row 0 = north
+     public/world/far-heights.json        the horizon, int16 decimetres (both: little-endian int16 in base64, plain
+                                          JSON so any static host serves them)
      public/world/cafarnaum.json  grid, lake level, shoreline, mission points, places, sources
      public/world/radar.png       the radar's map (hillshade + water), same square as the grid
      src/data/mc-pescadores.json  episode 1: missions, lines (literal BLIVRE), counter proof, verses
@@ -49,6 +51,15 @@ ALONG_BARCO = 520      # "um pouco mais adiante" (Mark 1:19)
 INLAND_START = 300     # the start point, inland from the beach point
 BOAT_OFFSHORE = 26
 EMPREGADOS = 2         # Mark 1:20 gives no number
+
+
+def heights_json(name, a, unit):
+    import base64
+    a = np.ascontiguousarray(a, dtype="<i2")
+    out = dict(format="int16 little-endian, base64, row-major, row 0 = north", unit=unit, n=int(a.shape[0]),
+               sha256=hashlib.sha256(a.tobytes()).hexdigest(), b64=base64.b64encode(a.tobytes()).decode("ascii"))
+    (ROOT / "public/world").mkdir(parents=True, exist_ok=True)
+    json.dump(out, open(ROOT / "public/world" / name, "w"))
 
 
 def merc_px(lon, lat, z=Z):
@@ -140,7 +151,7 @@ def main():
     water = rel < 0
     cm = np.round(rel * 100).astype(np.int16)
     (ROOT / "public/world").mkdir(parents=True, exist_ok=True)
-    (ROOT / "public/world/cafarnaum.bin").write_bytes(cm.tobytes())
+    heights_json("cafarnaum-heights.json", cm, "cm")
 
     # shoreline, west to east, in world metres (x east, z south): the 0 m line of the smoothed heights (marching squares)
     from skimage import measure
@@ -222,7 +233,7 @@ def main():
     hf = np.where(hf < 1.0, -4.0, hf)                                             # the lake (and the shore band) under the water
     under = (np.abs(fe) < SIZE / 2 - 60) & (np.abs(fn) < SIZE / 2 - 60)
     hf[under] = -25.0
-    (ROOT / "public/world/far.bin").write_bytes(np.round(hf * 10).astype(np.int16).tobytes())
+    heights_json("far-heights.json", np.round(hf * 10).astype(np.int16), "dm")
     write_sums(sums, sums_far)
 
     r2 = lambda p: [round(float(p[0]), 1), round(float(p[1]), 1)]

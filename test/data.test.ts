@@ -3,15 +3,18 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { counterTotal, type EpisodeData } from "../src/missions.ts";
-import { Terrain, type WorldMeta } from "../src/terrain.ts";
+import { createHash } from "node:crypto";
+import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "../src/terrain.ts";
 import { BLIVRE_NOTICE } from "../src/credits.ts";
 import { goals, npcs } from "../src/episode.ts";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url));
 const ep = JSON.parse(read("src/data/mc-pescadores.json").toString()) as EpisodeData & { personagens: { id: string; ref: string; nome: string }[] };
 const meta = JSON.parse(read("public/world/cafarnaum.json").toString()) as WorldMeta & { far: { n: number } };
-const bin = read("public/world/cafarnaum.bin");
-const terrain = new Terrain(meta, new Int16Array(bin.buffer, bin.byteOffset, bin.byteLength / 2));
+const nearFile = JSON.parse(read("public/world/cafarnaum-heights.json").toString()) as HeightsFile;
+const farFile = JSON.parse(read("public/world/far-heights.json").toString()) as HeightsFile;
+const near = decodeHeights(nearFile);
+const terrain = new Terrain(meta, near);
 const PT: Record<string, string> = { Mark: "Marcos" };
 const refPt = (osis: string) => { const [b, c, v] = osis.split("."); return `${PT[b]} ${c}:${v}`; };
 
@@ -49,8 +52,11 @@ test("the BLIVRE notice is the authors' text, unchanged", () => {
 });
 
 test("the world files agree with their description", () => {
-  assert.equal(bin.byteLength, meta.n * meta.n * 2);
-  assert.equal(read("public/world/far.bin").byteLength, meta.far.n * meta.far.n * 2);
+  assert.equal(near.length, meta.n * meta.n);
+  assert.equal(decodeHeights(farFile).length, meta.far.n * meta.far.n);
+  // the decoder gives back the bytes the builder hashed
+  for (const [f, a] of [[nearFile, near], [farFile, decodeHeights(farFile)]] as const)
+    assert.equal(createHash("sha256").update(new Uint8Array(a.buffer)).digest("hex"), f.sha256);
   const [lo, hi] = meta.relief_range_m;
   let mn = Infinity, mx = -Infinity;
   for (const h of terrain.h) { mn = Math.min(mn, h); mx = Math.max(mx, h); }

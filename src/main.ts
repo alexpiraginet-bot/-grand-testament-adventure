@@ -2,7 +2,7 @@
 // Capernaum. three.js with its WebGPU renderer (WebGPU when the browser has it, WebGL 2 otherwise).
 import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
-import { Terrain, type WorldMeta } from "./terrain.ts";
+import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, houses, props, sky, water, type Segment } from "./world.ts";
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, type NpcSpec } from "./episode.ts";
@@ -22,11 +22,11 @@ async function load() {
   const base = import.meta.env.BASE_URL;
   const [meta, near, far, img] = await Promise.all([
     fetch(`${base}world/cafarnaum.json`).then((r) => r.json() as Promise<WorldMeta & { far: { size: number; n: number } }>),
-    fetch(`${base}world/cafarnaum.bin`).then((r) => r.arrayBuffer()),
-    fetch(`${base}world/far.bin`).then((r) => r.arrayBuffer()),
+    fetch(`${base}world/cafarnaum-heights.json`).then((r) => r.json() as Promise<HeightsFile>),
+    fetch(`${base}world/far-heights.json`).then((r) => r.json() as Promise<HeightsFile>),
     new Promise<HTMLImageElement>((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = `${base}world/radar.png`; }),
   ]);
-  return { meta, terrain: new Terrain(meta, new Int16Array(near)), far: new Int16Array(far), img };
+  return { meta, terrain: new Terrain(meta, decodeHeights(near)), far: decodeHeights(far), img };
 }
 
 async function main() {
@@ -247,7 +247,8 @@ async function main() {
       let sp = 0;
       if (n.following >= 0) {
         const row = Math.floor(n.following / 2), side = n.following % 2 ? 1 : -1;
-        const tx = player.pos.x - fwd.x * (2.0 + row * 1.5) + fwd.z * side * 0.9, tz = player.pos.z - fwd.z * (2.0 + row * 1.5) - fwd.x * side * 0.9;
+        const back = 1.3 + row * 1.6, wide = 1.7 + row * 0.5;      // flanking him, not between him and the camera
+        const tx = player.pos.x - fwd.x * back + fwd.z * side * wide, tz = player.pos.z - fwd.z * back - fwd.x * side * wide;
         const dx = tx - n.pos.x, dz = tz - n.pos.z, d = Math.hypot(dx, dz);
         if (d > 0.25) {
           sp = Math.min(d * 1.6, Math.max(2.4, player.speed * 1.15));

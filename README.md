@@ -19,7 +19,7 @@ npm run world        # refaz public/world/ e src/data/ a partir das fontes (prec
 ```
 
 `?q=low|high` muda a qualidade (padrão: low no celular, high no PC); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
-`?debug` liga os ganchos de teste (`window.__gta`). `tools/shots.mjs` joga o episódio com o Chromium do ambiente e
+`?debug` liga os ganchos de teste (`window.__gta`; `&dtmax=0.25` deixa o tempo do jogo andar no renderizador por software). `tools/shots.mjs` joga o episódio com o Chromium do ambiente e
 tira os prints em 1280×800 e 390×844 (precisa do `vite preview` rodando).
 
 ## Controles

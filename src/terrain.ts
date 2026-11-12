@@ -1,4 +1,4 @@
-// The ground of the world: heights from public/world/<id>.bin (made by tools/build_world.py from real elevation data).
+// The ground of the world: heights from public/world/<id>-heights.json (made by tools/build_world.py from real elevation data).
 // x grows to the east, z to the south, y up; y = 0 is the surface of the lake.
 
 export type WorldMeta = {
@@ -55,4 +55,18 @@ export class Terrain {
     const r = this.size / 2 - margin;
     return Math.abs(x) <= r && Math.abs(z) <= r;
   }
+}
+
+export type HeightsFile = { format: string; unit: "cm" | "dm"; n: number; sha256: string; b64: string };
+
+/** The int16 grid of a heights file (little-endian int16 in base64). */
+export function decodeHeights(f: HeightsFile): Int16Array {
+  const bin = atob(f.b64);
+  const out = new Int16Array(bin.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    const v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8);
+    out[i] = v > 32767 ? v - 65536 : v;
+  }
+  if (out.length !== f.n * f.n) throw new Error(`heights: ${out.length} values, expected ${f.n * f.n}`);
+  return out;
 }
