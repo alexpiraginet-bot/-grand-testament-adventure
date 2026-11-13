@@ -7,6 +7,20 @@ são etapas diferentes.
 
 ## Linha do tempo comprovável
 
+### 13/11/2026 — abertura e urgência Safari
+
+Relato: iPhone 17 Pro Max/Safari encerrando repetidamente a página. Worktree
+isolada `codex/ios-startup-r7`, base `016079d`, preservando R7 de seguidores/cais
+e a PR paralela do Claude. Início da prioridade por volta de 13:00 UTC (estimado).
+Arte HTML com cruz/progresso real, limites de textura antes do upload, fila móvel,
+cancelamento de falhas e recuperação manual. Após visualizar, Alex mudou e
+aprovou a identidade marfim/bordô/dourado em toda a interface fora do gameplay.
+Build 109/109; sete cenários de carregamento Chrome e três tamanhos de painel
+passaram. Medições e limites em [ABERTURA-SAFARI-R7.md](ABERTURA-SAFARI-R7.md).
+Teste no iPhone real ainda depende do proprietário; imagens-conceito não são
+captura de gameplay. Registros/tokens continuam pelo coletor da sessão autorizada,
+sem inferir consumo das outras sessões. Publicação solicitada explicitamente.
+
 As datas abaixo são as datas de autoria armazenadas no Git, com seu fuso original.
 Não representam duração do trabalho, hora de cada captura nem comprovação nova de
 um teste antigo. Handoffs históricos são relatos daquela entrega.
