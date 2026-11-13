@@ -403,10 +403,19 @@ O que as falhas do `check_roam` eram, uma a uma:
 2. O teste lia a etiqueta "Narrativa do jogo" da volta à vila depois de abrir e fechar a Bíblia; a narrativa dura 7 s de
    jogo e a orientação já estava no lugar. O estado de abertura do epílogo passou a ser lido de uma vez, incluindo o
    aviso "Cena em desenvolvimento" (`7dc836b`).
-3. **Defeito do jogo, não do teste:** em 1280×800 o aviso do primeiro lugar nunca chegou a ser desenhado. Ele era
-   escondido por um temporizador de relógio de 6 s, e o primeiro lugar é encontrado no primeiro quadro depois de
-   Começar, justamente quando um quadro pode demorar mais que isso. Agora o aviso conta o tempo de jogo que o HUD
-   recebe a cada quadro, como a narrativa ao lado (`e70e1ba`).
+3. **Defeito do jogo, não só do teste:** em 1280×800 o aviso do primeiro lugar nunca chegou a ser desenhado. Ele era
+   regido pelo relógio duas vezes: um temporizador de 6 s que o escondia e uma animação CSS de 6 s que o apagava. O
+   primeiro lugar é encontrado no primeiro quadro depois de Começar, justamente quando um quadro pode demorar mais que
+   isso. A correção saiu em dois passos, e o primeiro estava incompleto:
+   - `e70e1ba` trocou só o temporizador por tempo de jogo. O `check_roam` **passou** nos dois tamanhos de tela e eu
+     registrei a correção como feita; ao olhar as capturas do próprio teste, o aviso não estava em nenhuma. Teste
+     verde, imagem reprovada: a animação CSS continuava no relógio.
+   - `3c16be2` passou a opacidade para o tempo de jogo também (`placeNoticeOpacity` em `places.ts`: entra em 0,3 s, sai
+     em 0,7 s, sem transição para quem pede menos movimento; testado com valores feitos à mão).
+   O teste também precisou de três acertos até provar o que diz: tirar a captura numa carga com o relógio normal do
+   jogo (0,05 s por quadro; no relógio acelerado do teste os 6 s do aviso acabam em doze quadros, antes de a captura
+   sair) (`6d982d8`); e trocar um critério inválido, "o que está no centro do aviso", que sempre devolvia o cenário
+   porque o HUD não recebe cliques por desenho, por visibilidade de toda a cadeia de elementos (`2a19a0f`).
    Também atualizei o teste para a R12: Simão é o único que pode aparecer seguindo, e só quando o ator dele carregou
    (`aa2340f`).
 
@@ -426,26 +435,30 @@ padrão de `countVisits` é verdadeiro, contra falso no build local) e a Vercel 
 `050e35bf7e6e9659…`). `painel.html` responde 200. **A API de consulta da Vercel ainda responde "Web Analytics not
 found"**: daqui não dá para afirmar que visitas estão sendo registradas; a confirmação é a aba Analytics do projeto.
 
-**Repetição do `check_roam` sobre `e70e1ba`:** em andamento quando este registro foi escrito; o resultado entra na
-linha seguinte do diário e na PR #10. Até lá, a correção do aviso tem só os 301 testes de CPU e o `tsc` a seu favor.
+**Resultado final do `check_roam` (build de `2a19a0f`, 22:56 UTC):** passou em 390×844 e 1280×800, agora com o aviso
+"Lugar encontrado · 1 de 5 · Cafarnaum" visível nas duas capturas (`shots/main-2a19a0f/roam/*-0-lugar.png`, locais).
+É a primeira vez que o fluxo inteiro de exploração passa neste ambiente: volta a Cafarnaum com a oração literal de
+Marcos 1:21, cinco lugares, aviso a 20 m do limite, entrada por "Explorar a região", lugar encontrado lembrado depois
+de recarregar. No celular o Simão carregou e seguiu; no PC o ator dele ficou indisponível neste renderizador e o
+jogo seguiu sem ele. 302/302 testes e `tsc` limpo em `2a19a0f`.
 
 **Encontros e interações:** li `INTERACOES-E-ENCONTROS.md`. Nada foi implementado por esta sessão. O que caberia aqui
 sem arte nova é a base lógica (um consumidor do botão de ação por quadro, estados puros do encontro, registro local
 versionado); ficou perguntado a Alex se é comigo ou com o Codex, para não repetir o caso das casas.
 
-**Consumo real da sessão até 13/11/2026 22:21:33 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+**Consumo real da sessão até 13/11/2026 22:57:16 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
 respostas desde 09:39:24 UTC). Substitui o retrato das 17:53:
 
 | grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
 |---|---|---|---|---|---|---|---|---|
-| principal | claude-fable-5-2 | 297 | 636 | 432.942 | 165.343.564 | 0 | 2.107.933 | 84.12 |
+| principal | claude-fable-5-2 | 341 | 750 | 458.389 | 198.825.191 | 0 | 2.182.916 | 93.03 |
 | principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
 | workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
 
-Total equivalente em preço de lista da API: **US$ 270,76**. Atividade estimada: **7,65 h** (intervalos entre respostas
+Total equivalente em preço de lista da API: **US$ 279,67**. Atividade estimada: **8,03 h** (intervalos entre respostas
 até 5 min, sem sobreposição; não inclui as ~3 h em que a sessão ficou parada). Não é fatura: a sessão roda no plano da
-conta claude.ai, e foi o limite desse plano que a interrompeu. 35 respostas sintéticas (sem tokens) ficam fora da
-tabela. Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
+conta claude.ai, e foi o limite desse plano que a interrompeu. Respostas sintéticas (sem tokens) ficam fora da tabela.
+Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
 
 ### Publicação R3 registrada
 
