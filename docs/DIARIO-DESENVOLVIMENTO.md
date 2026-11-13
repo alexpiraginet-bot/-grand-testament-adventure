@@ -379,7 +379,11 @@ habitats, cacarejo/zurro vêm das posições dos animais. Limites de três vozes
 cache PCM de 12 MiB, pausa dos menus e botão de som. Uma retenção de buffer
 fora do cache foi encontrada e corrigida com teste de regressão.
 
-Build integrado: 166 testes CPU + typecheck, bundle `index-By9uYN8-.js`.
+Build integrado inicial: 166 testes CPU + typecheck, bundle `index-By9uYN8-.js`.
+O ensaio nativo de áudio encontrou depois o raio físico sendo usado como
+alcance sonoro; o animal ficava inaudível. Correção com agente completo no
+teste: 167 testes CPU + typecheck, bundle final `index-BvfTbjcg.js`. A falha
+anterior foi guardada junto das evidências; não conta como áudio aprovado.
 QA de cena no Chrome e WebKit é registrada por bundle; o WebKit Windows não
 oferece Web Audio e mostra “Som indisponível”. Não equivale a Safari físico,
 escuta humana ou prova de FPS no iPhone. Capturas são gameplay real de QA;

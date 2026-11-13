@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {FaunaAudio,faunaAttenuation,faunaCallDelay,type AudibleFauna,type FaunaSoundClip} from '../src/fauna-audio.ts';
+import type {FaunaAgent} from '../src/fauna-simulation.ts';
 
 class Param {
   value=0;
@@ -87,6 +88,27 @@ test('near visible animals share a lazy buffer, use spatial position/orientation
   assert.equal(ctx.panners[0].connected,master);assert.equal(ctx.panners[0].rolloffFactor,0);
   assert.equal(ctx.sources[0].loop,false);
   audio.update(.1,listener,[]);assert.equal(audio.stats.voices,0);assert.ok(ctx.sources.every(s=>s.stopped&&s.disconnected));audio.dispose();
+});
+
+test('runtime animal body radii never replace the acoustic range at the player ear height',async()=>{
+  const ear={x:0,y:1.55,z:0,yaw:0};
+  for(const [kind,bodyRadius,hearingRadius] of [['chicken',.28,22],['donkey',.91,55]] as const){
+    const agent:FaunaAgent={id:`runtime-${kind}`,kind,x:3,y:0,z:0,heading:0,homeX:3,homeZ:0,
+      phase:0,scale:1,radius:bodyRadius,halfHeight:kind==='chicken'?.23:.7,seed:42,time:0,moving:false,speed:0};
+    let requests=0;
+    const {audio,ctx}=setup([{id:kind,kind,url:`/${kind}.mp3`,radius:hearingRadius}],{
+      fetch:async()=>{requests++;return response();}
+    });
+    audio.enable();
+    for(let i=0;i<36;i++){ctx.currentTime+=.25;audio.update(.25,ear,[agent]);await flush();}
+    assert.equal(requests,1,`${kind} at 3m must load despite its small physical body radius`);
+    assert.equal(audio.stats.voices,1,`${kind} is within its ${hearingRadius}m sound range`);
+    const started=audio.stats.startedVoices;
+    agent.x=hearingRadius+2;
+    audio.update(.1,ear,[agent]);assert.equal(audio.stats.voices,0,'moving outside the acoustic range stops the current call');
+    for(let i=0;i<400;i++){ctx.currentTime+=.25;audio.update(.25,ear,[agent]);await flush();}
+    assert.equal(audio.stats.startedVoices,started,'a distant animal cannot restart a call');audio.dispose();
+  }
 });
 
 test('habitat ambience needs no animal mesh, fetch and decode are sequential, and bytes are observed',async()=>{

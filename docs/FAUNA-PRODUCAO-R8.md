@@ -118,9 +118,16 @@ hashes, 22 vistas e limites do blend. Os quatro GLBs de ambas as espécies
 somam 4.841.404 bytes; o navegador baixa apenas o par do seu perfil:
 1.783.012 bytes no celular ou 3.058.392 bytes no desktop. Não há IK de terreno.
 
-O build integrado passou 166 testes CPU e typecheck. A revisão de navegador
+O build integrado final passou 167 testes CPU e typecheck. A revisão de navegador
 de cada versão está nas capturas/logs `shots/fauna-r8-*`; não generalizar
 evidência de uma versão anterior para um bundle alterado.
+
+O ensaio de áudio nativo encontrou um erro de integração que os emissores
+simplificados dos testes anteriores não expunham: o raio físico do animal
+sobrescrevia o alcance sonoro. Corrigido copiando apenas identidade e posição;
+regressão cobre agentes completos, ouvido a 1,55 m e os alcances de 22/55 m.
+Bundle após a correção: `index-BvfTbjcg.js`. A falha anterior foi preservada
+em `shots/fauna-r8-final-audio/` para não registrar um falso sucesso.
 
 Ovelha, cabra e peixe permanecem pendentes de geração própria e aprovação.
 O som de ovelha está preparado, mas não será emitido por um animal invisível.

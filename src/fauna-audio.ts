@@ -92,7 +92,9 @@ export class FaunaAudio {
     this.time+=Math.min(dt,.25);
     this.listener(listener);
     const emitters:Emitter[]=[];
-    for(const a of visibleAgents)if(a.kind!=='fish'&&a.visible!==false&&pointValid(a))emitters.push({...a,id:`animal:${a.id}`,kind:a.kind});
+    // FaunaAgent.radius is a collision disc, never an acoustic radius. Copy only emitter coordinates.
+    for(const a of visibleAgents)if(a.kind!=='fish'&&a.visible!==false&&pointValid(a))
+      emitters.push({id:`animal:${a.id}`,kind:a.kind,x:a.x,y:a.y,z:a.z});
     for(const h of this.options.habitats??[])if(pointValid(h))emitters.push({...h,id:`habitat:${h.id}`});
     const byId=new Map(emitters.map(e=>[e.id,e]));
     for(const voice of this.voices){
