@@ -3,6 +3,8 @@ import type { EpisodeData, State, Vec2 } from "./missions.ts";
 import { counterTotal, readingTime } from "./missions.ts";
 import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
+import { buildJourneyHint, journeyNarrative, journeyRoute } from './journey.ts';
+import type { Segment } from './world-layout.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -18,12 +20,23 @@ export class Hud {
   private bars: HTMLElement[] = [];
   private ep: EpisodeData;
   private meta: WorldMeta;
+  private journey: HTMLParagraphElement;
+  private journeyBody: HTMLSpanElement;
+  private journeyLabel: HTMLSpanElement;
+  private routes: readonly Segment[];
+  private journeyMission = -1;
+  private narrativeLeft = 0;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
-  constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean) {
+  constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
     this.ep = ep; this.meta = meta; this.map = map;
+    this.routes=routes;
     this.radar = $("radar") as HTMLCanvasElement;
     this.ctx = this.radar.getContext("2d")!;
+    this.journey=document.createElement('p');this.journey.id='journey';this.journey.className='journey';this.journey.hidden=true;
+    this.journeyLabel=document.createElement('span');this.journeyLabel.className='journey-label';this.journeyLabel.textContent='Narrativa do jogo';
+    this.journeyBody=document.createElement('span');this.journeyBody.className='journey-body';
+    this.journey.append(this.journeyLabel,this.journeyBody);$('counter').after(this.journey);
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
@@ -48,7 +61,7 @@ export class Hud {
     if (touch) { $("key").hidden = true; }
   }
 
-  show() { $("hud").hidden = false; $("start").hidden = true; }
+  show() { this.journeyMission=-1;this.narrativeLeft=0;$("hud").hidden = false; $("start").hidden = true; }
 
   /** The start card's buttons and the line about saving. */
   startCard(o: { primary: string; secondary?: string; note: string }) {
@@ -90,6 +103,21 @@ export class Hud {
     if (c.childElementCount !== total + 1) c.innerHTML = `<span>${ep.contador.rotulo.toUpperCase()}</span>` + "<i></i>".repeat(total);
     c.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < s.filled));
 
+    // Give each encounter a short editorial introduction, then switch to contextual help.
+    // Do not compete with scripture, completion cards or the previous mission's tick animation.
+    if(s.phase==='play'&&this.doneFlash===0&&s.mission!==this.journeyMission){
+      this.journeyMission=s.mission;this.narrativeLeft=7;
+    }
+    this.narrativeLeft=Math.max(0,this.narrativeLeft-dt);
+    const guidance=buildJourneyHint(s,dist,touch);
+    const narrated=this.narrativeLeft>0&&!s.promptVisible;
+    const journeyText=s.phase==='play'&&this.doneFlash===0
+      ?(narrated?journeyNarrative(s.mission):guidance):'';
+    this.journey.hidden=!journeyText;
+    const journeyLabel=narrated?'Narrativa do jogo':'Orientação';
+    if(this.journeyLabel.textContent!==journeyLabel)this.journeyLabel.textContent=journeyLabel;
+    if(this.journeyBody.textContent!==journeyText)this.journeyBody.textContent=journeyText;
+
     const pr = $("prompt"), act = $("act");
     const label = m.acao ?? "";
     pr.hidden = !(s.promptVisible && s.phase === "play") || touch;     // on a phone the round button is the prompt
@@ -101,7 +129,7 @@ export class Hud {
     sub.hidden = !s.line;
     if (s.line) {
       $("subt").textContent = `“${s.line.texto}”`;
-      $("subr").textContent = s.line.ref.toUpperCase();
+      $("subr").textContent = `BÍBLIA LIVRE · ${s.line.ref.toUpperCase()}`;
     }
 
     // progress: done segments full; the current one fills with the reading of its line, or with the walk to the goal
@@ -138,15 +166,26 @@ export class Hud {
       ctx.fillStyle = "#3a2818"; ctx.fillText(pl.nome, q.x + 10, q.y + 6);
     }
 
-    // route: gold dots from the player to the goal (clamped to the edge), and the goal's ring
+    // Dots follow the walkable route around bends/inlets; the ring retains the true goal direction.
     if (goal) {
+      const route=journeyRoute(this.routes,pos,goal).map(toR),actual=toR(goal);
+      ctx.save();ctx.beginPath();ctx.rect(8,8,S-16,S-16);ctx.clip();
+      let nextDot=0;
+      for(let i=1;i<route.length;i++){
+        const a=route[i-1],b=route[i],dx=b.x-a.x,dy=b.y-a.y,length=Math.hypot(dx,dy);
+        if(length<1e-6)continue;
+        for(;nextDot<length;nextDot+=13){
+          const x=a.x+dx*nextDot/length,y=a.y+dy*nextDot/length;
+          if(Math.hypot(x-c,y-c)<22||Math.hypot(x-actual.x,y-actual.y)<14)continue;
+          ctx.beginPath();ctx.arc(x,y,3.4,0,Math.PI*2);ctx.fillStyle='#ffcf73';ctx.fill();
+          ctx.lineWidth=1.5;ctx.strokeStyle='#18120c';ctx.stroke();
+        }
+        nextDot-=length;
+      }
+      ctx.restore();
       const g = toR(goal);
       let dx = g.x - c, dy = g.y - c; const L = Math.hypot(dx, dy); dx /= L || 1; dy /= L || 1;
       const end = Math.min(L, c - 16);
-      for (let d = 22; d < end - 10; d += 13) {
-        ctx.beginPath(); ctx.arc(c + dx * d, c + dy * d, 3.4, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffcf73"; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = "#18120c"; ctx.stroke();
-      }
       const gx = c + dx * end, gy = c + dy * end, pulse = (Math.sin(t * 4) + 1) / 2;
       ctx.beginPath(); ctx.arc(gx, gy, 13 + 4 * pulse, 0, Math.PI * 2); ctx.lineWidth = 3; ctx.strokeStyle = `rgba(255,207,115,${1 - 0.6 * pulse})`; ctx.stroke();
       ctx.beginPath(); ctx.arc(gx, gy, 9, 0, Math.PI * 2); ctx.fillStyle = "#ffcf73"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#18120c"; ctx.stroke();

@@ -22,6 +22,28 @@ Responsável desta revisão: Codex, `codex/tripo-runtime-r1`.
 
 ## Composição do jogo
 
+### R3 — 13/11/2026
+
+Rua inicial com desvios suaves, frentes assimétricas, variação de altura e rotação.
+O gerador atual produz 158 casas, 20 pequenos pátios com muros, 89 jarros e 69 toldos;
+essas quantidades vêm do código e não representam dados de população antiga.
+Os detalhes seguem a rotação da fachada; somente postes/objetos ao nível do chão
+recebem barreiras de movimento, e os muros usam os limites reais da malha.
+Os oito trechos do percurso passaram na verificação de colisão e preservam o DEM.
+
+NPCs provisórios receberam trama de tecido compartilhada, baixo-relevo, pregas,
+cordas, tiras nas sandálias e cabelo mais detalhado. Ainda não são as malhas humanas
+Tripo com rig; o herói nativo foi preservado. Jornada e etiquetas em `NARRATIVA.md`.
+
+Build/typecheck e 39 testes passaram. Chrome local em 1280×800, 390×844 com toque
+e WebGL2: 14 recursos carregados, movimento, animação e pausa sem erros. Três missões
+completaram nos dois viewports; testes por teleporte/ação de depuração, sem simular
+uma caminhada manual completa. Capturas verificaram espaço móvel e separação das falas.
+Na amostra de integração local: 87,3–94,7 FPS desktop WebGPU, 47,7–93,9 móvel emulado,
+89,8–95,5 WebGL2; 17.887.926 bytes de recursos transferidos. Não é teste em telefone.
+Evidências: `shots/r3-final-build.log`, `shots/r3-final-world/`, `shots/r3-final-episode/`,
+`shots/r3-final-integration/`. Publicação e arquivo do diário devem registrar o SHA final.
+
 O traçado e a quantidade de casas, seus objetos e sua extensão em direção à praia são
 composição artística, não uma planta arqueológica comprovada. O aviso aparece nos créditos.
 As casas utilizam três malhas existentes do Tripo, repetidas com variações de escala e

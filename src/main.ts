@@ -134,7 +134,7 @@ async function main() {
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   const feedback = setupFeedbackPanel((open) => input.setSuspended(open));
   const sfx = new Sfx();
-  const hud = new Hud(ep, meta, img, input.touch);
+  const hud = new Hud(ep, meta, img, input.touch, keep);
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;

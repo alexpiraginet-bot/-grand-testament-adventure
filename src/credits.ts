@@ -12,7 +12,10 @@ export const SHORT = [
 
 export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Texto bíblico", quote: BLIVRE_NOTICE, p: [
-    "As falas na tela são trechos literais dos versículos citados. Os colchetes da BLIVRE (palavras acrescentadas pelos tradutores) não aparecem nas falas usadas aqui.",
+    "As legendas identificadas como Bíblia Livre são trechos literais dos versículos citados. Os colchetes da BLIVRE (palavras acrescentadas pelos tradutores) não aparecem nas falas usadas aqui.",
+  ] },
+  { h: "Narrativa do jogo", p: [
+    "Os textos com a etiqueta Narrativa do jogo são autorais, inspirados em Marcos 1:16–20. Contextualizam a jornada e não são citações bíblicas nem transcrições históricas. Orientação identifica ajuda de controles e navegação.",
   ] },
   { h: "Lugares", p: ["Geocodificação: OpenBible.info Bible Geocoding Data, CC BY 4.0. O nome em português de cada lugar é o que a BLIVRE escreve."] },
   { h: "Relevo", p: [

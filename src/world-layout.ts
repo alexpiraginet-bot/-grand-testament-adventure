@@ -26,6 +26,12 @@ export function insideObstacle(x: number, z: number, b: Obstacle, margin = 0) {
   return Math.abs(dx*c-dz*s)<b.hx+margin && Math.abs(dx*s+dz*c)<b.hz+margin;
 }
 
+/** Transform a point on a building's floor plan; +Z is the entrance/front. */
+export function buildingPoint(b: {x:number;z:number;rot:number}, x:number,z:number): {x:number;z:number} {
+  const c=Math.cos(b.rot),s=Math.sin(b.rot);
+  return {x:b.x+c*x+s*z,z:b.z-s*x+c*z};
+}
+
 function pathIntersects(s:Segment,b:Obstacle) {
   const c=Math.cos(b.rot),sn=Math.sin(b.rot),local=(x:number,z:number)=>[(x-b.x)*c-(z-b.z)*sn,(x-b.x)*sn+(z-b.z)*c];
   const a=local(s.ax,s.az),end=local(s.bx,s.bz),half=[b.hx+s.r+.35,b.hz+s.r+.35];
@@ -47,8 +53,12 @@ function buildingsOverlap(a:Building,b:{x:number;z:number;w:number;d:number;rot:
 }
 
 export function missionRoutes(t: Terrain): Segment[] {
-  const p=t.meta.points, pairs=[['start','beach'],['beach','simao'],['simao','barco_margem']] as const;
-  return pairs.flatMap(([a,b])=>landRoute(t,p[a],p[b]));
+  const p=t.meta.points,dx=p.beach[0]-p.start[0],dz=p.beach[1]-p.start[1],length=Math.hypot(dx,dz);
+  // Small authored bends break the 300 m ruler-straight view. Heights and endpoints stay original.
+  const lane:[number,number][]=[p.start,...[[.24,10],[.51,-9],[.77,6]].map(([u,offset])=>
+    [p.start[0]+dx*u+dz/length*offset,p.start[1]+dz*u-dx/length*offset] as [number,number]),p.beach];
+  return [...lane.slice(1).flatMap((b,i)=>landRoute(t,lane[i],b)),
+    ...landRoute(t,p.beach,p.simao),...landRoute(t,p.simao,p.barco_margem)];
 }
 
 function landRoute(t:Terrain,a:[number,number],b:[number,number]):Segment[] {
@@ -105,31 +115,47 @@ export function settlementLayout(t: Terrain, routes: Segment[], cx=0, cz=0): Bui
       heights.push(t.heightAt(x+c*sx*w/2+s*sz*d/2,z-s*sx*w/2+c*sz*d/2));
     if(Math.min(...heights)<.015)return;
     const y=Math.max(.28,Math.max(...heights)+.02);
-    out.push({x,z,y,w,d,h:2.65+r()*.65,foundation:y-Math.min(...heights)+.25,rot,variant:out.length%3});
+    out.push({x,z,y,w,d,h:2.45+r()*.95,foundation:y-Math.min(...heights)+.25,rot,variant:Math.floor(r()*3)});
   };
-  const spine=routes[0],dx=spine.bx-spine.ax,dz=spine.bz-spine.az,l=Math.hypot(dx,dz),ux=dx/l,uz=dz/l;
-  // Facing rows with gaps for courtyards; the walking lane itself stays clear.
-  for(let row=-3;row<13;row++) for(const side of [-1,1]) {
-    const along=row*17+7,w=6+r()*2.5,d=5.2+r()*2,offset=(d/2+2.25+r()*.4)*side;
-    add(spine.ax+ux*along+uz*offset,spine.az+uz*along-ux*offset,w,d,Math.atan2(ux,uz)-side*Math.PI/2);
-    if(row%3!==0) {
-      const outer=(27+r()*4)*side;
-      add(spine.ax+ux*(along+4)+uz*outer,spine.az+uz*(along+4)-ux*outer,7+r()*2,6+r()*2,0);
+  const beach=t.meta.points.beach;
+  const beachIndex=routes.findIndex(s=>Math.hypot(s.bx-beach[0],s.bz-beach[1])<.01);
+  const village=routes.slice(0,beachIndex+1),lengths=village.map(s=>Math.hypot(s.bx-s.ax,s.bz-s.az));
+  const total=lengths.reduce((a,b)=>a+b,0);
+  const alongLane=(distance:number)=>{
+    let at=distance,i=0;
+    while(i<village.length-1&&at>lengths[i])at-=lengths[i++];
+    const s=village[i],ux=(s.bx-s.ax)/lengths[i],uz=(s.bz-s.az)/lengths[i];
+    return {x:s.ax+ux*at,z:s.az+uz*at,ux,uz};
+  };
+  // Independent frontage rhythms create offset doorways and occasional pocket courtyards.
+  // The second row shares the lane's direction without making a perfectly mirrored grid.
+  for(const side of [-1,1]) {
+    let at=-34+(side===1?6:0),index=0;
+    while(at<total-13) {
+      const {x,z,ux,uz}=alongLane(at),w=5.8+r()*3.0,d=4.8+r()*2.0;
+      const offset=(d/2+2.4+r()*.85)*side,rot=Math.atan2(ux,uz)-side*Math.PI/2+(r()-.5)*.13;
+      add(x+uz*offset,z-ux*offset,w,d,rot);
+      if(index%3!==1) {
+        const outer=(15+r()*6)*side;
+        add(x+ux*(3+r()*5)+uz*outer,z+uz*(3+r()*5)-ux*outer,6+r()*3,5+r()*2,rot+(r()-.5)*.2);
+      }
+      at+=w+2.4+r()*4.4+(index%5===3?5:0);index++;
     }
   }
   // Small fishing workshops on the inland side of the shore route. Their placement is artistic.
-  for(const s of routes.slice(1)) {
+  for(const s of routes.slice(beachIndex+1)) {
     const dx=s.bx-s.ax,dz=s.bz-s.az,length=Math.hypot(dx,dz),nx=-dz/length,nz=dx/length;
-    for(let dist=8;dist<length;dist+=19){
+    for(let dist=8;dist<length;dist+=12+r()*7){
       const u=dist/length,x=s.ax+dx*u,z=s.az+dz*u;
       const side=t.heightAt(x+nx*10,z+nz*10)>t.heightAt(x-nx*10,z-nz*10)?1:-1;
-      add(x+nx*side*9,z+nz*side*9,6+r()*2,5+r(),Math.atan2(-nx*side,-nz*side));
+      const off=6.8+r()*2;
+      add(x+nx*side*off,z+nz*side*off,5.8+r()*2.4,4.8+r()*1.2,Math.atan2(-nx*side,-nz*side)+(r()-.5)*.10);
     }
   }
   // Compact blocks around the geocoded settlement, rather than random isolated huts.
   for(let iz=-4;iz<=4;iz++) for(let ix=-4;ix<=4;ix++) {
     if(Math.abs(ix)<2 && iz>1) continue;
-    add(cx+ix*17+(r()-.5)*3,cz+iz*17+(r()-.5)*3,6+r()*3,5+r()*2.5,0);
+    add(cx+ix*16+(r()-.5)*5,cz+iz*16+(r()-.5)*5,6+r()*3,5+r()*2.5,(ix%2?Math.PI/2:0)+(r()-.5)*.22);
   }
   return out;
 }

@@ -7,6 +7,19 @@ import { missionRoutes, settlementLayout, insideObstacle } from '../src/world-la
 const read=(path:string)=>readFileSync(new URL(`../${path}`,import.meta.url));
 const t=new Terrain(JSON.parse(read('public/world/cafarnaum.json').toString()),decodeHeights(JSON.parse(read('public/world/cafarnaum-heights.json').toString())));
 
+test('the bent route remains continuous and visits the unchanged mission endpoints in order',()=>{
+  const routes=missionRoutes(t),points=t.meta.points;
+  assert.ok(routes.length<=12,'keep the per-fragment path-mask budget bounded');
+  assert.deepEqual([routes[0].ax,routes[0].az],points.start);
+  for(let i=1;i<routes.length;i++)assert.deepEqual([routes[i].ax,routes[i].az],[routes[i-1].bx,routes[i-1].bz]);
+  let after=-1;
+  for(const endpoint of [points.beach,points.simao,points.barco_margem]){
+    const next=routes.findIndex((s,i)=>i>after&&Math.hypot(s.bx-endpoint[0],s.bz-endpoint[1])<1e-6);
+    assert.ok(next>after,'each goal stays on the continuous route in episode order');after=next;
+  }
+  assert.deepEqual([routes.at(-1)!.bx,routes.at(-1)!.bz],points.barco_margem);
+});
+
 test('settlement leaves the entire mission corridor walkable on measured land',()=>{
   const routes=missionRoutes(t),plans=settlementLayout(t,routes);
   assert.ok(plans.length>=60,'a substantial village, not isolated huts');

@@ -20,6 +20,10 @@ caminhos estreitos sobre o relevo. Referências históricas e limites em
 [docs/CAFARNAUM-CENARIO.md](docs/CAFARNAUM-CENARIO.md); evidência técnica em
 [docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md). A imagem-alvo ainda não é o visual entregue.
 
+Diário do processo e material para os Reels: [DIARIO-DESENVOLVIMENTO](docs/DIARIO-DESENVOLVIMENTO.md).
+A distinção entre citações e narrativa autoral está em [NARRATIVA](docs/NARRATIVA.md).
+Comparação documental de motores, ainda sem benchmark de migração: [MOTORES-GRAFICOS](docs/MOTORES-GRAFICOS.md).
+
 ## Rodar
 
 Precisa de Node 24 (e Python 3 com numpy, scipy, opencv, scikit-image e Pillow só para refazer o mundo).

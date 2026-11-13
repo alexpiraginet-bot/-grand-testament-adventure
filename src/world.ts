@@ -2,6 +2,7 @@
 // Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
 import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float, step, color } from 'three/tsl';
+import { settlementDetails } from './settlement-details.ts';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
 import { rng, distanceToSegment, insideObstacle, settlementLayout, type Segment, type Obstacle } from './world-layout.ts';
@@ -391,6 +392,7 @@ export function houses(t: Terrain, cx: number, cz: number, keepClear: Segment[],
     const batch=new THREE.InstancedMesh(geo,model?.material??wall,list.length);
     list.forEach((p,i)=>{
       o.position.set(p.x,p.y,p.z);o.rotation.set(0,p.rot,0);o.scale.set(p.w/size.x,p.h/size.y,p.d/size.z);o.updateMatrix();batch.setMatrixAt(i,o.matrix);
+      batch.setColorAt(i,new THREE.Color().setRGB(.91+(i%4)*.03,.90+(i%3)*.03,.87+(i%5)*.025));
     });
     batch.castShadow=true;batch.receiveShadow=true;group.add(batch);
   });
@@ -399,39 +401,9 @@ export function houses(t: Terrain, cx: number, cz: number, keepClear: Segment[],
   });
   foundation.receiveShadow=true;group.add(foundation);
 
-  // Local household details are our meshes: clay vessels and simple wooden shade frames.
-  const pottery=new THREE.MeshStandardMaterial({color:0x9b6e4a,roughness:.92});
-  const jarGeo=new THREE.LatheGeometry([new THREE.Vector2(.10,0),new THREE.Vector2(.19,.1),new THREE.Vector2(.25,.35),new THREE.Vector2(.18,.57),new THREE.Vector2(.08,.65),new THREE.Vector2(.1,.70),new THREE.Vector2(.072,.70),new THREE.Vector2(.06,.58)],14);
-  const jarSpots:Spot[]=[];
-  for(const p of plans.filter((_,i)=>i%2===0)) {
-    const x=p.x,z=p.z+p.d/2+.9;
-    if(keepClear.every(s=>distanceToSegment(x,z,s)>s.r)&&!boxes.some(b=>insideObstacle(x,z,b,.2)))jarSpots.push({x,z,y:t.heightAt(x,z)});
-  }
-  group.add(instanced(jarGeo,pottery,jarSpots,731,r=>{const k=.8+r()*.5;return[k,k,k];}));
-
-  const timber=new THREE.MeshStandardMaterial({color:0x63503a,roughness:.95});
-  const beamGeo=new THREE.BoxGeometry(1,1,1),beams:{x:number;y:number;z:number;sx:number;sy:number;sz:number}[]=[];
-  const wallModel=sceneryMesh(assets['muro-pedra']);
-  const yardWalls:{x:number;y:number;z:number;rot:number}[]=[];
-  for(const p of plans.filter((_,i)=>i%4===0)) {
-    const z=p.z+p.d/2+1.4;
-    if(keepClear.some(s=>distanceToSegment(p.x,z,s)<s.r+2.8)||boxes.some(b=>insideObstacle(p.x,z+1,b,1)))continue;
-    const y=t.heightAt(p.x,z);
-    for(const side of [-1,1])beams.push({x:p.x+side*1.6,y:y+1.1,z:z+1.2,sx:.12,sy:2.2,sz:.12});
-    for(let i=0;i<7;i++)beams.push({x:p.x-1.7+i*.56,y:y+2.25,z,sx:.09,sy:.09,sz:2.8});
-    beams.push({x:p.x,y:y+2.2,z:z+1.2,sx:3.5,sy:.15,sz:.15});
-    yardWalls.push({x:p.x+2.4,y:t.heightAt(p.x+2.4,z),z,rot:Math.PI/2});
-    boxes.push({x:p.x+2.4,z,hx:2,hz:.4,rot:Math.PI/2,bottom:y-.2,top:y+1});
-  }
-  const beamBatch=new THREE.InstancedMesh(beamGeo,timber,beams.length);
-  beams.forEach((b,i)=>{o.position.set(b.x,b.y,b.z);o.rotation.set(0,0,0);o.scale.set(b.sx,b.sy,b.sz);o.updateMatrix();beamBatch.setMatrixAt(i,o.matrix);});
-  beamBatch.castShadow=true;beamBatch.receiveShadow=true;group.add(beamBatch);
-  if(wallModel&&yardWalls.length) {
-    const batch=new THREE.InstancedMesh(wallModel.geometry,wallModel.material,yardWalls.length);
-    yardWalls.forEach((w,i)=>{o.position.set(w.x,w.y,w.z);o.rotation.set(0,w.rot,0);o.scale.set(1,.7,1);o.updateMatrix();batch.setMatrixAt(i,o.matrix);});
-    batch.castShadow=true;batch.receiveShadow=true;group.add(batch);
-  }
-  group.userData.counts={houses:plans.length,courtyards:yardWalls.length,jars:jarSpots.length};
+  const details=settlementDetails(t,plans,keepClear,boxes,sceneryMesh(assets['muro-pedra']));
+  group.add(details.group);boxes.push(...details.boxes);
+  group.userData.counts={houses:plans.length,...details.counts};
   return {group,boxes};
 }
 

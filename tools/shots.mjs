@@ -2,6 +2,7 @@
 //   npm run build && npx vite preview --port 4173 &   then   node tools/shots.mjs [url] [outdir]
 // Plays episode 1 through with the ?debug hooks (teleport + action), at 390x844 (phone) and 1280x800 (PC).
 import { createRequire } from "node:module";
+import assert from 'node:assert/strict';
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -34,6 +35,12 @@ async function play(name, ctxOpts, extra = "") {
   await page.screenshot({ path: `${OUT}/${name}-0-inicio.png` });
   await page.click("#go");
   await page.waitForFunction(() => window.__gta.state.time > 0.5, null, { timeout: 120000 });
+  assert.equal(await page.locator('#journey').isVisible(),true,'editorial opening is visible');
+  assert.equal(await page.locator('.journey-label').textContent(),'Narrativa do jogo');
+  if(ctxOpts.hasTouch)assert.equal(await page.evaluate(()=>{
+    const a=document.querySelector('#journey').getBoundingClientRect(),b=document.querySelector('.radar').getBoundingClientRect();
+    return document.documentElement.scrollWidth<=innerWidth && !(a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top);
+  }),true,'mobile narration must not overlap radar or overflow');
   await page.screenshot({ path: `${OUT}/${name}-1-missao1.png` });
 
   const g = (fn, arg) => page.evaluate(fn, arg);
@@ -58,6 +65,9 @@ async function play(name, ctxOpts, extra = "") {
   await g(() => window.__gta.act());
   await page.waitForFunction(() => window.__gta.state.phase === "line", null, { timeout: 120000 });
   await waitGame(1.0);
+  assert.equal(await page.locator('#journey').isVisible(),false,'editorial text yields to Scripture');
+  assert.match(await page.locator('#subr').textContent(),/^BÍBLIA LIVRE · /);
+  assert.equal(await page.locator('#subt').textContent(),await g(()=>`“${window.__gta.state.line.texto}”`));
   await page.screenshot({ path: `${OUT}/${name}-4-fala.png` });
   await page.waitForFunction(() => window.__gta.state.mission === 2, null, { timeout: 240000 });
   // mission 3: at the shore by the boat
@@ -76,6 +86,7 @@ async function play(name, ctxOpts, extra = "") {
   // FPS: the renderer's own count, the last seconds of play
   const fps = await g(() => window.__gta ? window.__gta.fpsLog.slice(-8) : []);
   const st = await page.evaluate(() => ({ backend: window.__gta?.backend, followers: window.__gta?.followers(), info: window.__gta?.info() }));
+  assert.equal(st.followers.length,4);assert.deepEqual(errors,[]);
   report[name] = { readyMs: ready, bytes, transfer: gz, files, fps, ...st, errors: errors.slice(0, 12) };
   await browser.close();
 }

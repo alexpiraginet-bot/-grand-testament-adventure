@@ -1,4 +1,4 @@
-// People made of simple shapes, standing in for the Tripo meshes until they arrive (see TRIPO.md). No faces are
+// Procedural adult NPCs standing in for the Tripo meshes until their rigs arrive (see ASSETS.md). No faces are
 // modelled: the player is seen from behind, as in the reels, and everyone else is a first-century adult.
 import * as THREE from "three/webgpu";
 
@@ -31,6 +31,57 @@ function mat(color: number, rough = 0.9): THREE.MeshStandardMaterial {
   return m;
 }
 
+// Shared, deterministic material detail: no network texture and no per-character canvas allocation.
+// This is a woven-cloth approximation, not a photographed historical garment.
+function surfaceTexture(kind: 'linen' | 'hair', color = false): THREE.DataTexture {
+  const n=256, pixels=new Uint8Array(n*n*4);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++) {
+    const yarn=(Math.sin(x*Math.PI*.5)+Math.sin(y*Math.PI*.5))*.5;
+    const fibre=Math.sin(x*.61+y*.13)*Math.sin(y*.37-x*.07);
+    const irregular=Math.sin(x*.17)*Math.cos(y*.09);
+    const v=kind==='linen'?231+12*yarn+5*fibre+4*irregular:199+25*Math.sin(x*.55+Math.sin(y*.07))+10*fibre;
+    const i=(y*n+x)*4;
+    pixels[i]=pixels[i+1]=pixels[i+2]=Math.round(v);pixels[i+3]=255;
+  }
+  const texture=new THREE.DataTexture(pixels,n,n);
+  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+  texture.magFilter=THREE.LinearFilter;texture.minFilter=THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps=true;texture.anisotropy=4;
+  if(color)texture.colorSpace=THREE.SRGBColorSpace;
+  texture.repeat.set(kind==='linen'?5:2,kind==='linen'?7:1);
+  texture.needsUpdate=true;
+  return texture;
+}
+let linenColor:THREE.Texture|undefined,linenBump:THREE.Texture|undefined,hairBump:THREE.Texture|undefined;
+const clothMats=new Map<number,THREE.MeshStandardMaterial>(),hairMats=new Map<number,THREE.MeshStandardMaterial>();
+function cloth(color:number):THREE.MeshStandardMaterial {
+  let m=clothMats.get(color);
+  if(!m){
+    linenColor??=surfaceTexture('linen',true);linenBump??=surfaceTexture('linen');
+    m=new THREE.MeshStandardMaterial({color,map:linenColor,bumpMap:linenBump,bumpScale:.0025,roughness:.94,metalness:0});
+    clothMats.set(color,m);
+  }
+  return m;
+}
+function hairMaterial(color:number):THREE.MeshStandardMaterial {
+  let m=hairMats.get(color);
+  if(!m){hairBump??=surfaceTexture('hair');m=new THREE.MeshStandardMaterial({color,bumpMap:hairBump,bumpScale:.002,roughness:.88});hairMats.set(color,m);}
+  return m;
+}
+
+/** Small radial folds preserve the overall silhouette, UVs and animation pivot. */
+function folds(geometry:THREE.BufferGeometry,amp:number,frequency:number):THREE.BufferGeometry {
+  const pos=geometry.attributes.position as THREE.BufferAttribute;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i),r=Math.hypot(x,z);
+    if(r<.025)continue;
+    const a=Math.atan2(x,z),waist=Math.exp(-Math.pow((y-1)/.12,2));
+    const dr=amp*(1-.8*waist)*(Math.sin(a*frequency+y*.6)+.25*Math.sin(a*frequency*2-y));
+    const scale=(r+dr)/r;pos.setXYZ(i,x*scale,y,z*scale);
+  }
+  geometry.computeVertexNormals();return geometry;
+}
+
 function mesh(g: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0) {
   const o = new THREE.Mesh(g, m);
   o.position.set(x, y, z);
@@ -57,13 +108,15 @@ export function makePerson(p: Palette): Person {
   const k = (p.height ?? 1.75) / 1.75;
   body.scale.setScalar(k);
 
-  const skin = mat(p.skin, 0.75), tunic = mat(p.tunic, 0.95), hair = mat(p.hair, 0.8), sandal = mat(p.sandal, 0.8);
+  const skin = mat(p.skin, 0.78), tunic = cloth(p.tunic), hair = hairMaterial(p.hair), sandal = mat(p.sandal, 0.86);
 
   // legs: hip pivots, so they swing
   const mkLeg = (side: number) => {
     const g = new THREE.Group(); g.position.set(0.09 * side, 0.86, 0);
     g.add(mesh(new THREE.CapsuleGeometry(0.06, 0.66, 4, 8), skin, 0, -0.43, 0));
     g.add(mesh(new THREE.BoxGeometry(0.11, 0.04, 0.26), sandal, 0, -0.84, -0.05));
+    const foot=mesh(new THREE.SphereGeometry(.065,10,6),skin,0,-.805,-.09);foot.scale.set(.82,.45,1.45);g.add(foot);
+    const strap=mesh(new THREE.BoxGeometry(.113,.025,.035),sandal,0,-.78,-.08);g.add(strap);
     body.add(g); return g;
   };
   const legL = mkLeg(-1), legR = mkLeg(1);
@@ -71,23 +124,25 @@ export function makePerson(p: Palette): Person {
   // the tunic: a lathe from the hem up to the shoulders
   const hem = p.short ? 0.5 : 0.22;
   const prof = [
-    [0.0, hem - 0.01], [0.27, hem], [0.25, hem + 0.2], [0.21, 0.82], [0.18, 1.0], [0.21, 1.2], [0.23, 1.36], [0.17, 1.46], [0.06, 1.5], [0.0, 1.5],
+    [0.0, hem - 0.01], [0.27, hem], [0.265,hem+.04], [0.25, hem + 0.2], [0.225,.76], [0.21, 0.82], [0.18, 1.0], [0.195,1.08], [0.21, 1.2], [0.23, 1.36], [0.17, 1.46], [0.06, 1.5], [0.0, 1.5],
   ].map(([r, y]) => new THREE.Vector2(r, y));
-  const robe = mesh(new THREE.LatheGeometry(prof, 18), tunic);
+  const robe = mesh(folds(new THREE.LatheGeometry(prof,36),.012,9), tunic);
   robe.scale.z = 0.72;
   body.add(robe);
-  const belt = mesh(new THREE.TorusGeometry(0.185, 0.022, 6, 20), mat(p.belt, 0.9), 0, 1.0, 0);
+  const belt = mesh(new THREE.TorusGeometry(0.185, 0.013, 7, 32), cloth(p.belt), 0, 1.0, 0);
   belt.rotation.x = Math.PI / 2; belt.scale.y = 0.72;
   body.add(belt);
-  if (p.belt && !p.short) {
-    const knot = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.32, 5), mat(p.belt, 0.9), 0.08, 0.86, -0.13);
+  if (p.belt) {
+    const knot = mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.23, 6), cloth(p.belt), 0.08, 0.89, -0.145);
+    knot.rotation.z=-.12;
     body.add(knot);
   }
 
   // arms: shoulder pivots
   const mkArm = (side: number) => {
     const g = new THREE.Group(); g.position.set(0.25 * side, 1.38, 0);
-    g.add(mesh(new THREE.CapsuleGeometry(0.058, 0.36, 4, 8), tunic, 0, -0.2, 0));
+    const sleeve=folds(new THREE.CylinderGeometry(.075,.089,.37,18,4),.004,6);
+    g.add(mesh(sleeve, tunic, 0, -0.2, 0));
     g.add(mesh(new THREE.CapsuleGeometry(0.045, 0.22, 4, 8), skin, 0, -0.5, 0));
     body.add(g); return g;
   };
@@ -98,7 +153,7 @@ export function makePerson(p: Palette): Person {
   const head = mesh(new THREE.SphereGeometry(0.105, 16, 12), skin, 0, 1.63, 0);
   head.scale.set(0.92, 1.08, 1);
   body.add(head);
-  const cap = mesh(new THREE.SphereGeometry(0.115, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.62), hair, 0, 1.645, 0.012);
+  const cap = mesh(folds(new THREE.SphereGeometry(0.115,24,16,0,Math.PI*2,0,Math.PI*.62),.005,11), hair, 0, 1.645, 0.012);
   cap.scale.set(0.98, 1.06, 1.04);
   body.add(cap);
   if (p.hairLong) {
@@ -112,13 +167,13 @@ export function makePerson(p: Palette): Person {
   }
   if (p.beard) {
     const b = mesh(new THREE.SphereGeometry(0.08, 10, 8), hair, 0, 1.56, -0.055);
-    b.scale.set(1.05, 0.9, 0.7);
+    b.scale.set(.94, 1.0, 0.55);
     body.add(b);
   }
 
   // the mantle: across the back from the left shoulder to the right hip, and draped over the left shoulder
   if (p.mantle !== undefined) {
-    const m = new THREE.MeshStandardMaterial({ color: p.mantle, roughness: 0.95, side: THREE.DoubleSide });
+    const m = cloth(p.mantle).clone();m.side=THREE.DoubleSide;
     // wrapped around the back and the left side (the person faces -z, so the back is +z and the left is -x)
     const wrap = mesh(new THREE.CylinderGeometry(0.235, 0.3, 1.0, 16, 1, true, -1.95, 2.6), m, 0, 1.0, 0.01);
     wrap.scale.z = 0.8; wrap.rotation.z = 0.12;
