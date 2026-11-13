@@ -136,7 +136,25 @@ Build local: 92 testes. `shots/r5-community/` verifica os valores reais do plano
 navegação de três abas, pausa/foco e composição de candidatura nos dois viewports.
 O rascunho de QA é sintético, window.open foi interceptado e nenhuma candidatura
 foi enviada. `shots/r5-support/` cobre a regressão de Pix, contas e uso observado.
-Conferência pública e SHA desta revisão são registrados após publicação.
+Publicada em `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`, deployment
+`dpl_Bg7HYru687BvoPAgK7sKzkwbD8eb` READY. Conferidos no domínio público os bundles
+`index-CSnHhZh8.js` e `index-CZGO82_i.css`. QA público de colaboração e apoio passou
+em 1280×800 e 390×844: `shots/production-r5-community/` e
+`shots/production-r5-support/`, sem publicação de issue ou pagamento.
+São viewports no PC, não testes em telefone físico. Prova completa:
+`shots/production-r5-community/PUBLICACAO-VERIFICADA.json`.
+
+Arquivo privado do diário: `INDEX-1b9aab97db4d.md`, com 42 arquivos R5 verificados
+por hash, sem vídeos novos. O conjunto R5 tem SHA próprio e não relabela R4.
+
+Por novo pedido de Alex, foram separados 13 arquivos de imagem para a série e
+uma eventual proposta ao Tripo: oito capturas da ferramenta, uma referência de
+entrada, duas capturas do GLB e duas do jogo. Fontes e cópias foram comparadas
+por SHA-256. A pasta privada `Serie-Reels-R1/Fontes-Tripo` contém manifesto e
+limites de uso; a sessão de Reels recebeu o caminho. Não há captura dedicada
+da tela de rig nem gravação contínua da geração. Os prints brutos exigem recorte
+de informações pessoais. `PROPOSTA-PATROCINIO-TRIPO.md` é rascunho local não enviado,
+sem patrocínio confirmado e sem autorização implícita de postagem social.
 
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 

@@ -16,6 +16,11 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
 - GitHub público: https://github.com/alexpiraginet-bot/-grand-testament-adventure — o hífen inicial faz
   parte do nome.
 - Jogo: https://grand-testament-adventure-lexprojects.vercel.app/
+- **Base pública R5 atual:** `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`, com metas
+  revisáveis e candidatura voluntária por rascunho GitHub. Deployment
+  `dpl_Bg7HYru687BvoPAgK7sKzkwbD8eb` READY, 92 testes, QA público de colaboração e
+  apoio em 1280×800 e 390×844. Bundle `index-CSnHhZh8.js` conferido. Preservar as três
+  abas do Colabore ao integrar a PR #1. Celular físico e envio de candidatura não foram testados.
 - Base pública R4 desta transferência: `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
 - **R4 publicada**: água, Colabore/Pix, prestação de contas e instrumentação de esforço.
   Deployment `dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, `READY`, HTTP 200 e bundle
