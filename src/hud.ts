@@ -8,6 +8,8 @@ import type { Segment } from './world-layout.ts';
 import { ORIGIN_LABEL, type Place } from "./places.ts";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+/** How long a found place stays announced, in game seconds. */
+const PLACE_NOTICE_S = 6;
 
 export type RadarMark = { pos: Vec2; kind: "follower" };
 
@@ -48,7 +50,7 @@ export class Hud {
   private narrativeLeft = 0;
   private roamKind = "";
   private foundOnRadar: readonly Place[] = [];
-  private placeTimer: ReturnType<typeof setTimeout> | undefined;
+  private placeLeft = 0;                 // game seconds the place notice still has on screen
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
   constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
@@ -131,13 +133,20 @@ export class Hud {
     $("placename").textContent = place.nome;
     $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]}`;
     el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
-    clearTimeout(this.placeTimer);
-    this.placeTimer = setTimeout(() => { el.hidden = true; }, 6000);
+    this.placeLeft = PLACE_NOTICE_S;
+  }
+
+  /** The place notice is timed by the frames that show it (game time, as update() and roam() receive it), not by the
+   * clock: the first place is found on the first frame after Go, when one frame can take longer than the whole notice.
+   * A wall-clock timer hid it before it was ever drawn on a slow start (seen at 1280×800 on a software renderer). */
+  private tickPlace(dt: number) {
+    if (this.placeLeft > 0 && (this.placeLeft -= dt) <= 0) $("placefound").hidden = true;
   }
 
   /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */
   roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number,
     touch = false, sealed: Sealed | null = null) {
+    this.tickPlace(dt);
     const mk = v.kind === "free" ? "EXPLORAÇÃO LIVRE" : "EPÍLOGO";
     if ($("mk").textContent !== mk) $("mk").textContent = mk;
     const closed = sealed && v.kind === "return";
@@ -171,6 +180,7 @@ export class Hud {
 
   update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number,
     notice: string | null = null, sealed: Sealed | null = null) {
+    this.tickPlace(dt);
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);
     const m = ep.missoes[k];

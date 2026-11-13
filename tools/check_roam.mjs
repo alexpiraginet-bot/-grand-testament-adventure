@@ -41,8 +41,8 @@ async function run(name, ctxOpts) {
   await page.waitForFunction(() => window.__gta.state.phase === "play", null, LONG);
 
   // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is
-  // read in the same page task that sees the place found: the notice stays up 6 s of real time, and on a software
-  // renderer four separate reads can take longer than that (they did, with the machine busy: 13/11, run on 6878694)
+  // read in the same page task that sees the place found. The notice stays up 6 s of game time (hud.ts): while it was
+  // timed by the clock, this renderer at 1280×800 took longer than that to draw the next frame and never showed it
   const first = await (await page.waitForFunction(() => {
     const e = document.getElementById("placefound"), t = (id) => document.getElementById(id).textContent;
     return window.__gta.roam().found.includes("Capernaum")
