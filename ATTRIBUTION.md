@@ -10,6 +10,19 @@ Alteração indicada: os colchetes da BLIVRE (palavras acrescentadas pelos tradu
 `src/data/mc-pescadores.json` (ex.: "Tiago [filho] de Zebedeu" vira "Tiago filho de Zebedeu"). Nenhuma fala mostrada
 na tela tem colchete.
 
+Na Bíblia do jogo (`src/data/biblia-cronologica.json`, gerado por `tools/build_bible.py`), os versículos dos outros
+momentos da leitura são copiados da BLIVRE **sem alteração**, com os colchetes e a pontuação do arquivo de origem
+(`fontes/blivre/porbr2018_vpl.zip` do Bíblia Conectada, SHA-256 conferido contra `fontes/SHA256SUMS`).
+
+## Ordem de leitura: Bíblia Conectada
+
+A ordem das passagens na Bíblia do jogo é o roteiro de leitura cronológica do
+[Bíblia Conectada](https://www.bibliaconectada.company/cronologia) (`site/src/lib/chronological-reading.ts`): títulos,
+fases, lugares e referências são os dele. É uma ordem editorial ampla, que o próprio roteiro descreve como "not a
+harmonized historical chronology". A passagem jogada (Marcos 1:16–21) não é um dos momentos do roteiro; o jogo a põe
+logo depois do último momento que o mesmo evangelho narra antes dela (o batismo, Marcos 1:9–11), sem fixar a relação
+com os relatos dos outros evangelhos (`src/bible.ts`, `test/bible.test.ts`).
+
 ## Lugares: OpenBible.info Bible Geocoding Data, CC BY 4.0
 
 "Geocodificação: OpenBible.info". Nome em português de cada lugar: o que a BLIVRE escreve.

@@ -1,0 +1,518 @@
+{
+ "origem": {
+  "roteiro": "biblia-conectada, site/src/lib/chronological-reading.ts (roteiro editorial de leitura do Bíblia Conectada)",
+  "roteiro_sha256": "a991552e0485aecc6402cdda6e7265fbe7b683cd99876910c0ded15fddbd458f",
+  "texto": "biblia-conectada, fontes/blivre/porbr2018_vpl.zip",
+  "texto_sha256": "99b62593c3cc6387bbd4aa6aff11103a5c3f5bda87d6257155bdb6576e3e1231",
+  "commit": "f0dce71971e0597482f4ba7cb852fb91e2bf531c"
+ },
+ "fonte_texto": "Bíblia Livre (BLIVRE), CC BY 4.0 BR",
+ "evangelhos": [
+  {
+   "id": "mateus",
+   "nome": "Mateus"
+  },
+  {
+   "id": "marcos",
+   "nome": "Marcos"
+  },
+  {
+   "id": "lucas",
+   "nome": "Lucas"
+  },
+  {
+   "id": "joao",
+   "nome": "João"
+  }
+ ],
+ "momentos": [
+  {
+   "id": "nascimento",
+   "titulo": "Um começo em Belém",
+   "fase": "Nascimento",
+   "lugar": "Belém",
+   "evangelho": "Lucas",
+   "ref": "Lucas 2:6–7",
+   "versiculos": [
+    {
+     "n": 6,
+     "texto": "E aconteceu que, enquanto eles ali, completaram-se os dias em que ela havia de dar à luz."
+    },
+    {
+     "n": 7,
+     "texto": "E deu à luz seu filho primogênito, e o envolveu em panos, e o deitou numa manjedoura; porque não havia lugar para eles na hospedaria."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 2,
+     "de": 1,
+     "ate": 2,
+     "relacao": "relato",
+     "ref": "Mateus 2:1–2"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 2,
+     "de": 6,
+     "ate": 7,
+     "relacao": "relato",
+     "ref": "Lucas 2:6–7"
+    }
+   ]
+  },
+  {
+   "id": "batismo",
+   "titulo": "Às águas do Jordão",
+   "fase": "Início da vida pública",
+   "lugar": "Jordão",
+   "evangelho": "Marcos",
+   "ref": "Marcos 1:9–11",
+   "versiculos": [
+    {
+     "n": 9,
+     "texto": "E aconteceu que, naqueles dias, Jesus de Nazaré da Galileia veio, e foi batizado por João no Jordão."
+    },
+    {
+     "n": 10,
+     "texto": "E assim que saiu da água, viu os céus se abrirem, e o Espírito, que como pomba descia sobre ele."
+    },
+    {
+     "n": 11,
+     "texto": "E veio uma voz dos céus: Tu és meu Filho amado, em quem me agrado."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 3,
+     "de": 16,
+     "ate": 17,
+     "relacao": "relato",
+     "ref": "Mateus 3:16–17"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 1,
+     "de": 9,
+     "ate": 11,
+     "relacao": "relato",
+     "ref": "Marcos 1:9–11"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 3,
+     "de": 21,
+     "ate": 22,
+     "relacao": "relato",
+     "ref": "Lucas 3:21–22"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 1,
+     "de": 32,
+     "ate": 34,
+     "relacao": "relacionado",
+     "ref": "João 1:32–34"
+    }
+   ]
+  },
+  {
+   "id": "cana",
+   "titulo": "A água, o vinho e o sinal",
+   "fase": "Início do ministério",
+   "lugar": "Caná da Galileia",
+   "evangelho": "João",
+   "ref": "João 2:7–9",
+   "versiculos": [
+    {
+     "n": 7,
+     "texto": "Disse-lhes Jesus: Enchei estes vasos com água. E encheram-nas até encima."
+    },
+    {
+     "n": 8,
+     "texto": "E disse-lhes: Agora tirai, e a levai ao mestre de cerimônia. Então levaram."
+    },
+    {
+     "n": 9,
+     "texto": "E quando o mestre de cerimônia experimentou a água feita vinho (sem saber de onde era, porém os serventes que haviam tirado a água sabiam), o mestre de cerimônia chamou o noivo,"
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "joao",
+     "capitulo": 2,
+     "de": 7,
+     "ate": 9,
+     "relacao": "relato",
+     "ref": "João 2:7–9"
+    }
+   ]
+  },
+  {
+   "id": "ensino",
+   "titulo": "Palavras que mudam o olhar",
+   "fase": "Ministério e ensino",
+   "lugar": "Galileia",
+   "evangelho": "Mateus",
+   "ref": "Mateus 5:3–5",
+   "versiculos": [
+    {
+     "n": 3,
+     "texto": "Benditos são os humildes de espírito, porque deles é o Reino dos céus."
+    },
+    {
+     "n": 4,
+     "texto": "Benditos são os que choram, porque eles serão consolados."
+    },
+    {
+     "n": 5,
+     "texto": "Benditos são os mansos, porque eles herdarão a terra."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 5,
+     "de": 3,
+     "ate": 5,
+     "relacao": "relato",
+     "ref": "Mateus 5:3–5"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 6,
+     "de": 20,
+     "ate": 21,
+     "relacao": "relacionado",
+     "ref": "Lucas 6:20–21"
+    }
+   ]
+  },
+  {
+   "id": "paes",
+   "titulo": "Há lugar à mesa",
+   "fase": "Ministério na Galileia",
+   "lugar": "Galileia",
+   "evangelho": "João",
+   "ref": "João 6:10–11",
+   "versiculos": [
+    {
+     "n": 10,
+     "texto": "E disse Jesus: Fazei sentar as pessoas; e havia muita erva naquele lugar. Sentaram-se, pois, os homens, em número de cinco mil."
+    },
+    {
+     "n": 11,
+     "texto": "E tomou Jesus os pães, e havendo dado graças, repartiu-os aos discípulos, e os discípulos aos que estavam sentados, semelhantemente também dos peixes, quanto queriam."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 14,
+     "de": 19,
+     "ate": 20,
+     "relacao": "relato",
+     "ref": "Mateus 14:19–20"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 6,
+     "de": 41,
+     "ate": 42,
+     "relacao": "relato",
+     "ref": "Marcos 6:41–42"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 9,
+     "de": 16,
+     "ate": 17,
+     "relacao": "relato",
+     "ref": "Lucas 9:16–17"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 6,
+     "de": 10,
+     "ate": 11,
+     "relacao": "relato",
+     "ref": "João 6:10–11"
+    }
+   ]
+  },
+  {
+   "id": "entrada",
+   "titulo": "O caminho chega a Jerusalém",
+   "fase": "Chegada a Jerusalém",
+   "lugar": "Jerusalém",
+   "evangelho": "Mateus",
+   "ref": "Mateus 21:8–9",
+   "versiculos": [
+    {
+     "n": 8,
+     "texto": "E uma grande multidão estendia suas roupas pelo caminho, e outros cortavam ramos das árvores, e os espalhavam pelo caminho."
+    },
+    {
+     "n": 9,
+     "texto": "E as multidões que iam adiante, e as que seguiam, clamavam: Hosana ao Filho de Davi! Bendito o que vem no nome do Senhor! Hosana nas alturas!"
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 21,
+     "de": 8,
+     "ate": 9,
+     "relacao": "relato",
+     "ref": "Mateus 21:8–9"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 11,
+     "de": 8,
+     "ate": 10,
+     "relacao": "relato",
+     "ref": "Marcos 11:8–10"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 19,
+     "de": 37,
+     "ate": 38,
+     "relacao": "relato",
+     "ref": "Lucas 19:37–38"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 12,
+     "de": 12,
+     "ate": 13,
+     "relacao": "relato",
+     "ref": "João 12:12–13"
+    }
+   ]
+  },
+  {
+   "id": "refeicao",
+   "titulo": "Perto, à mesma mesa",
+   "fase": "Antes da prisão",
+   "lugar": "Jerusalém",
+   "evangelho": "Lucas",
+   "ref": "Lucas 22:19–20",
+   "versiculos": [
+    {
+     "n": 19,
+     "texto": "E tomando o pão, e tendo agradecido [a Deus] ,partiu-o, e o deu a eles, dizendo: Isto é o meu corpo, que é dado por vós; fazei isto em memória de mim."
+    },
+    {
+     "n": 20,
+     "texto": "De modo semelhante também com o copo, depois da ceia, disse: Este copo [é] o Novo Testamento em meu sangue, que é derramado por vós."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 26,
+     "de": 26,
+     "ate": 28,
+     "relacao": "relato",
+     "ref": "Mateus 26:26–28"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 14,
+     "de": 22,
+     "ate": 24,
+     "relacao": "relato",
+     "ref": "Marcos 14:22–24"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 22,
+     "de": 19,
+     "ate": 20,
+     "relacao": "relato",
+     "ref": "Lucas 22:19–20"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 13,
+     "de": 4,
+     "ate": 5,
+     "relacao": "relacionado",
+     "ref": "João 13:4–5"
+    }
+   ]
+  },
+  {
+   "id": "cruz",
+   "titulo": "Diante da cruz",
+   "fase": "Paixão",
+   "lugar": "Jerusalém",
+   "evangelho": "João",
+   "ref": "João 19:28–30",
+   "versiculos": [
+    {
+     "n": 28,
+     "texto": "Depois disto, sabendo Jesus que já todas as coisas estavam feitas, para que a Escritura se cumprisse, ele disse: Tenho sede."
+    },
+    {
+     "n": 29,
+     "texto": "Estava pois ali um vaso cheio de vinagre, e encheram uma esponja de vinagre, e envolvendo-a com hissopo, levaram-na a sua boca."
+    },
+    {
+     "n": 30,
+     "texto": "Quando pois Jesus tomou o vinagre, disse: Está consumado; e abaixando a cabeça, deu o Espírito."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 27,
+     "de": 45,
+     "ate": 46,
+     "relacao": "relato",
+     "ref": "Mateus 27:45–46"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 15,
+     "de": 33,
+     "ate": 34,
+     "relacao": "relato",
+     "ref": "Marcos 15:33–34"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 23,
+     "de": 44,
+     "ate": 46,
+     "relacao": "relato",
+     "ref": "Lucas 23:44–46"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 19,
+     "de": 28,
+     "ate": 30,
+     "relacao": "relato",
+     "ref": "João 19:28–30"
+    }
+   ]
+  },
+  {
+   "id": "tumulo",
+   "titulo": "O primeiro dia, uma descoberta",
+   "fase": "Relatos da ressurreição",
+   "lugar": "Jerusalém",
+   "evangelho": "Marcos",
+   "ref": "Marcos 16:5–7",
+   "versiculos": [
+    {
+     "n": 5,
+     "texto": "e entrando no sepulcro, viram um rapaz sentado à direita, vestido com uma roupa comprida branca; e elas se espantaram."
+    },
+    {
+     "n": 6,
+     "texto": "Mas ele lhes disse: Não vos espanteis. Vós buscais a Jesus Nazareno crucificado. Ele já ressuscitou, não está aqui. Eis aqui o lugar onde o puseram."
+    },
+    {
+     "n": 7,
+     "texto": "Porém ide, dizei a seus discípulos e a Pedro, que ele vai adiante de para a Galileia; ali o vereis, como ele vos disse."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 28,
+     "de": 5,
+     "ate": 7,
+     "relacao": "relato",
+     "ref": "Mateus 28:5–7"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 16,
+     "de": 5,
+     "ate": 7,
+     "relacao": "relato",
+     "ref": "Marcos 16:5–7"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 24,
+     "de": 5,
+     "ate": 7,
+     "relacao": "relato",
+     "ref": "Lucas 24:5–7"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 20,
+     "de": 1,
+     "ate": 2,
+     "relacao": "relato",
+     "ref": "João 20:1–2"
+    }
+   ]
+  },
+  {
+   "id": "reencontros",
+   "titulo": "A história continua",
+   "fase": "Encontros e envio",
+   "lugar": "Galileia e Jerusalém",
+   "evangelho": "Mateus",
+   "ref": "Mateus 28:18–20",
+   "versiculos": [
+    {
+     "n": 18,
+     "texto": "Jesus se aproximou deles, e lhes falou: Todo o poder me é dado no céu e na terra."
+    },
+    {
+     "n": 19,
+     "texto": "Portanto ide, fazei discípulos a todas as nações, batizando-os em nome do Pai, do Filho, e do Espírito Santo,"
+    },
+    {
+     "n": 20,
+     "texto": "ensinando-lhes a guardar todas as coisas que eu vos tenho mandado. E eis que eu estou convosco todos os dias, até o fim dos tempos. Amém."
+    }
+   ],
+   "passagens": [
+    {
+     "evangelho": "mateus",
+     "capitulo": 28,
+     "de": 18,
+     "ate": 20,
+     "relacao": "relato",
+     "ref": "Mateus 28:18–20"
+    },
+    {
+     "evangelho": "marcos",
+     "capitulo": 16,
+     "de": 7,
+     "ate": 7,
+     "relacao": "relacionado",
+     "ref": "Marcos 16:7"
+    },
+    {
+     "evangelho": "lucas",
+     "capitulo": 24,
+     "de": 46,
+     "ate": 49,
+     "relacao": "relacionado",
+     "ref": "Lucas 24:46–49"
+    },
+    {
+     "evangelho": "joao",
+     "capitulo": 20,
+     "de": 21,
+     "ate": 22,
+     "relacao": "relacionado",
+     "ref": "João 20:21–22"
+    }
+   ]
+  }
+ ]
+}

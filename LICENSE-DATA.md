@@ -9,6 +9,7 @@ pontos das missões) sai sob a **Creative Commons Atribuição 4.0 Internacional
 |---|---|---|
 | `src/data/mc-pescadores.json` (versículos, falas, nomes) | Bíblia Livre (BLIVRE) | CC BY 4.0 Brasil; aviso exato em `ATTRIBUTION.md` |
 | `src/data/attribution.json` | o aviso dos autores da BLIVRE | o próprio aviso, para copiar sem mudar |
+| `src/data/biblia-cronologica.json` (a Bíblia do jogo: ordem de leitura e versículos) | roteiro de leitura do Bíblia Conectada (`site/src/lib/chronological-reading.ts`, curadoria editorial do projeto); versículos da Bíblia Livre, copiados sem alteração | MIT (o roteiro, como o código do Bíblia Conectada); CC BY 4.0 Brasil (o texto), aviso exato em `ATTRIBUTION.md` |
 | `public/world/cafarnaum.json` (ponto de Cafarnaum, nome dos lugares) | OpenBible.info Bible Geocoding Data; nomes da BLIVRE | CC BY 4.0; CC BY 4.0 Brasil |
 | `public/world/*-heights.json`, `public/world/radar.png`, `data/terrain-tiles.sha256` | AWS Terrain Tiles: SRTM/GMTED2010 (USGS), ETOPO1 (NOAA), Mapzen | atribuição pedida pela fonte (crédito em `ATTRIBUTION.md`) |
 
