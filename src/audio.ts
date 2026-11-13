@@ -1,33 +1,54 @@
 // Interface sounds synthesized in the browser, the same set as the reels (hud.py ui_sounds): a thump for a new mission,
 // a tick for the key prompt and the subtitle, a two-note chime when a mission is ticked, a D major chord at the end.
-// Plus the lake: filtered noise rising and falling like small waves. No audio files.
+// Wildlife/shore recordings share this graph, but are optional and managed separately.
 
 export class Sfx {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
+  private muted = false;
+  private paused = false;
+  private resumeError: string | null = null;
+
+  get available() {
+    return typeof window !== 'undefined' && typeof (window.AudioContext ??
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) === 'function';
+  }
 
   start() {
-    if (this.ctx) return;
-    const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return;
-    const ctx = new AC();
-    this.ctx = ctx;
-    this.master = ctx.createGain(); this.master.gain.value = 0.7; this.master.connect(ctx.destination);
-    // waves
-    const len = ctx.sampleRate * 4, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
-    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 520;
-    const g = ctx.createGain(); g.gain.value = 0.05;
-    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.13;
-    const lg = ctx.createGain(); lg.gain.value = 0.035;
-    lfo.connect(lg); lg.connect(g.gain);
-    src.connect(lp); lp.connect(g); g.connect(this.master);
-    src.start(); lfo.start();
+    // Called only by beginPlay's click. A failed optional audio device cannot block the game.
+    if (!this.ctx) {
+      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AC) return null;
+      try {
+        this.ctx = new AC();
+        this.master = this.ctx.createGain();
+        this.master.gain.value = this.muted || this.paused ? 0 : 0.7;
+        this.master.connect(this.ctx.destination);
+      } catch (error) { this.resumeError = String(error); return null; }
+    }
+    this.resumeFromGesture();
+    return this.master ? { context: this.ctx, output: this.master } : null;
+  }
+
+  /** Reuse the unlocked context after iOS interrupts it; never create another on ordinary input. */
+  resumeFromGesture() {
+    const ctx = this.ctx;
+    if (!ctx || ctx.state === 'closed' || ctx.state === 'running') return;
+    try { void ctx.resume().then(() => { this.resumeError = null; }, error => { this.resumeError = String(error); }); }
+    catch (error) { this.resumeError = String(error); }
+  }
+
+  setMuted(muted: boolean) { if(this.muted===muted)return;this.muted = muted; this.applyGain(); }
+  setPaused(paused: boolean) { if(this.paused===paused)return;this.paused = paused; this.applyGain(); }
+  get stats() { return { available: this.available, contextState: this.ctx?.state ?? 'not-created', muted: this.muted, paused: this.paused, resumeError: this.resumeError, syntheticWaves: false }; }
+  private applyGain() {
+    if (!this.ctx || !this.master) return;
+    const gain=this.master.gain,time=this.ctx.currentTime;
+    gain.cancelScheduledValues(time);gain.setTargetAtTime(this.muted || this.paused ? 0 : .7,time,.025);
   }
 
   private tone(f: number, dur: number, amp: number, decay: number, at = 0, attack = 0.004) {
-    const ctx = this.ctx; if (!ctx || !this.master) return;
+    const ctx = this.ctx; if (!ctx || !this.master || this.muted || this.paused) return;
     const t0 = ctx.currentTime + at;
     for (const [mul, a] of [[1, 1], [2, 0.25]] as const) {
       const o = ctx.createOscillator(); o.frequency.value = f * mul;
@@ -40,7 +61,7 @@ export class Sfx {
   }
 
   thump(amp = 0.5) {
-    const ctx = this.ctx; if (!ctx || !this.master) return;
+    const ctx = this.ctx; if (!ctx || !this.master || this.muted || this.paused) return;
     const t0 = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
     o.frequency.setValueAtTime(90, t0); o.frequency.exponentialRampToValueAtTime(46, t0 + 0.2);
     g.gain.setValueAtTime(amp, t0); g.gain.setTargetAtTime(0, t0, 0.16);

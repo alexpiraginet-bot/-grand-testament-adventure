@@ -352,3 +352,46 @@ Snapshots, manifests e índices recebem identificadores de conteúdo e são imut
 uma cópia divergente causa erro, não sobrescrita. Fontes ausentes ficam como pendência.
 O programa imprime o caminho do índice mais recente. Não faz upload, não publica
 redes sociais, não gera vídeo e não modifica memórias do assistente.
+
+## 13/11/2026 — fauna própria R8
+
+Pedido: povoar o mapa com animais e sons, preservando o padrão visual e a
+correção de abertura no iPhone da R7. Base `c664f9f`; trabalho isolado em
+`codex/fauna-original-r8`, sem modificar a branch de Claude.
+
+Produção no site Tripo: 175 créditos nesta revisão, somados aos 1.025 já
+registrados. Teto de 1.200 atingido; saldo observado 2.015. Não houve compra.
+A ampliação de até 300 créditos foi perguntada, mas não presumida aprovada.
+Ovelha, cabra e peixe aguardam geração própria; seus substitutos rejeitados
+não voltaram ao jogo.
+
+Galinha detalhada e burro detalhado foram preservados com seus originais.
+Os rigs automáticos chegaram com classificação inadequada; as cópias receberam
+animação local revisada, pés/cascos funcionais, variantes desktop/mobile e
+hashes distintos. Galinha: 7.886 triângulos, caminhada a 0,24 m/s, dois ossos
+adicionais de pé. Burro: 17.688 triângulos, caminhada a 0,38 m/s e repouso.
+Ver `QA-GALINHA-R8-BIRDWALK.md` e `QA-BURRO-R8-WALK.md`; não há IK de terreno.
+
+O mundo usa setores determinísticos e população próxima ao jogador, até 24
+animais no celular/48 no PC. Só malhas aprovadas e carregadas produzem emissores
+de animal. Cinco sons CC0 foram adaptados e creditados; aves e água ocupam
+habitats, cacarejo/zurro vêm das posições dos animais. Limites de três vozes,
+cache PCM de 12 MiB, pausa dos menus e botão de som. Uma retenção de buffer
+fora do cache foi encontrada e corrigida com teste de regressão.
+
+Build integrado inicial: 166 testes CPU + typecheck, bundle `index-By9uYN8-.js`.
+O ensaio nativo de áudio encontrou depois o raio físico sendo usado como
+alcance sonoro; o animal ficava inaudível. Correção com agente completo no
+teste: 167 testes CPU + typecheck, bundle final `index-BvfTbjcg.js`. A falha
+anterior foi guardada junto das evidências; não conta como áudio aprovado.
+QA de cena no Chrome e WebKit é registrada por bundle; o WebKit Windows não
+oferece Web Audio e mostra “Som indisponível”. Não equivale a Safari físico,
+escuta humana ou prova de FPS no iPhone. Capturas são gameplay real de QA;
+reposicionamentos via debug ficam identificados e não contam como missão
+completada. Nenhuma evidência desta revisão usa DLSS.
+
+Horas/tokens: snapshot agregado atualizado em 13/11 às 14:58:29 UTC, somente
+da sessão autorizada. Publicado na branch `metrics/development`, commit
+`d7e4aba7b478364efd4d92163cf1822f240f1d21`. Horas são atividade estimada e
+valores em USD equivalência hipotética de API, não cobrança da assinatura.
+Não foram coletadas conversas alheias nem inventadas horas de Claude.

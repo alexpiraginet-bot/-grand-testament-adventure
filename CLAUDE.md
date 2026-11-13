@@ -1,5 +1,13 @@
 # Grand Testament Adventure — continuidade local
 
+Fauna R8 (13/11): ler `docs/FAUNA-PRODUCAO-R8.md`, os dois relatórios
+`QA-*-R8-*.md` e `tools/fauna/README.md` antes de mexer nos animais. Galinha e
+burro próprios têm rigs/caminhadas corrigidos e hashes por perfil; os presets
+automáticos originais foram rejeitados. Não reintroduzir os animais simples
+rejeitados por Alex. Ovelha/cabra/peixe ainda aguardam geração e aprovação.
+Tripo pelo site/app, sem API/compra: os 1.200 créditos autorizados foram
+consumidos; a ampliação perguntada não equivale a autorização concedida.
+
 Leia `HANDOFF.md`, `HANDOFF-CODEX.md`, `README.md`, `ASSETS.md` e
 `docs/CONSTRUA-CONOSCO.md` antes de alterar o jogo. O handoff do Claude na nuvem
 foi recuperado do commit `84443a71eb7376565c1139efdf56176b8a41560a`.
