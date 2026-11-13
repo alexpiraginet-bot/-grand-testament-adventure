@@ -97,8 +97,9 @@ export class Hud {
   /** A place of the region was just found (places.ts): its name, what kind of fact it is, and the count, for a moment. */
   placeFound(place: Place, found: number, total: number) {
     const el = $("placefound");
+    $("placecount").textContent = `Lugar encontrado · ${found} de ${total}`;
     $("placename").textContent = place.nome;
-    $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]} · ${found} de ${total}`;
+    $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]}`;
     el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
     clearTimeout(this.placeTimer);
     this.placeTimer = setTimeout(() => { el.hidden = true; }, 6000);

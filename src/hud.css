@@ -154,8 +154,12 @@ button { font: inherit; cursor: pointer; }
 @keyframes placefade { 0% { opacity: .2; } 5% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
 .placefound[hidden] { display: none; }
 .placefound .pk { display: block; font: 700 10px "Space Mono", monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); }
-.placefound b { display: block; font: 700 17px "Space Grotesk", sans-serif; letter-spacing: .3px; }
-.placefound #placenote { display: block; font: 400 11px "Space Mono", monospace; opacity: .85; }
+.placefound b { display: inline; font: 700 15px "Space Grotesk", sans-serif; letter-spacing: .3px; }
+.placefound #placenote { display: inline; margin-left: 8px; font: 400 11px "Space Mono", monospace; opacity: .85; }
+/* lying sideways there is little height between the mission and the stick: the name alone, on one line */
+@media (pointer: coarse) and (orientation: landscape) {
+  .placefound { padding: 4px 10px; } .placefound .pk { display: inline; margin-right: 8px; } .placefound #placenote { display: none; }
+}
 @media (prefers-reduced-motion: reduce) { .placefound { animation: none; } }
 .card.end #again { margin-top: 12px; }
 

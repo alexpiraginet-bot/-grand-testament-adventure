@@ -43,7 +43,8 @@ async function run(name, ctxOpts) {
   // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is
   await page.waitForFunction(() => window.__gta.roam().found.includes("Capernaum"), null, LONG);
   assert.equal(await text("#placename"), "Cafarnaum");
-  assert.equal(await text("#placenote"), "Lugar com fonte · 1 de 5");
+  assert.equal(await text("#placecount"), "Lugar encontrado · 1 de 5");
+  assert.equal(await text("#placenote"), "Lugar com fonte");
   assert.equal(await shown("#placefound"), true, "the found place is announced");
   await page.screenshot({ path: `${OUT}/${name}-0-lugar.png` });
   assert.equal(await g(() => window.__gta.roam().phase), "off", "no exploring mode while the episode is played");
@@ -63,7 +64,8 @@ async function run(name, ctxOpts) {
   await g(() => window.__gta.act());
   await page.waitForFunction(() => window.__gta.state.phase === "done", null, LONG);
   assert.deepEqual(await g(() => window.__gta.roam().found), ["Capernaum", "margem", "redes", "barco"], "the passage's places were found on the way");
-  assert.equal(await text("#placenote"), "Marcos 1:20 · Posição escolhida pelo jogo · 4 de 5");
+  assert.equal(await text("#placecount"), "Lugar encontrado · 4 de 5");
+  assert.equal(await text("#placenote"), "Marcos 1:20 · Posição escolhida pelo jogo");
 
   // the end card offers to keep exploring; until then nothing roams
   await page.waitForFunction(() => !document.getElementById("end").hidden, null, LONG);
@@ -114,7 +116,8 @@ async function run(name, ctxOpts) {
   await tp(top.x, top.z, head([top.x, top.z], P.beach));
   await page.waitForFunction(() => window.__gta.roam().found.length === 5, null, LONG);
   assert.equal(await text("#placename"), "Mirante do mar da Galileia");
-  assert.equal(await text("#placenote"), "Nome do jogo sobre o relevo real · 5 de 5");
+  assert.equal(await text("#placecount"), "Lugar encontrado · 5 de 5");
+  assert.equal(await text("#placenote"), "Nome do jogo sobre o relevo real");
   await page.waitForFunction(() => document.querySelector(".journey-body").textContent === "Lugares encontrados: 5 de 5.", null, LONG);
   assert.equal(await text(".journey-label"), "Orientação");
   await page.screenshot({ path: `${OUT}/${name}-5-mirante.png` });
