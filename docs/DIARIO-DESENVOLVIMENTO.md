@@ -54,8 +54,7 @@ Commit e deployment de produção: **pendentes** até revisão/merge; não presu
   `test/joystick.test.ts` (novo), `tools/check_touch.mjs` (novo), README e este diário.
 - **Fontes/licenças:** nenhuma fonte externa nova; o desenho da mão é código deste repositório (MIT).
 - **Evidência:** build completo com assets verificados por SHA-256 e 41/41 testes. `tools/check_touch.mjs`
-  em 390×844 e 844×390 (toque) sobre `4d7cf86`, e 1280×800 sobre `424a096` (repetição sobre `4d7cf86`
-  registrada na PR): controle fixo e recentrado andam, soltar para o herói,
+  em 390×844, 844×390 (toque) e 1280×800, todos sobre `4d7cf86`: controle fixo e recentrado andam, soltar para o herói,
   `AnimationMixer` real com `walk` ≥ 0,9 de peso e ossos mudando, toque real no botão da mão
   dispara a fala, sem sobreposição com missão, radar, links e legenda, zero erros de página/HTTP.
   Varredura de layout de 320×568 a 932×430 em retrato e paisagem. Capturas e relatório em
