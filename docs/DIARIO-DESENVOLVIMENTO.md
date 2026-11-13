@@ -437,3 +437,64 @@ Uso agregado da própria sessão atualizado em 13/11 às 17:40:26 UTC, branch
 `metrics/development`, commit `35e441dcead64cab84dbd55377b2d6a512a70bb8`.
 Horas estimadas e equivalência hipotética de API permanecem separadas de
 pagamentos. Nenhuma nova geração ou compra Tripo; teto anterior consumido.
+
+## 13/11/2026 — R10, primeiro acabamento de vila/solo
+
+Registro inicial às 17:54 UTC. Alex autorizou prosseguir na direção aprovada e
+pediu documentação de tudo. Base main `a1c5b21`; branch isolada
+`codex/village-quality-r10`. Claude permanece com jornada/Bíblia/analytics;
+Codex assume esta primeira revisão de casas/solo e avisa o escopo na PR #1.
+
+Divisão: agente de casas em módulo próprio, agente de material do chão em
+módulo próprio, agente de QA com capturas comparáveis e integrador em world.ts.
+Sem escrita simultânea no mesmo arquivo. Fontes/modelos existentes preservados;
+sem mudança de relevo de origem, sem NPC procedural, sem novo gasto Tripo.
+Não foi iniciada uma IA local concorrente com o benchmark gráfico nesta GPU;
+a revisão independente dos módulos e a inspeção do navegador foram realizadas
+por agentes separados, com conferência final pelo integrador.
+
+As 158 casas agora preservam a proporção do GLB runtime, com escala uniforme,
+fachada mantida no mesmo alinhamento e colisores/decoração/fauna ajustados ao
+footprint final. Uma saia texturada acompanha o terreno no lugar da base
+retangular cinza. Trilha e margem têm menos relevo aparente que o cascalho;
+transições de areia/umidade usam altura e variação espacial. Os três mapas de
+solo foram reaproveitados, sem novo arquivo de imagem, modelo ou áudio.
+Modelos, relevo e rotas originais foram preservados. Ver `CASAS-R10.md` e
+`SOLO-R10.md`; não houve reconstrução das fontes brutas do Tripo.
+
+Build, TypeScript e **184/184 testes** passaram. Comparação A/B: três posições,
+mesmas poses/controles e tamanhos 1280×800/390×844; **36/36 verificações Chrome
+por versão**, herói e fauna preservados, sem NPCs provisórios. Cada passagem
+sondou 2.262 pontos de rota; um trecho usou caminhada W real, mas o restante
+foi posicionado para QA. Candidata WebKit: **12/12 verificações**. Os PNGs reais
+e relatórios têm hashes; não são imagens-conceito. `QA-VILA-R10.md` contém
+procedimento, dimensões, bytes, medições e limitações.
+
+Uma medição curta WebKit foi desfavorável (47,67 contra 56,26 FPS), motivando
+novo par com 10 s de aquecimento e 10 s de medição. Nesse par, R9 ficou em
+54,49 FPS e R10 em 62,80; a queda não se reproduziu. Ambos os resultados foram
+preservados. Não se afirma ganho de desempenho nem validação de Safari físico.
+Chrome ficou perto de 100 FPS, limitado pelo ritmo observado do ambiente.
+Casas ainda têm apenas três variantes simples e atlas limitados; a base pode
+ficar alta nas encostas e a margem do DEM permanece reta em alguns trechos.
+Esta entrega melhora implantação/material e não encerra a qualidade artística.
+
+Uso agregado da própria sessão publicado às 18:12:46 UTC em
+`metrics/development`, commit `c4998ad20f32f7fe911e6c024b3a9354bd442ea7`.
+Horas são atividade estimada e preços de API uma equivalência hipotética,
+separada dos pagamentos. Não se inventou consumo de Claude ou de subagentes.
+
+### Nova direção: interações que mudam a vida das pessoas
+
+Durante a revisão, Alex propôs montar o burro, pegar a galinha, conversar com
+pessoas e deixar palavras de ânimo. O centro da experiência será aproximar-se,
+ouvir e ajudar, com consequência observável. `INTERACOES-E-ENCONTROS.md`
+registra um primeiro encontro autoral, seleção contextual, animações,
+persistência e dependências para animais. É um plano, não funcionalidade
+implementada. Citações bíblicas continuam literais/referenciadas; falas
+autorais recebem a etiqueta Narrativa do jogo. Não exigir leitura para agir.
+
+Claude avançou até `7c02464` com painel e diário, incluindo a integração R9
+em sua própria branch. Ela foi consultada sem alteração; casas/solo continuam
+na worktree Codex. A publicação desta R10 e o handoff final serão vinculados
+na PR e no arquivo privado de evidências, sem publicar Reels automaticamente.

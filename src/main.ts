@@ -4,7 +4,7 @@ import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
-import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
+import { missionRoutes, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
 import { goals as makeGoals, npcs as makeNpcs, shoreDir } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
@@ -143,11 +143,15 @@ async function main() {
   const movementMargin = 60;
   const pt = (p: [number, number]): Vec2 => ({ x: p[0], z: p[1] });
   const keep=missionRoutes(terrain);
-  scene.add(groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures));
+  const ground=groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures);
+  scene.add(ground);
   const fm = farMesh(far, meta.far.size, meta.far.n); fm.position.y = -0.3; scene.add(fm);
   const lake = water(meta.far.size,terrain); scene.add(lake.mesh);
   const cap = meta.places.find((p) => p.id === "Capernaum") ?? { x: 0, z: 0 };
-  const town = houses(terrain, cap.x, cap.z, keep, assets);
+  const town = houses(terrain, cap.x, cap.z, keep, assets, {
+    map:groundTextures.albedo,normalMap:groundTextures.normal,roughnessMap:groundTextures.roughness,
+    groundSegments:quality === 'low' ? 192 : 256,
+  });
   scene.add(town.group);
   const vegetation=props(terrain,keep,q,assets,town.boxes); scene.add(vegetation);
 
@@ -290,8 +294,8 @@ async function main() {
           }
       }
       faunaBlocked=(x,z)=>(cells.get(`${Math.floor(x/cellSize)}:${Math.floor(z/cellSize)}`)??[]).some(box=>insideObstacle(x,z,box,.15));
-      // Same deterministic plans/centre as houses(); never infer houses from prop collider boxes.
-      faunaPopulation=createFaunaPopulation({terrain,routes:keep,buildings:settlementLayout(terrain,keep,cap.x,cap.z),
+      // Use the fitted visual footprints, never an older plan or prop collider as a house.
+      faunaPopulation=createFaunaPopulation({terrain,routes:keep,buildings:town.plans,
         blocked:faunaBlocked,playableMargin:movementMargin,species:approved.map(asset=>asset.kind),
         bodies:Object.fromEntries(approved.map(asset=>[asset.kind,asset.body])),maxAgents});
       faunaStatus='ready';
@@ -614,6 +618,7 @@ async function main() {
           heading:a.heading,scale:a.scale,radius:a.radius,halfHeight:a.halfHeight,groundHeight:terrain.heightAt(a.x,a.z),blockedStatic:faunaBlocked(a.x,a.z)}))??[]}),
       assets: Object.keys(assets),
       world: {...town.group.userData.counts,...vegetation.userData.counts},
+      worldQuality:()=>({houses:town.diagnostics,ground:(ground.material as THREE.Material).userData.groundSurface}),
       routes:keep,
       blocked,
       quality,
