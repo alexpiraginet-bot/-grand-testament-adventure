@@ -20,6 +20,7 @@ import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets } from './tripo-assets.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseFx } from "./postfx.ts";
+import { ease, twoShot, type CineShot } from "./cinematic.ts";
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -323,6 +324,13 @@ async function main() {
   };
 
   const tmp = new THREE.Vector3();
+  // the story's two-shots (cinematic.ts): chosen when a line starts, blended in and out; cameraSolid matches the
+  // obstruction test the follow camera already uses for houses and walls
+  const cine: { shot: CineShot | null; k: number; left: boolean } = { shot: null, k: 0, left: false };
+  const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const hudEl = $("hud");
+  const cameraSolid = (x: number, y: number, z: number) =>
+    town.boxes.some((b) => y > (b.bottom ?? -Infinity) && y < (b.top ?? Infinity) + 0.15 && insideObstacle(x, z, b, 0.25));
   let last = performance.now(), fpsFrames = 0, fpsT = 0;
   const fpsLog: number[] = [];
   const fpsEl = $("fps");
@@ -440,8 +448,32 @@ async function main() {
         tmp.lerpVectors(head,tmp,Math.max(.12,d-.23)/cameraDistance);break;
       }
     }
-    camera.position.copy(tmp);
-    camera.lookAt(head.x, head.y + 0.15, head.z);
+    // a line being read: the composed two-shot (cinematic.ts), unless the player walks out of it or asks for less motion
+    if (state.phase === "line" && !cine.left && !REDUCED_MOTION) {
+      if (!cine.shot) {
+        const g = goals[state.mission];
+        const ids = g.kind === "call" ? g.npcs : [];
+        const people = [player.pos, ...npcList.filter((n) => ids.includes(n.spec.id)).map((n) => n.pos)]
+          .map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
+        const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
+        cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
+        if (!cine.shot) cine.left = true;                   // nowhere clear to stand: stay with the game camera
+      }
+      if (Math.hypot(input.move.x, input.move.y) > 0.3) cine.left = true;
+    }
+    if (state.phase !== "line") { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
+    const want = state.phase === "line" && !cine.left && cine.shot ? 1 : 0;
+    cine.k += (want - cine.k) * Math.min(1, dt * 2.6);
+    const k = cine.shot ? ease(cine.k) : 0;
+    if (k > 0 && cine.shot) {
+      const e = cine.shot.eye, l = cine.shot.look;
+      camera.position.set(tmp.x + (e.x - tmp.x) * k, tmp.y + (e.y - tmp.y) * k, tmp.z + (e.z - tmp.z) * k);
+      camera.lookAt(head.x + (l.x - head.x) * k, head.y + 0.15 + (l.y - head.y - 0.15) * k, head.z + (l.z - head.z) * k);
+    } else {
+      camera.position.copy(tmp);
+      camera.lookAt(head.x, head.y + 0.15, head.z);
+    }
+    hudEl.classList.toggle("cine", k > 0.5);
     sun.position.set(player.pos.x + sunDir.x * 120, hero.root.position.y + sunDir.y * 120, player.pos.z + sunDir.z * 120);
     sun.target.position.set(player.pos.x, hero.root.position.y, player.pos.z);
 
@@ -478,6 +510,8 @@ async function main() {
       quality,
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
+      cine: () => ({ k: cine.k, left: cine.left, shot: cine.shot, on: hudEl.classList.contains("cine"),
+        camera: camera.position.toArray() }),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;
         if (heading !== undefined) { player.heading = heading; cam.yaw = heading; }

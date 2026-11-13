@@ -162,3 +162,13 @@ button { font: inherit; cursor: pointer; }
 .nuvem input:focus-visible, .card button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .nuvem .nbody button { margin-top: 12px; }
 .nuvem .nmsg { min-height: 1.5em; margin: 10px 0 0; font: 400 13px "Space Mono", monospace; }
+
+/* the story's two-shots (cinematic.ts, main.ts): cinema bars come in, the play panels step aside, the line stays */
+#hud::before, #hud::after { content: ""; position: absolute; left: 0; right: 0; height: 0; background: #050605; transition: height .45s ease; z-index: 0; }
+#hud::before { top: 0; } #hud::after { bottom: 0; }
+#hud.cine::before, #hud.cine::after { height: 9vh; }
+#hud .mission, #hud .radarbox, #hud .hud-links, #hud .joy, #hud .top { transition: opacity .35s ease; }
+#hud.cine .mission, #hud.cine .radarbox, #hud.cine .hud-links, #hud.cine .joy, #hud.cine .top { opacity: 0; pointer-events: none; }
+#hud.cine .hud-links { visibility: hidden; }            /* its buttons opt back into pointer events: take them out entirely */
+#hud .sub { z-index: 1; }
+@media (prefers-reduced-motion: reduce) { #hud::before, #hud::after, #hud .mission, #hud .radarbox, #hud .hud-links, #hud .joy, #hud .top { transition: none; } }

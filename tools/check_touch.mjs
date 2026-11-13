@@ -141,7 +141,29 @@ async function run(name, ctxOpts) {
     r.subtitle = { sub, joy };
     assert.ok(!overlap(sub, joy), "the line is not drawn under the stick");
   }
+  // the two-shot (cinematic.ts): in while the line is read, the play panels step aside, the subtitle stays
+  await page.waitForFunction(() => window.__gta.cine().k > 0.95 || window.__gta.state.phase !== "line", null, { timeout: 240000, polling: 100 });
+  const cine = await g(() => ({ ...window.__gta.cine(), phase: window.__gta.state.phase, sub: !document.getElementById("sub").hidden,
+    missionOpacity: Number(getComputedStyle(document.querySelector(".mission")).opacity), links: getComputedStyle(document.querySelector(".hud-links")).visibility }));
+  r.cinematic = { k: cine.k, shot: cine.shot, camera: cine.camera };
+  assert.equal(cine.phase, "line", "the line is still being read when the shot is in");
+  assert.ok(cine.shot && cine.on && cine.sub, "two-shot in, cinema class on, subtitle shown");
+  assert.ok(Math.hypot(cine.camera[0] - cine.shot.eye.x, cine.camera[2] - cine.shot.eye.z) < 0.05, "camera at the shot's eye");
+  assert.equal(cine.links, "hidden", "community links out of the way (and out of the tab order)");
+  await page.waitForTimeout(500);                          // let the CSS fade finish before the picture
+  assert.ok(await g(() => Number(getComputedStyle(document.querySelector(".mission")).opacity)) < 0.05, "mission panel faded");
   await page.screenshot({ path: `${OUT}/${name}-4-fala.png` });
+  if (!touch) {
+    // walking out of the shot hands the camera back at once, without waiting for the line to end
+    await page.keyboard.down("KeyW"); await waitGame(1.0); await page.keyboard.up("KeyW");
+    const out = await g(() => ({ ...window.__gta.cine(), phase: window.__gta.state.phase }));
+    r.cinematicLeave = { k: out.k, left: out.left, phase: out.phase };
+    assert.ok(out.left && out.k < 0.5 && !out.on, "moving leaves the two-shot");
+  }
+  await page.waitForFunction(() => window.__gta.state.phase !== "line", null, { timeout: 240000, polling: 100 });
+  await waitGame(1.0);
+  const after = await g(() => window.__gta.cine());
+  assert.ok(after.k < 0.05 && !after.on && after.shot === null, "after the line the game camera is back and the shot cleared");
 
   r.fps = await g(() => window.__gta.fpsLog.slice(-5).map((f) => Math.round(f * 10) / 10));
   r.backend = await g(() => window.__gta.backend);
