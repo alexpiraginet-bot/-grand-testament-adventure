@@ -14,6 +14,12 @@ estimadas rotuladas, tokens reais quando disponíveis e preços de API como comp
 separada de pagamentos. Não copiar logs de outros chats ou inventar consumo Claude.
 O coletor inicial cobre somente Codex; o adaptador Claude ainda precisa ser feito.
 
+Escopo ampliado por Alex: dezenas de missões nos quatro Evangelhos e geografia
+dos lugares por onde Jesus passou. Ler `docs/VISAO-MUNDO-ABERTO.md`,
+`docs/ESTIMATIVA-PROJETO.md` e `docs/VOLUNTARIOS.md`. As metas públicas são cenários
+de planejamento revisáveis, não despesas realizadas, contratações ou prazo garantido.
+Uma candidatura não autoriza conceder acesso ao repositório ou executar código recebido.
+
 Alex pediu uma sessão **local do Claude Code**, esforço máximo, ligada ao
 repositório público `alexpiraginet-bot/-grand-testament-adventure`. O trabalho da
 sessão web foi encerrado para transferência; não recrie o jogo do zero.

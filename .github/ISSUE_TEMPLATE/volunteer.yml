@@ -1,0 +1,58 @@
+name: Quero colaborar como voluntário
+description: Apresente uma proposta pública para construir o Grand Testament Adventure.
+title: "[Voluntariado] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Esta é uma candidatura voluntária para análise dos mantenedores, não entrada automática na equipe nem oferta de emprego.
+        O conteúdo será público. Não inclua telefone, e-mail, documentos, senhas ou outras informações privadas.
+        Seu perfil do GitHub será suficiente para continuarmos a conversa pública.
+  - type: dropdown
+    id: role
+    attributes:
+      label: Frente de colaboração
+      options:
+        - Engenharia e ferramentas
+        - Gameplay e jornada
+        - Gráficos · WebGPU e three.js
+        - Arte 3D e materiais
+        - Rig e animação
+        - Testes e acessibilidade
+        - Pesquisa histórica e bíblica
+        - Áudio e paisagem sonora
+        - Mapas e construção do mundo
+    validations:
+      required: true
+  - type: dropdown
+    id: availability
+    attributes:
+      label: Disponibilidade aproximada
+      description: Uma estimativa semanal para combinar as primeiras tarefas; pode mudar.
+      options:
+        - Cerca de 2 horas por semana
+        - Cerca de 5 horas por semana
+        - Cerca de 10 horas por semana
+        - Cerca de 20 horas por semana
+    validations:
+      required: true
+  - type: input
+    id: portfolio
+    attributes:
+      label: Portfólio público (opcional)
+      description: Use HTTPS sem usuário, senha ou outros dados de acesso na URL.
+      placeholder: https://github.com/seu-perfil
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Como gostaria de ajudar?
+      description: Conte um pouco da sua experiência ou do que quer aprender e construir, em até 1.000 caracteres.
+    validations:
+      required: true
+  - type: checkboxes
+    id: acknowledgement
+    attributes:
+      label: Ciência da publicação
+      options:
+        - label: Entendo que estes dados serão públicos no GitHub e que a candidatura depende de análise dos mantenedores.
+          required: true

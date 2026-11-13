@@ -4,6 +4,14 @@ Horas estimadas, tokens observados e comparação de preços de API ficam na mes
 aba, conforme `docs/ESFORCO-E-CUSTOS.md`. Estes valores não são saídas de caixa e
 não alteram o saldo da prestação de contas.
 
+Alex solicitou também uma meta para a campanha completa e captação de voluntários.
+O cenário revisável de `src/data/project-plan.json` é separado da contabilidade:
+R$300 mil de referência, faixa R$200–500 mil; primeira etapa R$15 mil já incluída.
+São reservas de caixa, com trabalho principal não remunerado excluído e sem
+cotações/contratações. Não há percentual financiado enquanto os recebimentos
+permanecerem desconhecidos. Premissas e cenários de equipe em
+`docs/ESTIMATIVA-PROJETO.md`; candidatura em `docs/VOLUNTARIOS.md`.
+
 Alex autorizou a exibição pública da chave Pix de e-mail
 `Alexpiraginet@outlook.com` na seção **Apoie o desenvolvimento**. A configuração
 está em `src/support.ts`; não é uma credencial secreta do aplicativo.

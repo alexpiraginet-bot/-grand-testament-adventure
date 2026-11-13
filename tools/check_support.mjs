@@ -153,7 +153,7 @@ try {
     assert.equal(await page.evaluate(()=>document.activeElement.id),'community-ideas-tab');
     assert.equal(await page.inputValue('#feedback-description'),draft);
     assert.equal(await page.locator('#feedback-public').isChecked(),true);
-    await page.keyboard.press('End');
+    await page.keyboard.press('ArrowRight');
     assert.equal(await page.evaluate(()=>document.activeElement.id),'community-support-tab');
     await page.evaluate(()=>{window.__supportClipboardMode='deferred';});
     await page.click('#support-copy');await page.keyboard.press('Escape');

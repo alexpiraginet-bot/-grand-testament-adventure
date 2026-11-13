@@ -35,7 +35,7 @@
 #feedback-status { color: var(--gold); }
 .feedback .community-footer { margin: 20px 0 0; border-top: 1px solid #454c40; padding-top: 14px; font-size: 12px; }
 .feedback [hidden] { display: none; }
-.feedback .community-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 20px; }
+.feedback .community-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin: 0 0 20px; }
 .feedback .community-tabs button { padding: 10px 9px; font: 600 13px/1.35 "Space Grotesk", system-ui, sans-serif; }
 .feedback .community-tabs [aria-selected="true"] { background: #ffcf73; color: #171c19; border-color: #ffcf73; }
 .feedback #community-support h3 { margin: 0 0 10px; font-size: 21px; }
@@ -84,6 +84,34 @@
 .effort-notes { padding-left: 18px; }
 .effort-notes li { margin-block: 6px; }
 .effort-history { display: inline-block; margin-top: 8px; font-size: 12px; }
+.project-plan { margin-block: 20px; border-block: 1px solid #454c40; padding-block: 20px; }
+.project-plan .plan-scope { color: #d3d5cc; font-size: 14px; }
+.plan-phase, .plan-volunteers { padding: 16px; background: #101611; border: 1px solid #454c40; border-radius: 10px; margin-block: 16px; }
+.project-plan h4 { margin: 0 0 8px; font-size: 15px; }
+.plan-phase > strong, .plan-volunteers > strong { color: var(--gold); font-size: 23px; }
+.plan-phase p, .plan-volunteers p { font-size: 13px; }
+.project-plan li { margin-block: 7px; }
+.project-plan details { margin-top: 18px; font-size: 13px; }
+.project-plan summary { cursor: pointer; color: var(--gold); padding-block: 10px; min-height: 44px; }
+.project-plan summary:focus-visible { outline: 3px solid var(--gold); }
+.plan-budget > div { border-bottom: 1px solid #454c40; padding-block: 12px; }
+.plan-budget dt { font-weight: 600; }
+.plan-budget dd { margin: 5px 0; color: var(--gold); }
+.plan-budget p { line-height: 1.5; }
+.project-plan progress { width: 100%; accent-color: var(--gold); }
+#community-volunteer h3 { font-size: 22px; margin-top: 0; }
+#community-volunteer ul { padding-left: 18px; font-size: 13px; }
+#community-volunteer li { margin-block: 8px; }
+#community-volunteer p { font-size: 13px; }
+#community-volunteer summary { cursor: pointer; padding-block: 12px; min-height: 44px; color: var(--gold); }
+#community-volunteer details { margin-block: 14px; }
+#community-volunteer summary:focus-visible { outline: 3px solid var(--gold); }
+#volunteer-error { color: #ffb7ad; }
+#volunteer-status { color: var(--gold); }
+@media (max-width: 480px) {
+  .project-plan .effort-totals { grid-template-columns: 1fr; }
+  .project-plan .effort-totals dd { white-space: nowrap; }
+}
 @media (pointer: coarse), (max-width: 700px) {
   .hud-links { left: var(--pad); justify-content: center; }
   .hud-links .credbtn { font-size: 10px; padding: 7px 9px; }

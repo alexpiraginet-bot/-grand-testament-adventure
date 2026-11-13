@@ -2,6 +2,8 @@ import { COMMUNITY_REPO, FEEDBACK_LIMITS, feedbackIssueUrl } from "./feedback.ts
 import { SUPPORT, copyPixKey } from './support.ts';
 import { renderAccountability } from './accountabilityui.ts';
 import { mountEffort } from './effortui.ts';
+import { renderProjectPlan } from './project-plan-ui.ts';
+import { mountVolunteerPanel } from './volunteersui.ts';
 import "./feedback.css";
 
 export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
@@ -21,8 +23,8 @@ export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
   nickname.maxLength = FEEDBACK_LIMITS.nickname;
   (document.getElementById("community-issues") as HTMLAnchorElement).href = `${COMMUNITY_REPO}/issues`;
   (document.getElementById('community-diary') as HTMLAnchorElement).href=SUPPORT.diaryUrl;
-  const tabs=[document.getElementById('community-ideas-tab')!,document.getElementById('community-support-tab')!];
-  const panels=[document.getElementById('community-ideas')!,document.getElementById('community-support')!];
+  const tabs=[document.getElementById('community-ideas-tab')!,document.getElementById('community-support-tab')!,document.getElementById('community-volunteer-tab')!];
+  const panels=[document.getElementById('community-ideas')!,document.getElementById('community-support')!,document.getElementById('community-volunteer')!];
   const setTab=(index:number,focus=false)=>{
     tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});
     if(focus)tabs[index].focus();
@@ -40,6 +42,8 @@ export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
   const copyButton=document.getElementById('support-copy') as HTMLButtonElement;
   const supportStatus=document.getElementById('support-status')!;
   renderAccountability(document.getElementById('support-accountability')!);
+  renderProjectPlan(document.getElementById('support-plan')!);
+  mountVolunteerPanel(document.getElementById('community-volunteer')!);
   mountEffort(document.getElementById('support-effort')!);
   pixKey.value=SUPPORT.pixKey;
   copyButton.addEventListener('click',async()=>{

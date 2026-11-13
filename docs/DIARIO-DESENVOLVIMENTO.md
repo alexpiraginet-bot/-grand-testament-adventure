@@ -115,6 +115,29 @@ deserto, pesca e Caná; não anunciar essas regiões ou “24 capítulos” como
 A visão de mundo completo foi registrada em `docs/VISAO-MUNDO-ABERTO.md` como
 expansão por etapas. A criação de sessão não equivale a Reel renderizado ou postado.
 
+### R5 — metas revisáveis e colaboração voluntária
+
+Alex ampliou o escopo para dezenas de missões nos quatro Evangelhos e pediu uma
+estimativa para a campanha e para 200 voluntários. O plano usa uma referência de
+caixa de R$300 mil, faixa de R$200–500 mil, com trabalho principal não remunerado
+excluído. Primeiro marco de R$15 mil incluído, sem somar ao total. São hipóteses
+de planejamento sem cotações ou gastos. Prazo com núcleo pequeno: 36–60 meses;
+com 200 pessoas ativas e coordenação suficiente: 12–24 meses. Não são garantias
+nem contagem de colaboradores existentes. As premissas estão em
+`docs/ESTIMATIVA-PROJETO.md`, com dados validados em `src/data/project-plan.json`.
+
+Colabore ganhou a aba Participe da equipe: nove frentes, disponibilidade e portfólio
+opcional. O envio abre um rascunho GitHub com consentimento público; o candidato
+confirma lá e os mantenedores analisam. Não há inscrição/contratação automática,
+coleta de telefone/e-mail nem concessão de permissão. O template direto do GitHub
+e o fluxo estão em `docs/VOLUNTARIOS.md`.
+
+Build local: 92 testes. `shots/r5-community/` verifica os valores reais do plano,
+navegação de três abas, pausa/foco e composição de candidatura nos dois viewports.
+O rascunho de QA é sintético, window.open foi interceptado e nenhuma candidatura
+foi enviada. `shots/r5-support/` cobre a regressão de Pix, contas e uso observado.
+Conferência pública e SHA desta revisão são registrados após publicação.
+
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
 1. **“Começamos com formas simples: o que já precisava funcionar?”** Mostrar a
@@ -143,7 +166,7 @@ expansão por etapas. A criação de sessão não equivale a Reel renderizado ou
 - Gravação contínua de gameplay nas mesmas posições antes/depois; screenshots são
   quadros reais, mas não substituem vídeo de movimento. O arquivador só copia vídeos
   existentes e informa quando a contagem é zero.
-- R4: build/QA finais, commit e deployment, mais conferência no link público.
+- Gravação contínua da R4 publicada; build, commit, deploy e QA público já estão registrados acima.
 - Performance em iPhone/Android físicos. Os números atuais vêm do PC e seus viewports.
 - NPCs Tripo rigados, acabamento final de vegetação/arquitetura e animações adicionais.
 - Contribuição do Claude identificada por branch/commit/arquivo real antes de atribuir autoria.
@@ -166,13 +189,14 @@ permanecem no projeto; o destino é:
 
 ```powershell
 node tools/archive_development.mjs
-# Depois do commit da R4, informar o SHA completo e verificado:
-node tools/archive_development.mjs --commit SHA_COMPLETO_DA_REVISAO
+# Depois do commit da R5, informar seu SHA completo e verificado:
+node tools/archive_development.mjs --r5-commit SHA_COMPLETO_DA_R5
 ```
 
 R3 permanece fixa em `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
-`--commit` associa somente a R4; sem esse argumento, R4 recebe `working-tree`,
-nunca o SHA anterior por suposição. Seleções de evidência de futuras revisões
+`--commit` associa somente a R4, fixada por padrão em `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
+`--r5-commit` associa somente a R5; sem esse argumento, R5 recebe `working-tree`.
+Seleções de evidência de futuras revisões
 devem ser adicionadas separadamente, sem relabelar capturas históricas.
 Snapshots, manifests e índices recebem identificadores de conteúdo e são imutáveis:
 uma cópia divergente causa erro, não sobrescrita. Fontes ausentes ficam como pendência.

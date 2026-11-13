@@ -25,8 +25,8 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
   de trabalhar. Não sobrescreva arquivos ativos, descarte diffs, execute `reset --hard` ou troque a
   branch deste checkout compartilhado.
 - Use um **worktree próprio** e branch `claude/fable52-<incremento>`, a partir da revisão compartilhada
-  já commitada. Se R4 continuar sem commit, combine a base; não copie indiscriminadamente o working tree
-  nem apresente R3 como se contivesse R4.
+  já commitada. A R4 está publicada; combine a base das revisões posteriores e não copie
+  indiscriminadamente o working tree nem apresente R3 como se contivesse R4.
 
 Leia primeiro, nesta ordem: `CLAUDE.md`, este documento, `README.md`, `docs/DIARIO-DESENVOLVIMENTO.md`,
 `docs/CAFARNAUM-CENARIO.md`, `docs/NARRATIVA.md`, `ASSETS.md`, `docs/TRIPO-RUNTIME-R1.md`,
@@ -40,6 +40,11 @@ Alex ampliou a visão para um mundo aberto cobrindo a vida de Jesus: ler
 `docs/VISAO-MUNDO-ABERTO.md` como direção futura, sem confundir com regiões entregues.
 A série de Reels já tem sessão separada e fontes em
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/`.
+Escopo atualizado: dezenas de missões dos quatro Evangelhos e geografia dos
+locais por onde Jesus passou. Ler `docs/ESTIMATIVA-PROJETO.md` e
+`docs/VOLUNTARIOS.md`: R$300 mil é referência revisável de caixa, não gasto ou
+arrecadação. O cenário de 200 voluntários não representa uma equipe existente.
+Planejamento, inscrições, revisão e participantes efetivamente ativos são distintos.
 
 ### Coordenação verificada com a PR #1
 
@@ -269,7 +274,8 @@ código de outro responsável.
 Em **cada incremento**, atualizar `docs/DIARIO-DESENVOLVIMENTO.md`: problema, hipótese, decisão,
 tentativa/falha, arquivos, fonte/licença, antes/depois, testes e limites, SHA/deploy e registro de
 esforço. Preservar evidências em `shots/`. O arquivador `tools/archive_development.mjs` fixa R0–R3
-nos respectivos commits e aplica `--commit` somente à R4; sem argumento, R4 fica working-tree.
+nos respectivos commits e aplica `--commit` somente à R4, fixada por padrão em `08785fe`.
+R5 usa `--r5-commit SHA`; sem esse argumento, somente R5 fica working-tree.
 Para uma revisão Fable posterior, acrescentar seleção própria antes de usar outro SHA. Nunca rotular
 capturas históricas com um commit novo. Destino de arquivo:
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario`. Referências existentes:
