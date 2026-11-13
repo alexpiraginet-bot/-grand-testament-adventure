@@ -43,13 +43,22 @@ O segundo comando é viewport emulado no PC, **não** é celular. Para celular f
 
 ## Variantes em medição desde 13/11 (todas desligadas por padrão)
 
-| Flag | O que faz | Resultado até agora (renderizador por software, só imagem e draw calls) |
+Medidas sobre a base integrada com a `main` (build `9c05537`, 1280×800, `tools/bench.mjs`, renderizador por software:
+valem imagem, draw calls e memória informada, **não** tempo de quadro). Draw calls na ordem dos planos vila, viela,
+margem, pescadores, barco, panorama; sem flags: 174/78/174/203/123/41, 1.215 MB de textura pelo renderer, 0 erros.
+
+| Flag | O que faz | Resultado |
 |---|---|---|
-| `?atmo=1` | névoa por altura e distância num único nó de névoa, mais quente na direção do sol | nenhuma draw call nova; com os valores escolhidos (8% em 1 km, ~metade em 10 km) a diferença média de pixel é 0,16–0,54 de 255 nos planos próximos e 4,27 no panorama: **quase não aparece**; ajuste é decisão visual |
-| `?tm=agx` / `neutral` / `off`, `?exp=` | curva tonal e exposição | nenhuma draw call nova; AgX na exposição 1,08 deixou a imagem lavada e com menos contraste: **pior**, não promover sem gradação; `?exp` não age com `tm=off` |
-| `?shadow=csm` | três cascatas do sol até 600 m no lugar da caixa de 56 m | corrigido em `9c05537` (ver degrau 4); imagens e custo na rodada sobre a base integrada |
-| `?ao=indireta` (com `?fx=alto`) | GTAO só na luz ambiente/indireta, por pré-passe de profundidade e normal (`builtinAOContext` da r186) | segundo passe de geometria; imagens na rodada sobre a base integrada |
-| `?cam=mola` | câmera com mola criticamente amortecida, exata a qualquer fps; entra na hora na parede e sai em ~0,34 s | `tools/check_camera.mjs` compara com a câmera atual na viela |
+| `?atmo=1` | névoa por altura e distância num único nó de névoa, mais quente na direção do sol | mesmas draw calls da base; diferença média de pixel 0,16–0,54 (de 255) nos planos próximos e 4,27 no panorama: com os valores escolhidos **quase não aparece**; ajuste é decisão visual |
+| `?tm=agx` / `neutral` / `off`, `?exp=` | curva tonal e exposição | mesmas draw calls; AgX na exposição 1,08 deixou a imagem lavada (medido na base antiga): **pior**, não promover sem gradação; `?exp` não age com `tm=off` |
+| `?shadow=csm` | três cascatas do sol até 600 m no lugar da caixa de 56 m | 336/240/336/396/337/69 draw calls (três passes de sombra), 1.181 MB de textura; no panorama as casas e árvores passam a projetar sombra (a caixa não chega lá); nos planos próximos a imagem muda 0,09–0,18 em média. Custo de GPU: medir na RTX |
+| `?fx=alto` | GTAO em meia resolução multiplicando a cor final, mais bloom | 187/91/187/216/136/54, 1.243 MB; escurece cantos e também o que o sol ilumina; **pontos escuros nas arestas** (GTAO sem filtro de ruído) |
+| `?fx=alto&ao=indireta` | GTAO só na luz ambiente/indireta (`builtinAOContext` da r186) | 347/155/346/370/249/80 (segundo passe de geometria), 1.247 MB; escurece os cantos menos e preserva as paredes ao sol; os mesmos pontos escuros nas arestas: resolver o ruído antes de promover qualquer um dos dois |
+| `?fx=master` | o mesmo com TRAA | **continua bloqueado**: com a água R4 o TRAA desenha água sobre o chão no plano pescadores e a perde em outros (luminância média 117,7 contra 94,6 da base) |
+| `?cam=mola` | câmera com mola criticamente amortecida, exata a qualquer fps; entra na hora na parede e sai em ~0,34 s | `tools/check_camera.mjs`: 0 quadros dentro de casa nos dois modos; maior salto 0,49 m (fixa) contra 0,51 m (mola). O giro do teste não chegou a ser tapado por parede, então **o ganho ainda não tem prova de navegador**, só os testes de unidade |
+
+O plano fixo "viela" hoje olha para dentro de uma construção a poucos metros: rever o enquadramento antes da próxima
+rodada (pendência do bench, não do jogo).
 
 ## Próximos degraus, em ordem de ganho por esforço
 
