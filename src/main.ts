@@ -279,6 +279,7 @@ async function main() {
   const regionList = regionPlaces(meta, ep, (x, z) => terrain.heightAt(x, z), movementMargin);
   const foundPlaces = parseFound((() => { try { return localStorage.getItem(PLACES_KEY); } catch { return null; } })(), regionList);
   const homeName = regionList.find((p) => p.origem === "fonte")?.nome ?? null;
+  hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
   // One graph, created by Go; audio never participates in startup readiness.
   let natureAudio:FaunaAudio|null=null,natureRunning=false;
   let faunaScene:FaunaScene|null=null,faunaPopulation:FaunaPopulation|null=null,faunaAgents:FaunaAgent[]=[];
@@ -677,6 +678,7 @@ async function main() {
       if (fresh.length) {
         try { localStorage.setItem(PLACES_KEY, serializeFound(foundPlaces, regionList)); } catch { /* found for this visit only */ }
         hud.placeFound(fresh[fresh.length - 1], foundPlaces.size, regionList.length);
+        hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
       }
     }
     // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)

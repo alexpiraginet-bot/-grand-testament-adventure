@@ -39,6 +39,7 @@ export class Hud {
   private journeyMission = -1;
   private narrativeLeft = 0;
   private roamKind = "";
+  private foundOnRadar: readonly Place[] = [];
   private placeTimer: ReturnType<typeof setTimeout> | undefined;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
@@ -93,6 +94,9 @@ export class Hud {
     this.savedTimer = setTimeout(() => { el.hidden = true; }, 2300);
   }
   private savedTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** The places already found that are not sourced places (those are always on the radar): drawn with another mark. */
+  setFoundPlaces(places: readonly Place[]) { this.foundOnRadar = places.filter((p) => p.origem !== "fonte"); }
 
   /** The counter's label and marks (as many as the passage names), `filled` of them on. */
   private drawCounter(filled: number) {
@@ -224,6 +228,18 @@ export class Hud {
       ctx.fillRect(q.x - 5, q.y - 5, 10, 10); ctx.strokeRect(q.x - 5, q.y - 5, 10, 10);
       ctx.lineWidth = 5; ctx.strokeStyle = "rgba(232,214,176,.9)"; ctx.strokeText(pl.nome, q.x + 10, q.y + 6);
       ctx.fillStyle = "#3a2818"; ctx.fillText(pl.nome, q.x + 10, q.y + 6);
+    }
+
+    // places the player found (places.ts): a hollow diamond and an upright name, so a name the game gave does not
+    // read as a sourced place name
+    ctx.font = "600 15px 'Space Grotesk', sans-serif";
+    for (const pl of this.foundOnRadar) {
+      const q = toR({ x: pl.x, z: pl.z });
+      if (q.x < -40 || q.y < -40 || q.x > S + 40 || q.y > S + 40) continue;
+      ctx.beginPath(); ctx.moveTo(q.x, q.y - 7); ctx.lineTo(q.x + 7, q.y); ctx.lineTo(q.x, q.y + 7); ctx.lineTo(q.x - 7, q.y); ctx.closePath();
+      ctx.lineWidth = 4; ctx.strokeStyle = "#ecdcba"; ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = "#3a2818"; ctx.stroke();
+      ctx.lineWidth = 4; ctx.strokeStyle = "rgba(232,214,176,.9)"; ctx.strokeText(pl.nome, q.x + 11, q.y + 5);
+      ctx.fillStyle = "#3a2818"; ctx.fillText(pl.nome, q.x + 11, q.y + 5);
     }
 
     // Dots follow the walkable route around bends/inlets; the ring retains the true goal direction.
