@@ -11,13 +11,15 @@ const args=process.argv.slice(2);
 if(args.length && !(args.length===2 && args[0]==='--commit' && /^[a-f0-9]{40}$/i.test(args[1])))throw Error('Use: node tools/archive_development.mjs [--commit FULL_SHA]');
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const git=(...args)=>execFileSync('git',args,{cwd:repo,encoding:'utf8'}).trim();
-const r3Commit=args[1]||'working-tree';
-if(r3Commit!=='working-tree'&&git('rev-parse',`${r3Commit}^{commit}`)!==r3Commit)throw Error('R3 commit not found');
+// Historical releases stay pinned; --commit applies only to the current R4 evidence.
+const r4Commit=args[1]||'working-tree';
+if(r4Commit!=='working-tree'&&git('rev-parse',`${r4Commit}^{commit}`)!==r4Commit)throw Error('R4 commit not found');
 const releases=[
  {id:'releaseR0',commit:'293fc8415e9aad171775ae8728a25fbcf4c9004c',label:'Protótipo e primeira publicação',sources:['shots/publicacao/feedback','shots/publicacao/episodio','shots/publicacao/build.log']},
  {id:'releaseR1',commit:'6e35ff1534d4d17aa082d1d03113d997b51da801',label:'Herói animado e vila',sources:['shots/production-r1-integration','shots/production-r1-world','shots/production-r1-episode']},
  {id:'releaseR2',commit:'424a096ee7e865553eb7d4ad55d7cb1cd881359b',label:'Céu fotográfico e água rasa',sources:['shots/production-r2-integration','shots/sky-water-r2-build.log']},
- {id:'releaseR3',commit:r3Commit,label:'Ruas, NPCs e orientação da jornada',sources:['shots/r3-final-integration','shots/r3-final-world','shots/r3-final-episode','shots/r3-final-build.log','shots/production-r3-integration','shots/production-r3-world','shots/production-r3-episode']},
+ {id:'releaseR3',commit:'4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f',label:'Ruas, NPCs e orientação da jornada',sources:['shots/r3-final-integration','shots/r3-final-world','shots/r3-final-episode','shots/r3-final-build.log','shots/production-r3-integration','shots/production-r3-world','shots/production-r3-episode']},
+ {id:'releaseR4',commit:r4Commit,label:'Água, Colabore e transparência; fauna reservada',sources:['shots/r4-final-build.log','shots/r4-final-support','shots/r4-final-feedback','shots/r4-world','shots/r4-integration','shots/production-r4-integration','shots/production-r4-support']},
 ];
 const allowed=new Set(['.png','.jpg','.jpeg','.webp','.mp4','.webm','.json','.log']);
 async function list(relative){
@@ -69,6 +71,6 @@ for(const release of releases){
 const indexBytes=Buffer.from(JSON.stringify(index,null,2)+'\n'),indexId=sha(indexBytes).slice(0,12);
 const indexJson=path.join(archiveRoot,`INDEX-${indexId}.json`),indexMarkdown=path.join(archiveRoot,`INDEX-${indexId}.md`);
 await immutableWrite(indexJson,indexBytes);
-const md=['# Diário visual — Grand Testament Adventure','','Arquivo privado local. Fontes preservadas; cópias verificadas por SHA-256.','','| Etapa | Commit / data Git | Arquivos | Vídeos existentes | Manifesto |','|---|---|---:|---:|---|',...index.releases.map(r=>`| ${r.id} — ${r.label} | ${r.commit} / ${r.commitDate||'sem commit'} | ${r.files} | ${r.videoFiles} | [Manifesto](${r.manifest.replaceAll('\\','/')}) |`),'','## Fontes ainda ausentes','',...index.releases.flatMap(r=>r.pending.map(p=>`- ${r.id}: ${p}`)),'','## Limites','','- Índice não prova publicação, aprovação editorial ou desempenho em celular físico.','- Capturas com teleporte de depuração não são gravação de percurso contínuo.','- Não foram gerados vídeos nem feitas publicações sociais.','- R3 com working-tree deve ser arquivada novamente com --commit SHA após a revisão final.',''];
+const md=['# Diário visual — Grand Testament Adventure','','Arquivo privado local. Fontes preservadas; cópias verificadas por SHA-256.','','| Etapa | Commit / data Git | Arquivos | Vídeos existentes | Manifesto |','|---|---|---:|---:|---|',...index.releases.map(r=>`| ${r.id} — ${r.label} | ${r.commit} / ${r.commitDate||'sem commit'} | ${r.files} | ${r.videoFiles} | [Manifesto](${r.manifest.replaceAll('\\','/')}) |`),'','## Fontes ainda ausentes','',...index.releases.flatMap(r=>r.pending.map(p=>`- ${r.id}: ${p}`)),'','## Limites','','- Índice não prova publicação, aprovação editorial ou desempenho em celular físico.','- Capturas com teleporte de depuração não são gravação de percurso contínuo.','- Não foram gerados vídeos nem feitas publicações sociais.','- R3 permanece vinculada ao commit publicado 4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f.','- R4 com working-tree deve ser arquivada novamente com --commit SHA após a revisão final.',''];
 await immutableWrite(indexMarkdown,Buffer.from(md.join('\n')));
 console.log(JSON.stringify({indexJson,indexMarkdown,releases:index.releases.map(({id,files,videoFiles,pending,folder})=>({id,files,videoFiles,pending,folder}))},null,2));

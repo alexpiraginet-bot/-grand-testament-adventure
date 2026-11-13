@@ -4,6 +4,16 @@ Leia `HANDOFF.md`, `HANDOFF-CODEX.md`, `README.md`, `ASSETS.md` e
 `docs/CONSTRUA-CONOSCO.md` antes de alterar o jogo. O handoff do Claude na nuvem
 foi recuperado do commit `84443a71eb7376565c1139efdf56176b8a41560a`.
 
+Para a próxima sessão de evolução, leia também `docs/HANDOFF-CLAUDE-FABLE-5.2.md`.
+O nome do modelo nesse arquivo é o solicitado por Alex; a seleção e disponibilidade
+reais dependem do cliente Claude. Não afirmar que um Markdown ativou um modelo.
+
+Por pedido de Alex, **toda sessão deve registrar atividade e manter o diário junto
+do trabalho**. Aplique `docs/ESFORCO-E-CUSTOS.md`: início/fim verificáveis, horas
+estimadas rotuladas, tokens reais quando disponíveis e preços de API como comparação
+separada de pagamentos. Não copiar logs de outros chats ou inventar consumo Claude.
+O coletor inicial cobre somente Codex; o adaptador Claude ainda precisa ser feito.
+
 Alex pediu uma sessão **local do Claude Code**, esforço máximo, ligada ao
 repositório público `alexpiraginet-bot/-grand-testament-adventure`. O trabalho da
 sessão web foi encerrado para transferência; não recrie o jogo do zero.

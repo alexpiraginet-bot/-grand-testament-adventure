@@ -34,7 +34,56 @@
 #feedback-error { color: #ffb7ad; }
 #feedback-status { color: var(--gold); }
 .feedback .community-footer { margin: 20px 0 0; border-top: 1px solid #454c40; padding-top: 14px; font-size: 12px; }
+.feedback [hidden] { display: none; }
+.feedback .community-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 20px; }
+.feedback .community-tabs button { padding: 10px 9px; font: 600 13px/1.35 "Space Grotesk", system-ui, sans-serif; }
+.feedback .community-tabs [aria-selected="true"] { background: #ffcf73; color: #171c19; border-color: #ffcf73; }
+.feedback #community-support h3 { margin: 0 0 10px; font-size: 21px; }
+.feedback #community-support > p { font-size: 14px; color: #d3d5cc; }
+.feedback .support-principle { padding-left: 12px; border-left: 2px solid var(--gold); }
+.feedback .pix-card { display: grid; gap: 12px; padding: 16px; margin: 20px 0 16px; border: 1px solid #74705e; border-radius: 12px; background: #101611; }
+.feedback #support-pix-key { font-size: 15px; background: #20281f; }
+.feedback #support-copy { background: var(--gold); color: #171c19; border-color: var(--gold); }
+.feedback #support-status { color: var(--gold); }
+.feedback #support-copy:disabled { opacity: .65; cursor: wait; }
+.feedback .community-footer { display: flex; flex-direction: column; gap: 10px; }
+.feedback .community-footer a { padding-block: 4px; }
+.feedback .community-close { margin-top: 18px; }
 .feedback a { color: var(--gold); text-underline-offset: 3px; }
+.accountability { margin-top: 24px; padding-top: 20px; border-top: 1px solid #454c40; }
+.accountability-totals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 14px 0; }
+.accountability-totals > div { padding: 10px; border: 1px solid #454c40; border-radius: 8px; background: #101611; }
+.accountability-totals dt { color: #c0c5b8; font-size: 11px; }
+.accountability-totals dd { margin: 6px 0 0; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; color: var(--gold); }
+.accountability-table-wrap { overflow-x: auto; max-width: 100%; margin: 16px 0; }
+.accountability-table { width: 100%; min-width: 430px; border-collapse: collapse; font-size: 12px; text-align: left; }
+.accountability-table caption { text-align: left; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.accountability-table th, .accountability-table td { border-bottom: 1px solid #454c40; padding: 9px 5px; vertical-align: top; }
+.accountability-table th { color: #c0c5b8; font-weight: 500; }
+.accountability-table td:nth-child(3) { white-space: nowrap; }
+.accountability-table td span, .accountability-table td small { display: block; overflow-wrap: anywhere; }
+.accountability-type { color: var(--gold); font-size: 10px; margin-bottom: 3px; text-transform: uppercase; }
+.accountability-empty { color: #c0c5b8; padding-block: 15px !important; }
+.accountability-subscriptions { margin-top: 20px; padding: 14px; border: 1px solid #454c40; border-radius: 10px; }
+.accountability-subscriptions h4 { font-size: 15px; margin: 0 0 12px; }
+.accountability-subscriptions ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.accountability-subscriptions li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; }
+.accountability-subscriptions small { grid-column: 1 / -1; color: #c0c5b8; font-size: 11px; }
+.accountability-subscription-total { font-size: 14px; font-weight: 600; }
+.feedback .accountability-history { display: inline-block; margin-top: 14px; font-size: 12px; }
+.effort { margin-top: 24px; padding-top: 20px; border-top: 1px solid #454c40; }
+.effort > .notice { margin-bottom: 12px; }
+.effort-totals { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 14px 0; }
+.effort-totals > div { padding: 12px; border: 1px solid #454c40; border-radius: 8px; background: #101611; }
+.effort-totals dt { color: #c0c5b8; font-size: 11px; }
+.effort-totals dd { margin: 6px 0 0; font-size: 18px; font-weight: 700; color: var(--gold); overflow-wrap: anywhere; }
+.effort-content > .notice { margin-block: 12px; overflow-wrap: anywhere; }
+.effort-sessions { list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 12px; }
+.effort-sessions li { display: grid; gap: 4px; padding: 12px; border-left: 2px solid #74705e; font-size: 13px; overflow-wrap: anywhere; }
+.effort-sessions small { font-size: 11px; color: #c0c5b8; }
+.effort-notes { padding-left: 18px; }
+.effort-notes li { margin-block: 6px; }
+.effort-history { display: inline-block; margin-top: 8px; font-size: 12px; }
 @media (pointer: coarse), (max-width: 700px) {
   .hud-links { left: var(--pad); justify-content: center; }
   .hud-links .credbtn { font-size: 10px; padding: 7px 9px; }

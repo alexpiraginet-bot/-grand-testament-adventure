@@ -1,4 +1,7 @@
 import { COMMUNITY_REPO, FEEDBACK_LIMITS, feedbackIssueUrl } from "./feedback.ts";
+import { SUPPORT, copyPixKey } from './support.ts';
+import { renderAccountability } from './accountabilityui.ts';
+import { mountEffort } from './effortui.ts';
 import "./feedback.css";
 
 export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
@@ -17,11 +20,46 @@ export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
   description.maxLength = FEEDBACK_LIMITS.description;
   nickname.maxLength = FEEDBACK_LIMITS.nickname;
   (document.getElementById("community-issues") as HTMLAnchorElement).href = `${COMMUNITY_REPO}/issues`;
+  (document.getElementById('community-diary') as HTMLAnchorElement).href=SUPPORT.diaryUrl;
+  const tabs=[document.getElementById('community-ideas-tab')!,document.getElementById('community-support-tab')!];
+  const panels=[document.getElementById('community-ideas')!,document.getElementById('community-support')!];
+  const setTab=(index:number,focus=false)=>{
+    tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;panels[i].hidden=i!==index;});
+    if(focus)tabs[index].focus();
+  };
+  tabs.forEach((tab,index)=>{
+    tab.addEventListener('click',()=>setTab(index));
+    tab.addEventListener('keydown',event=>{
+      const key=event.key;
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(key))return;
+      event.preventDefault();
+      setTab(key==='Home'?0:key==='End'?tabs.length-1:(index+(key==='ArrowRight'?1:tabs.length-1))%tabs.length,true);
+    });
+  });
+  const pixKey=document.getElementById('support-pix-key') as HTMLInputElement;
+  const copyButton=document.getElementById('support-copy') as HTMLButtonElement;
+  const supportStatus=document.getElementById('support-status')!;
+  renderAccountability(document.getElementById('support-accountability')!);
+  mountEffort(document.getElementById('support-effort')!);
+  pixKey.value=SUPPORT.pixKey;
+  copyButton.addEventListener('click',async()=>{
+    copyButton.disabled=true;supportStatus.textContent='';
+    const copied=await copyPixKey(navigator.clipboard?.writeText?.bind(navigator.clipboard));
+    copyButton.disabled=false;
+    // Clipboard permission can resolve after Escape or a tab change. Never steal focus back.
+    if(!dialog.open||panels[1].hidden)return;
+    if(copied){supportStatus.textContent='Chave Pix copiada. Cole no app do seu banco e confira o recebedor.';}
+    else {
+      pixKey.focus();pixKey.select();pixKey.setSelectionRange(0,pixKey.value.length);
+      supportStatus.textContent='Não foi possível copiar automaticamente. A chave está selecionada; use Copiar no seu aparelho.';
+    }
+  });
 
   document.querySelectorAll<HTMLElement>("[data-feedback-open]").forEach((button) => {
     button.addEventListener("click", () => {
       if (dialog.open) return;
       opener = button;
+      setTab(0);supportStatus.textContent='';
       document.exitPointerLock?.();
       dialog.showModal();
       controlsSuspended = true;

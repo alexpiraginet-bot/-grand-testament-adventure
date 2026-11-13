@@ -21,7 +21,8 @@ um teste antigo. Handoffs históricos são relatos daquela entrega.
 | 2026-11-12 20:09:01−03:00 | `917a69d` — evidência da publicação | Build/testes, acesso anônimo e limitações registrados | `docs/PUBLICACAO.md`; separar viewport móvel de telefone físico. |
 | 2026-11-12 21:25:18−03:00 | `6e35ff1` — visual R1 | Herói Tripo com rig nativo, 13 malhas de cenário, vila e caminhos | `docs/TRIPO-RUNTIME-R1.md`; `shots/production-r1-{integration,world,episode}/`. 14 assets e três missões verificados naquela versão; NPCs provisórios. |
 | 2026-11-12 21:41:08−03:00 | `424a096` — visual R2 | Céu fotográfico CC0, água rasa, reflexos e exposição | `docs/CAFARNAUM-CENARIO.md`; `shots/production-r2-integration/`, incluindo `PUBLICACAO-VERIFICADA.json`. 34 testes no build daquela revisão. |
-| R3 — data de commit pendente | Revisão em andamento | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `src/world-layout.ts`, `src/people.ts`, `src/journey.ts`, `src/hud.ts`; capturas `shots/r3-final-*`. Atualizar commit/deploy após a validação final; não presumir publicação. |
+| 2026-11-13 06:48:33−03:00 | `4d7cf86` — visual e jornada R3 | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `shots/r3-final-*` e `shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`; deploy público conferido READY. Sem NPCs Tripo rigados ou teste em telefone físico. |
+| R4 — sem commit final | Rascunho em `codex/fauna-galileia-r4` | Água, Colabore/Pix, prestação de contas e medição de esforço; fauna própria em preparação | Ensaios locais `shots/r4-*`; build/QA finais e publicação ainda pendentes. Malhas Quaternius rejeitadas, sem fauna ativa entregue. |
 
 Os instantes UTC das duas primeiras linhas antecedem a continuidade local
 (18:26 e 18:36 em UTC−3). A diferença de fuso não deve virar uma falsa ordem na edição.
@@ -35,6 +36,65 @@ amostra de FPS: desktop WebGPU 87,3–94,7, viewport móvel emulado 47,7–93,9 
 O cenário contém 158 casas, 20 pátios, 89 jarros, 69 toldos e oito segmentos de
 caminho; são contagens do cenário artístico, não demografia histórica.
 Esses dados não substituem a conferência pública posterior nem um telefone físico.
+
+### Publicação R3 registrada
+
+O commit completo é `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`, com data de autoria
+Git `2026-11-13T06:48:33-03:00`. O registro
+`shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`, observado em
+`2026-11-13T09:54:56.3260697Z`, associa esse SHA ao deployment
+`dpl_8FxdsULHRteALFo2zGBNg6TKevHQ`, estado `READY`, HTTP 200 no domínio público.
+
+O registro público lista 14 assets e zero erros de página, avisos ou falhas HTTP
+nas execuções desktop WebGPU, viewport móvel WebGPU e desktop WebGL2; cada uma
+registrou 16.730.339 bytes transferidos. As três missões completaram nos dois
+viewports, com quatro seguidores. Isso preserva a evidência daquela execução,
+não uma nova conferência de produção feita ao escrever este diário. O teste de
+episódio usa teleporte/ações de debug; viewport móvel usa a GPU do PC.
+
+### R4 em preparação — água, colaboração e transparência
+
+O problema visual observado motivou ondulações em duas escalas na água, normal
+combinada, rugosidade variável, reflexo do céu e transparência conforme profundidade
+e ângulo da câmera. A animação passa a seguir o tempo do jogo e pausa com ele.
+O nível da superfície e os dados de terreno foram preservados. É uma aproximação
+com material físico e transparência; não é refração em screen space, ray tracing
+ou DLSS. Alteração em `src/world.ts`; comparar imagens e movimento reais antes de
+concluir que o acabamento melhorou sem regressão de desempenho.
+
+A investigação de fauna encontrou modelos genéricos, mas Alex rejeitou sua
+qualidade visual: **Quaternius e derivados não integram a entrega**. A simulação
+determinística em `src/fauna-simulation.ts` fica reservada para malhas próprias;
+os testes cobrem terreno/água, pausa, estabilidade inicial e separação durante
+60 segundos. Os três PNGs próprios de burro, galinha e peixe são referências
+para o Tripo, não modelos rigados nem animais presentes no jogo. Fontes e limites
+estão em `docs/FAUNA-GALILEIA.md`; não usar contagens do simulador como população
+entregue ou reconstrução histórica.
+
+Colabore preserva a composição de issue no GitHub e acrescenta, na mesma página,
+apoio voluntário pela chave de e-mail autorizada. Copiar Pix não comprova pagamento.
+A prestação de contas usa registros públicos revisados, valores em centavos,
+recebimentos anônimos e links de comprovantes reais quando disponíveis. Ainda não
+foram informados recebimentos, gastos do jogo ou abertura conferida: os totais
+começam como **—**. Claude R$ 799/mês e Codex R$ 999/mês, pagos dia 6 segundo Alex,
+ficam como assinaturas gerais; a parcela do jogo não foi definida nem debitada dos
+apoios. Detalhes em `docs/APOIE.md`, `src/data/accountability.json` e testes próprios.
+
+A medição de esforço lê apenas metadados autorizados, com cobertura parcial,
+intervalos estimados sem dupla contagem e tokens observados com origem. Equivalente
+hipotético de API não é despesa paga nem custo da assinatura. Fontes:
+`tools/collect_project_usage.mjs`, `tools/project-usage-core.mjs`,
+`src/effort.ts`/`src/effortui.ts`; snapshot previsto em
+`public/metrics/development.json`. Coleta contínua, endpoint remoto e leitura
+pública permanecem pendentes de conferência final pelo integrador.
+
+Ensaios anteriores estão em `shots/r4-world/` e `shots/r4-integration/`. A evidência
+final planejada é `shots/r4-final-build.log`, `shots/r4-final-support/` e
+`shots/r4-final-feedback/`; após deploy, `shots/production-r4-integration/` e
+`shots/production-r4-support/`. Esses caminhos são destinos de verificação, não
+afirmação de arquivos concluídos ou resultados aprovados. O responsável pela
+integração preencherá SHA, data, resultados e prova de publicação. Ainda não
+atribuir os testes/FPS da R3 à R4 nem anunciar R4 publicada.
 
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
@@ -64,7 +124,7 @@ Esses dados não substituem a conferência pública posterior nem um telefone f�
 - Gravação contínua de gameplay nas mesmas posições antes/depois; screenshots são
   quadros reais, mas não substituem vídeo de movimento. O arquivador só copia vídeos
   existentes e informa quando a contagem é zero.
-- R3: commit e deployment final, mais confirmação no link público quando concluídos.
+- R4: build/QA finais, commit e deployment, mais conferência no link público.
 - Performance em iPhone/Android físicos. Os números atuais vêm do PC e seus viewports.
 - NPCs Tripo rigados, acabamento final de vegetação/arquitetura e animações adicionais.
 - Contribuição do Claude identificada por branch/commit/arquivo real antes de atribuir autoria.
@@ -87,11 +147,14 @@ permanecem no projeto; o destino é:
 
 ```powershell
 node tools/archive_development.mjs
-# Depois do commit da R3, informar o SHA completo e verificado:
+# Depois do commit da R4, informar o SHA completo e verificado:
 node tools/archive_development.mjs --commit SHA_COMPLETO_DA_REVISAO
 ```
 
-Sem `--commit`, a R3 recebe `working-tree`, nunca o SHA anterior por suposição.
+R3 permanece fixa em `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
+`--commit` associa somente a R4; sem esse argumento, R4 recebe `working-tree`,
+nunca o SHA anterior por suposição. Seleções de evidência de futuras revisões
+devem ser adicionadas separadamente, sem relabelar capturas históricas.
 Snapshots, manifests e índices recebem identificadores de conteúdo e são imutáveis:
 uma cópia divergente causa erro, não sobrescrita. Fontes ausentes ficam como pendência.
 O programa imprime o caminho do índice mais recente. Não faz upload, não publica

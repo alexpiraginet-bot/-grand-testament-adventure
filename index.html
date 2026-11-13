@@ -33,7 +33,7 @@
     <div class="plate" id="plate"></div>
   </div>
   <nav class="hud-links" aria-label="Comunidade e créditos">
-    <button class="credbtn community-btn" data-feedback-open type="button">Construa conosco</button>
+    <button class="credbtn community-btn" data-feedback-open type="button">Colabore</button>
     <button class="credbtn" id="credbtn" type="button">Créditos</button>
   </nav>
   <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
@@ -51,7 +51,7 @@
   </div>
   <p class="savenote" id="savenote" hidden></p>
   <button id="outro" class="link" type="button" hidden>Apelido e outro aparelho</button>
-  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
+  <button class="link community-link" data-feedback-open type="button">Colabore</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação em desenvolvimento. <a href="#" id="credlink">Créditos</a></p>
 </div>
@@ -64,7 +64,7 @@
   <p class="endcount" id="endc"></p>
   <ul class="cred" id="endcred"></ul>
   <button id="again" type="button">Jogar de novo</button>
-  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
+  <button class="link community-link" data-feedback-open type="button">Colabore</button>
 </div>
 
 <div class="card credits nuvem" id="nuvem" hidden role="dialog" aria-labelledby="nuvemh">
@@ -97,8 +97,14 @@
 <div class="fps" id="fps" hidden></div>
 <dialog class="feedback" id="feedback" aria-labelledby="feedback-heading" aria-describedby="feedback-intro">
   <p class="eyebrow">GRAND TESTAMENT ADVENTURE · COMUNIDADE</p>
-  <h2 id="feedback-heading" tabindex="-1">Construa conosco</h2>
-  <p class="intro" id="feedback-intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
+  <h2 id="feedback-heading" tabindex="-1">Colabore</h2>
+  <p class="intro" id="feedback-intro">Ajude a construir os próximos passos desta aventura.</p>
+  <div class="community-tabs" role="tablist" aria-label="Formas de colaborar">
+    <button id="community-ideas-tab" type="button" role="tab" aria-selected="true" aria-controls="community-ideas" tabindex="0">Ideias e melhorias</button>
+    <button id="community-support-tab" type="button" role="tab" aria-selected="false" aria-controls="community-support" tabindex="-1">Apoie o desenvolvimento</button>
+  </div>
+  <section id="community-ideas" role="tabpanel" aria-labelledby="community-ideas-tab">
+  <p class="intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
   <form id="feedback-form">
     <label class="field" for="feedback-kind">Quero compartilhar
       <select id="feedback-kind" required>
@@ -124,11 +130,31 @@
     <p class="message" id="feedback-error" role="alert"></p>
     <p class="message" id="feedback-status" role="status"></p>
     <div class="actions">
-      <button id="feedback-close" type="button">Voltar ao jogo</button>
       <button type="submit">Abrir no GitHub ↗</button>
     </div>
   </form>
-  <p class="community-footer"><a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a></p>
+  </section>
+  <section id="community-support" role="tabpanel" aria-labelledby="community-support-tab" hidden>
+    <h3>Vamos construir juntos</h3>
+    <p>Seu apoio ajuda com créditos de IA, malhas 3D e desenvolvimento do jogo.</p>
+    <p class="support-principle">O jogo continua livre. Contribuir é voluntário e não oferece vantagens dentro da aventura.</p>
+    <div class="pix-card">
+      <label class="field" for="support-pix-key">Chave Pix · E-mail
+        <input id="support-pix-key" type="text" readonly spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="support-pix-help">
+      </label>
+      <button id="support-copy" type="button">Copiar chave Pix</button>
+      <p class="message" id="support-status" role="status" aria-live="polite"></p>
+      <p class="notice" id="support-pix-help">No app do seu banco, confira o recebedor antes de confirmar.</p>
+    </div>
+    <p class="notice">Este jogo não processa nem confirma transferências. Não é preciso enviar comprovante aqui.</p>
+    <section id="support-accountability"></section>
+    <section id="support-effort" aria-label="Horas e uso de IA no projeto"></section>
+  </section>
+  <div class="community-footer">
+    <a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a>
+    <a id="community-diary" target="_blank" rel="noopener noreferrer">Acompanhar o diário de desenvolvimento ↗</a>
+  </div>
+  <div class="actions community-close"><button id="feedback-close" type="button">Voltar ao jogo</button></div>
 </dialog>
 <script type="module" src="/src/main.ts"></script>
 </body>
