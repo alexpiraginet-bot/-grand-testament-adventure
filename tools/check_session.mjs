@@ -1,0 +1,34 @@
+// Browser check of the session diary (src/session-log.ts): a normal reload ends clean and raises nothing; a renderer
+// crash (CDP Page.crash) followed by a reload in the same tab is found as an unclean end. This is what a 10-minute
+// phone soak relies on to count reloads. Chromium emulation on this machine, not a phone.
+//   npm run build && npx vite preview --port 4173 &   then   node tools/check_session.mjs [url]
+import { createRequire } from "node:module";
+import assert from "node:assert/strict";
+const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
+const url = `${process.argv[2] ?? "http://localhost:4173/"}?debug=1&q=low`;
+
+const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
+const page = await (await browser.newContext({ viewport: { width: 480, height: 320 } })).newPage();
+const ready = () => page.waitForFunction(() => window.__gta?.session, null, { timeout: 240000, polling: 250 });
+const session = () => page.evaluate(() => window.__gta.session());
+
+await page.goto(url, { waitUntil: "load" }); await ready();
+const first = await session();
+assert.equal(first.status, "ok"); assert.equal(first.previous, null, "a fresh tab has no previous load");
+assert.equal(first.record.loads, 1); assert.ok(first.record.backend, "backend recorded");
+
+await page.reload({ waitUntil: "load" }); await ready();
+const clean = await session();
+assert.equal(clean.record.loads, 2);
+assert.equal(clean.previous?.uncleanEnd, false, "a normal reload passes pagehide and is clean");
+
+const cdp = await page.context().newCDPSession(page);
+await cdp.send("Page.crash").catch(() => {});                 // the renderer dies: no pagehide runs
+await page.waitForTimeout(500);
+await page.reload({ waitUntil: "load" }); await ready();
+const crashed = await session();
+assert.equal(crashed.record.loads, 3);
+assert.equal(crashed.previous?.uncleanEnd, true, "the crashed load is found as an unclean end");
+assert.equal(crashed.record.uncleanEnds, 1);
+console.log(JSON.stringify({ ok: true, loads: crashed.record.loads, uncleanEnds: crashed.record.uncleanEnds, backend: crashed.record.backend }));
+await browser.close();

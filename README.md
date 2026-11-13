@@ -36,6 +36,10 @@ npm test             # lógica das missões + dados (node --test)
 npm run typecheck
 npm run build        # confere/baixa assets + typecheck + testes + vite build -> dist/
 npm run world        # refaz public/world/ e src/data/ a partir das fontes (precisa do biblia-conectada ao lado, em ../gta-src, ou o caminho como argumento)
+npm run bench:all    # mesma cena medida (6 planos, PC e viewport de celular emulado, fx=off e fx=alto), com `npx vite preview` rodando;
+                     # no PC da RTX: PLAYWRIGHT_CHANNEL=chrome. Relatórios trazem commit, GPU, navegador e memória estimada
+node tools/compare_bench.mjs a/bench.json b/bench.json   # compara dois relatórios plano a plano; recusa máquina/tela/commit diferentes
+node tools/check_session.mjs   # prova o diário de sessão: recarga limpa x queda do renderizador (base do teste de 10 min no celular)
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;

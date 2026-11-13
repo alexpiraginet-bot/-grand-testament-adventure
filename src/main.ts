@@ -22,6 +22,9 @@ import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseFx } from "./postfx.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
 import { BUILD_SHA, describeGpu } from "./build-info.ts";
+import { installSessionLog } from "./session-log.ts";
+import { memorySummary, renderTargetBytes } from "./bench.ts";
+import { sceneTextures } from "./scene-memory.ts";
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -42,7 +45,11 @@ async function load() {
 }
 
 async function main() {
+  // the session diary (session-log.ts): errors, device/context loss and unclean ends, kept in this tab only
+  const slog = installSessionLog(window);
+  if (slog.previous?.uncleanEnd) console.warn("Sessão anterior desta aba terminou sem fechamento limpo (recarga ou queda).");
   const canvas = $("c") as HTMLCanvasElement;
+  canvas.addEventListener("webglcontextlost", () => slog.mark("context-lost", "webglcontextlost"));
   const touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
   // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
   const hash = location.hash.slice(1);
@@ -62,7 +69,9 @@ async function main() {
     adapterInfo = ad?.info ?? null;
     forceWebGL = !ad || !!ad.isFallbackAdapter || !!ad.info?.isFallbackAdapter;
   }
-  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true });
+  // GPU timestamps only while benchmarking (bench.ts): they cost queries every frame
+  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true,
+    trackTimestamp: params.has("bench") });
   renderer.setPixelRatio(Math.min(devicePixelRatio, quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -76,7 +85,11 @@ async function main() {
   const glInfo = gl?.getExtension("WEBGL_debug_renderer_info");
   const gpuName = describeGpu({ webgpu: be.isWebGPUBackend ? adapterInfo : null,
     webglRenderer: gl && glInfo ? String(gl.getParameter(glInfo.UNMASKED_RENDERER_WEBGL)) : null });
-  be.device?.lost.then(() => { const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u); });
+  slog.setBackend(backend);
+  be.device?.lost.then((info) => {
+    slog.mark("device-lost", (info as { message?: string } | undefined)?.message ?? "device lost");
+    const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u);
+  });
 
   const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures(),loadSkyTextures()]);
 
@@ -269,6 +282,11 @@ async function main() {
   // ---- same-scene benchmark (bench.ts, tools/bench.mjs): ?bench flies the fixed shots, no HUD, and times every frame
   const num = (k: string, d: number) => { const v = Number(params.get(k)); return Number.isInteger(v) && v > 0 ? v : d; };
   const bench = params.has("bench") ? new BenchRun(benchShots(P, (x, z) => terrain.heightAt(x, z)), num("warmup", 30), num("frames", 180)) : null;
+  // GPU time per frame from the renderer's timestamp queries, one resolve in flight at a time (a sample may lag a frame)
+  const gpuTimer = backend === "WebGPU" ? renderer.hasFeature("timestamp-query")
+    : !!(renderer.backend as unknown as { disjoint?: unknown }).disjoint;
+  if (bench && !gpuTimer) bench.gpuUnavailable = backend === "WebGPU" ? "sem timestamp-query neste adaptador" : "sem EXT_disjoint_timer_query_webgl2";
+  let gpuPending = false, gpuLast: number | null = null, lastShotName = "";
   let benchLoadMs = NaN, benchHold = -1;             // after the timed route, hold(i) re-shows a shot for its picture
   if (bench) $("start").hidden = true;
   const fx = createPostFx(renderer, scene, camera, fxLevel);
@@ -501,11 +519,18 @@ async function main() {
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
     if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
+    if (shot && shot.name !== lastShotName) { lastShotName = shot.name; slog.mark("shot", shot.name); }
+    const cpuMs = performance.now() - now;                  // the frame's main-thread work before rendering
     renderer.info.reset();
     if (fx) fx.render(); else renderer.render(scene, camera);
     if (shot && bench && !bench.done) {
       if (Number.isNaN(benchLoadMs)) benchLoadMs = now;      // first measured frame, ms since navigation start
-      bench.record(real * 1000, renderer.info.render.drawCalls, renderer.info.render.triangles);
+      if (gpuTimer && !gpuPending) {
+        gpuPending = true;
+        renderer.resolveTimestampsAsync("render").then((ms) => { gpuLast = typeof ms === "number" ? ms : null; }, () => { gpuLast = null; })
+          .finally(() => { gpuPending = false; });
+      }
+      bench.record(real * 1000, renderer.info.render.drawCalls, renderer.info.render.triangles, { gpuMs: gpuLast, cpuMs });
     }
   };
   renderer.setAnimationLoop(frame);
@@ -515,6 +540,10 @@ async function main() {
     results: () => ({ ...bench.results(), fx: fxLevel, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
       build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
       models: { loaded: Object.keys(assets).length },
+      // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)
+      memory: { renderer: { ...renderer.info.memory }, textures: memorySummary(sceneTextures(scene)),
+        canvasBytes: renderTargetBytes(innerWidth, innerHeight, renderer.getPixelRatio(), 4 + 4, fxLevel === "off" && quality !== "low" ? 4 : 1) },
+      session: { status: slog.status, loads: slog.snapshot().loads, uncleanEnds: slog.snapshot().uncleanEnds, previous: slog.previous },
       viewport: [innerWidth, innerHeight], pixelRatio: renderer.getPixelRatio(), textureBytes: renderer.info.memory.texturesSize }),
   };
 
@@ -530,6 +559,7 @@ async function main() {
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
       freeze: (on: boolean) => { frozen = on; },
+      session: () => ({ status: slog.status, previous: slog.previous, record: slog.snapshot() }),
       cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
         // fraction of the shot's people whose chest projects inside the central 90% of the picture
         framed: cine.shot ? cineSubjects().filter((p) => { const v = tmp2.set(p.x, Math.max(terrain.heightAt(p.x, p.z), 0) + 1.2, p.z).project(camera);
