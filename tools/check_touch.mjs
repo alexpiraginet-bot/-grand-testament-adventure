@@ -63,17 +63,19 @@ async function run(name, ctxOpts) {
 
     // a thumb near the resting stick: the base stays put, the hero walks, the real mixer turns the bones
     const rest = center(joy);
-    await finger("touchStart", rest.x + 6, rest.y - 8);
+    // straight up from near the centre: a sideways component lets the path drift into the lane's jars and walls,
+    // and a collision rightly stops the walk cycle (that is the game, not the stick)
+    await finger("touchStart", rest.x, rest.y - 8);
     assert.equal(await g(() => document.getElementById("joy").style.transform), "translate(0px, 0px)", "base stays at rest");
     const p0 = await g(() => ({ ...window.__gta.player.pos }));
-    await finger("touchMove", rest.x + 4, rest.y - 44);
+    await finger("touchMove", rest.x, rest.y - 44);
     await waitGame(2.0);
-    const walking = await g(() => ({ pos: { ...window.__gta.player.pos }, actor: window.__gta.actor(), joy: document.getElementById("joy").className, knob: document.getElementById("knob").style.transform }));
+    const walking = await g(() => ({ pos: { ...window.__gta.player.pos }, speed: window.__gta.player.speed, actor: window.__gta.actor(), joy: document.getElementById("joy").className, knob: document.getElementById("knob").style.transform }));
     await page.screenshot({ path: `${OUT}/${name}-2-andando.png` });
     r.fixedWalk = { metres: Math.hypot(walking.pos.x - p0.x, walking.pos.z - p0.z), walkWeight: walking.actor.walkWeight, knob: walking.knob };
     assert.ok(r.fixedWalk.metres > 1, "thumb on the fixed stick walks the hero");
     assert.ok(walking.joy.includes("on") && walking.knob.startsWith("translate("));
-    assert.ok(walking.actor.walkWeight > 0.9, "walk clip blended in"); assert.notDeepEqual(walking.actor.skeleton, actor0.skeleton, "bones moved");
+    assert.ok(walking.actor.walkWeight > 0.9, `walk clip blended in: ${JSON.stringify({ w: walking.actor.walkWeight, speed: walking.speed, metres: r.fixedWalk.metres })}`); assert.notDeepEqual(walking.actor.skeleton, actor0.skeleton, "bones moved");
     await finger("touchEnd");
     await waitGame(1.5);
     const stopped = await g(() => ({ move: window.__gta.player.speed, w: window.__gta.actor().walkWeight, joy: document.getElementById("joy").className, t: document.getElementById("joy").style.transform }));
@@ -134,32 +136,42 @@ async function run(name, ctxOpts) {
     await page.screenshot({ path: `${OUT}/${name}-3-prompt.png` });
     await page.keyboard.press("KeyE");
   }
-  await page.waitForFunction(() => window.__gta.state.phase === "line", null, { timeout: 240000, polling: 100 });
-  await waitGame(0.6);
+  // Hold the story's clock (debug freeze) in the same page call that sees the line start: on a slow renderer every
+  // page call can cost a frame, and the line lasts only a few. Camera, animation and controls keep running.
+  await page.waitForFunction(() => { const G = window.__gta; if (G.state.phase !== "line") return false; G.freeze(true); return true; },
+    null, { timeout: 240000, polling: 50 });
   if (touch) {
     const sub = await rect("#sub p"), joy = await rect("#joy");
     r.subtitle = { sub, joy };
     assert.ok(!overlap(sub, joy), "the line is not drawn under the stick");
   }
-  // the two-shot (cinematic.ts): in while the line is read, the play panels step aside, the subtitle stays
-  await page.waitForFunction(() => window.__gta.cine().k > 0.95 || window.__gta.state.phase !== "line", null, { timeout: 240000, polling: 100 });
-  const cine = await g(() => ({ ...window.__gta.cine(), phase: window.__gta.state.phase, sub: !document.getElementById("sub").hidden,
-    missionOpacity: Number(getComputedStyle(document.querySelector(".mission")).opacity), links: getComputedStyle(document.querySelector(".hud-links")).visibility }));
-  r.cinematic = { k: cine.k, shot: cine.shot, camera: cine.camera };
-  assert.equal(cine.phase, "line", "the line is still being read when the shot is in");
-  assert.ok(cine.shot && cine.on && cine.sub, "two-shot in, cinema class on, subtitle shown");
+  // the two-shot (cinematic.ts): in while the line is read, the play panels step aside, the subtitle stays.
+  // CSS transitions are off in this check so opacity is the end state, not a timing sample.
+  await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
+  const cine = await (await page.waitForFunction(() => {
+    const G = window.__gta, c = G.cine();
+    if (c.k <= 0.95 && !c.left) return false;
+    return { ...c, phase: G.state.phase, sub: !document.getElementById("sub").hidden,
+      missionOpacity: Number(getComputedStyle(document.querySelector(".mission")).opacity),
+      links: getComputedStyle(document.querySelector(".hud-links")).visibility };
+  }, null, { timeout: 240000, polling: 100 })).jsonValue();
+  r.cinematic = { k: cine.k, why: cine.why, shot: cine.shot, camera: cine.camera };
+  assert.equal(cine.phase, "line", "the story is held on the line");
+  assert.ok(cine.shot && cine.on && cine.sub && !cine.left, `two-shot in, cinema class on, subtitle shown: ${JSON.stringify({ k: cine.k, why: cine.why, on: cine.on })}`);
   assert.ok(Math.hypot(cine.camera[0] - cine.shot.eye.x, cine.camera[2] - cine.shot.eye.z) < 0.05, "camera at the shot's eye");
   assert.equal(cine.links, "hidden", "community links out of the way (and out of the tab order)");
-  await page.waitForTimeout(500);                          // let the CSS fade finish before the picture
-  assert.ok(await g(() => Number(getComputedStyle(document.querySelector(".mission")).opacity)) < 0.05, "mission panel faded");
+  assert.ok(cine.missionOpacity < 0.05, "mission panel faded");
   await page.screenshot({ path: `${OUT}/${name}-4-fala.png` });
   if (!touch) {
     // walking out of the shot hands the camera back at once, without waiting for the line to end
-    await page.keyboard.down("KeyW"); await waitGame(1.0); await page.keyboard.up("KeyW");
-    const out = await g(() => ({ ...window.__gta.cine(), phase: window.__gta.state.phase }));
-    r.cinematicLeave = { k: out.k, left: out.left, phase: out.phase };
-    assert.ok(out.left && out.k < 0.5 && !out.on, "moving leaves the two-shot");
+    await page.keyboard.down("KeyW");
+    const out = await (await page.waitForFunction(() => { const c = window.__gta.cine(); return c.left && c.k < 0.5 && !c.on && { left: c.left, why: c.why, k: c.k, phase: window.__gta.state.phase }; },
+      null, { timeout: 240000, polling: 100 })).jsonValue();
+    await page.keyboard.up("KeyW");
+    r.cinematicLeave = out;
+    assert.ok(out.phase === "line" && out.why === "moved", `walking during the line leaves the shot: ${JSON.stringify(out)}`);
   }
+  await g(() => window.__gta.freeze(false));
   await page.waitForFunction(() => window.__gta.state.phase !== "line", null, { timeout: 240000, polling: 100 });
   await waitGame(1.0);
   const after = await g(() => window.__gta.cine());

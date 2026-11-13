@@ -326,7 +326,7 @@ async function main() {
   const tmp = new THREE.Vector3();
   // the story's two-shots (cinematic.ts): chosen when a line starts, blended in and out; cameraSolid matches the
   // obstruction test the follow camera already uses for houses and walls
-  const cine: { shot: CineShot | null; k: number; left: boolean } = { shot: null, k: 0, left: false };
+  const cine: { shot: CineShot | null; k: number; left: boolean; why: string } = { shot: null, k: 0, left: false, why: "" };
   const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hudEl = $("hud");
   const cameraSolid = (x: number, y: number, z: number) =>
@@ -336,6 +336,7 @@ async function main() {
   const fpsEl = $("fps");
   if (DEBUG || params.has("fps") || hash === "fps") fpsEl.hidden = false;
   let t = 0;
+  let frozen = false;                                    // ?debug only (__gta.freeze): the story's clock held; camera and controls run
 
   const frame = () => {
     const now = performance.now();
@@ -392,7 +393,7 @@ async function main() {
     if (actor) actor.update(mv,dt); else animate(fallback!, mv, dt, t);
 
     // mission logic
-    if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
+    if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
     else input.takeAction();
     // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)
     if (!paused && (state.phase === "play" || state.phase === "line")) {
@@ -457,9 +458,10 @@ async function main() {
           .map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
         const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
         cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
-        if (!cine.shot) cine.left = true;                   // nowhere clear to stand: stay with the game camera
+        if (!cine.shot) { cine.left = true; cine.why = "no-clear-shot"; }   // nowhere clear to stand: stay with the game camera
+        else cine.why = "shot";
       }
-      if (Math.hypot(input.move.x, input.move.y) > 0.3) cine.left = true;
+      if (Math.hypot(input.move.x, input.move.y) > 0.3 && !cine.left) { cine.left = true; cine.why = "moved"; }
     }
     if (state.phase !== "line") { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
     const want = state.phase === "line" && !cine.left && cine.shot ? 1 : 0;
@@ -510,7 +512,8 @@ async function main() {
       quality,
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
-      cine: () => ({ k: cine.k, left: cine.left, shot: cine.shot, on: hudEl.classList.contains("cine"),
+      freeze: (on: boolean) => { frozen = on; },
+      cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
         camera: camera.position.toArray() }),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;

@@ -39,8 +39,9 @@ for (const v of variants) {
   const tag = v.replace(/[^a-z0-9]+/gi, "-");
   for (const [i, s] of result.shots.entries()) {
     await page.evaluate((k) => window.__gtaBench.hold(k), i);
-    const t0 = await page.evaluate(() => performance.now());           // let a few frames settle (TRAA accumulates)
-    await page.waitForFunction((t) => performance.now() - t > 1500, t0, { timeout: 600000, polling: 250 });
+    // settle by frames, not seconds: TRAA in three r186 keeps its history across a camera cut (it resets only on a
+    // resize), so right after hold() the picture can still show the previous shot. 24 frames is ~0.4 s at 60 fps.
+    await page.evaluate(() => new Promise((done) => { let n = 0; const tick = () => (++n >= 24 ? done() : requestAnimationFrame(tick)); requestAnimationFrame(tick); }));
     await page.screenshot({ path: `${out}/${String(i + 1).padStart(2, "0")}-${s.name}-${tag}.png` });
   }
   result.errors = errors;
