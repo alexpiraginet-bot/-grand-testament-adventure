@@ -323,10 +323,13 @@ async function main() {
     return false;
   };
 
-  const tmp = new THREE.Vector3();
+  const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
   // the story's two-shots (cinematic.ts): chosen when a line starts, blended in and out; cameraSolid matches the
   // obstruction test the follow camera already uses for houses and walls
-  const cine: { shot: CineShot | null; k: number; left: boolean; why: string } = { shot: null, k: 0, left: false, why: "" };
+  const cine: { shot: CineShot | null; k: number; left: boolean; why: string; ids: string[]; aim: THREE.Vector3 } =
+    { shot: null, k: 0, left: false, why: "", ids: [], aim: new THREE.Vector3() };
+  // the people in the shot right now: the hero and those called in this line (they start walking to him at once)
+  const cineSubjects = () => [player.pos, ...npcList.filter((n) => cine.ids.includes(n.spec.id)).map((n) => n.pos)];
   const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hudEl = $("hud");
   const cameraSolid = (x: number, y: number, z: number) =>
@@ -453,13 +456,12 @@ async function main() {
     if (state.phase === "line" && !cine.left && !REDUCED_MOTION) {
       if (!cine.shot) {
         const g = goals[state.mission];
-        const ids = g.kind === "call" ? g.npcs : [];
-        const people = [player.pos, ...npcList.filter((n) => ids.includes(n.spec.id)).map((n) => n.pos)]
-          .map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
+        cine.ids = g.kind === "call" ? g.npcs : [];
+        const people = cineSubjects().map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
         const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
         cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
         if (!cine.shot) { cine.left = true; cine.why = "no-clear-shot"; }   // nowhere clear to stand: stay with the game camera
-        else cine.why = "shot";
+        else { cine.why = "shot"; cine.aim.set(cine.shot.look.x, cine.shot.look.y, cine.shot.look.z); }
       }
       if (Math.hypot(input.move.x, input.move.y) > 0.3 && !cine.left) { cine.left = true; cine.why = "moved"; }
     }
@@ -468,7 +470,12 @@ async function main() {
     cine.k += (want - cine.k) * Math.min(1, dt * 2.6);
     const k = cine.shot ? ease(cine.k) : 0;
     if (k > 0 && cine.shot) {
-      const e = cine.shot.eye, l = cine.shot.look;
+      // the eye holds still; the aim follows the group's centre as the called walk to him, eased
+      const ps = cineSubjects();
+      const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cz = ps.reduce((a, p) => a + p.z, 0) / ps.length;
+      const cy = ps.reduce((a, p) => a + Math.max(terrain.heightAt(p.x, p.z), 0), 0) / ps.length + 1.45;
+      cine.aim.lerp(tmp2.set(cx, cy, cz), Math.min(1, dt * 3));
+      const e = cine.shot.eye, l = cine.aim;
       camera.position.set(tmp.x + (e.x - tmp.x) * k, tmp.y + (e.y - tmp.y) * k, tmp.z + (e.z - tmp.z) * k);
       camera.lookAt(head.x + (l.x - head.x) * k, head.y + 0.15 + (l.y - head.y - 0.15) * k, head.z + (l.z - head.z) * k);
     } else {
@@ -514,6 +521,9 @@ async function main() {
       act: () => input.queueAction(),
       freeze: (on: boolean) => { frozen = on; },
       cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
+        // fraction of the shot's people whose chest projects inside the central 90% of the picture
+        framed: cine.shot ? cineSubjects().filter((p) => { const v = tmp2.set(p.x, Math.max(terrain.heightAt(p.x, p.z), 0) + 1.2, p.z).project(camera);
+          return Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9 && v.z < 1; }).length / cineSubjects().length : 0,
         camera: camera.position.toArray() }),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;

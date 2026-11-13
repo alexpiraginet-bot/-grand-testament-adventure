@@ -61,6 +61,16 @@ async function run(name, ctxOpts) {
     for (const [k, v] of Object.entries(others)) assert.ok(!overlap(joy, v), `joystick clear of ${k}`);
     await page.screenshot({ path: `${OUT}/${name}-1-repouso.png` });
 
+    // Each walk starts 2 m into the first stretch of the mission corridor, facing along it: the settlement keeps that
+    // corridor walkable (test/world-layout.test.ts) and no NPC stands within hundreds of metres, so a short step can
+    // only be the stick and the animation, not a jar, a wall or a fisherman in the way.
+    const toCorridor = () => g(() => {
+      const G = window.__gta, s = G.routes[0], len = Math.hypot(s.bx - s.ax, s.bz - s.az), f = 2 / len;
+      G.teleport(s.ax + (s.bx - s.ax) * f, s.az + (s.bz - s.az) * f, Math.atan2(s.bx - s.ax, -(s.bz - s.az)));
+      return len;
+    });
+    r.corridorMetres = await toCorridor();
+    await waitGame(0.6);
     // a thumb near the resting stick: the base stays put, the hero walks, the real mixer turns the bones
     const rest = center(joy);
     // straight up from near the centre: a sideways component lets the path drift into the lane's jars and walls,
@@ -82,6 +92,7 @@ async function run(name, ctxOpts) {
     r.release = stopped;
     assert.ok(stopped.w < 0.01 && stopped.move === 0 && !stopped.joy.includes("on") && stopped.t === "", "release stops him and settles the stick");
 
+    await toCorridor(); await waitGame(0.6);
     // a thumb far from the stick, still on the walking side: the base comes under it, then goes home
     const far = { x: Math.round(vw * 0.2), y: Math.round(vh * 0.42) };
     await finger("touchStart", far.x, far.y);
@@ -160,6 +171,11 @@ async function run(name, ctxOpts) {
   assert.ok(cine.shot && cine.on && cine.sub && !cine.left, `two-shot in, cinema class on, subtitle shown: ${JSON.stringify({ k: cine.k, why: cine.why, on: cine.on })}`);
   assert.ok(Math.hypot(cine.camera[0] - cine.shot.eye.x, cine.camera[2] - cine.shot.eye.z) < 0.05, "camera at the shot's eye");
   assert.equal(cine.links, "hidden", "community links out of the way (and out of the tab order)");
+  // let the aim settle on the group (eased), then everyone called must be in the picture
+  await page.waitForTimeout(1500);
+  const framed = await g(() => window.__gta.cine().framed);
+  r.cinematic.framed = framed;
+  assert.equal(framed, 1, "the hero and both called men are inside the picture");
   assert.ok(cine.missionOpacity < 0.05, "mission panel faded");
   await page.screenshot({ path: `${OUT}/${name}-4-fala.png` });
   if (!touch) {
