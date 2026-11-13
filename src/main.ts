@@ -20,6 +20,7 @@ import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets } from './tripo-assets.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseAo, parseFx } from "./postfx.ts";
+import { CAM_SPRING, parseCam, snap3, spring3, stepBoom, stepSpring3 } from "./camera.ts";
 import { atmosphereFog, cascadedShadows, parseAtmo, parseExposure, parseShadow, parseTone, TONE_MAPPING } from "./look.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
 import { BUILD_SHA, describeGpu } from "./build-info.ts";
@@ -164,6 +165,9 @@ async function main() {
 
   const camera = new THREE.PerspectiveCamera(touch && innerHeight > innerWidth ? 62 : 52, innerWidth / innerHeight, 0.1, 60000);
   const cam = { yaw: player.heading, pitch: 0.2, dist: touch && innerHeight > innerWidth ? 5.2 : 4.4, idle: 0 };
+  // ?cam=mola: the head the camera looks at trails him on a spring, and the camera eases back out after a wall (camera.ts)
+  const camMode = parseCam(params.get("cam"));
+  const pivot = spring3(player.pos.x, 0, player.pos.z), boom = { x: cam.dist, v: 0 };
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   const feedback = setupFeedbackPanel((open) => input.setSuspended(open));
@@ -470,6 +474,13 @@ async function main() {
     // camera behind and above his shoulders, kept above the ground
     const cd = cam.dist, cp = cam.pitch;
     const head = new THREE.Vector3(player.pos.x, hero.root.position.y + 1.55, player.pos.z);
+    const springy = camMode === "mola" && state.phase !== "intro" && !shot;
+    if (springy) {
+      // a teleport or a cut (more than 6 m away) snaps; otherwise the head trails him, critically damped
+      if (Math.hypot(pivot.x.x - head.x, pivot.y.x - head.y, pivot.z.x - head.z) > 6) snap3(pivot, head.x, head.y, head.z);
+      stepSpring3(pivot, head.x, head.y, head.z, REDUCED_MOTION ? CAM_SPRING.pivotReduced : CAM_SPRING.pivot, dt);
+      head.set(pivot.x.x, pivot.y.x, pivot.z.x);
+    } else snap3(pivot, head.x, head.y, head.z);
     tmp.set(head.x - Math.sin(cam.yaw) * Math.cos(cp) * cd, head.y + Math.sin(cp) * cd, head.z + Math.cos(cam.yaw) * Math.cos(cp) * cd);
     const floor = Math.max(terrain.heightAt(tmp.x, tmp.z), 0) + 0.4;
     if (tmp.y < floor) tmp.y = floor;
@@ -486,6 +497,12 @@ async function main() {
         tmp.lerpVectors(head,tmp,Math.max(.12,d-.23)/cameraDistance);break;
       }
     }
+    if (springy) {
+      // in at once when a wall cuts the view, back out on the spring (reduced motion: no ease, straight to the test)
+      const allowed = head.distanceTo(tmp);
+      const use = REDUCED_MOTION ? (boom.x = allowed) : stepBoom(boom, allowed, CAM_SPRING.outward, dt);
+      if (allowed > 1e-6) tmp.sub(head).multiplyScalar(use / allowed).add(head);
+    } else { boom.x = head.distanceTo(tmp); boom.v = 0; }
     // a line being read: the composed two-shot (cinematic.ts), unless the player walks out of it or asks for less motion
     if (state.phase === "line" && !cine.left && !REDUCED_MOTION) {
       if (!cine.shot) {
