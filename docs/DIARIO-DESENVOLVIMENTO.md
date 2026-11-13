@@ -23,6 +23,8 @@ um teste antigo. Handoffs históricos são relatos daquela entrega.
 | 2026-11-12 21:41:08−03:00 | `424a096` — visual R2 | Céu fotográfico CC0, água rasa, reflexos e exposição | `docs/CAFARNAUM-CENARIO.md`; `shots/production-r2-integration/`, incluindo `PUBLICACAO-VERIFICADA.json`. 34 testes no build daquela revisão. |
 | 2026-11-13 06:48:33−03:00 | `4d7cf86` — visual e jornada R3 | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `shots/r3-final-*` e `shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`; deploy público conferido READY. Sem NPCs Tripo rigados ou teste em telefone físico. |
 | 2026-11-13 07:35:41−03:00 | `08785fe` — R4 publicada | Água, Colabore/Pix, prestação de contas e medição de esforço; fauna própria em preparação | 81 testes no build, QA público em WebGPU/WebGL2 e apoio nos dois viewports. Malhas Quaternius rejeitadas, sem fauna ativa entregue. |
+| 2026-11-13 08:08:53−03:00 | `3d3f9c8` — R5 publicada | Metas revisáveis, candidatura voluntária e plano público | 92 testes e QA público de comunidade/apoio; rascunhos interceptados, sem candidatura ou pagamento enviados. |
+| 2026-11-13 08:54:42−03:00 | `3ac7854` — R6 publicada | Entrada/Colabore cristalinos, mapa de visão geral e convite no rig real | 97 testes e seis suítes públicas; mapa sobre os mesmos 3.072 m. Desembarque posterior dos discípulos ainda pendente. |
 
 Os instantes UTC das duas primeiras linhas antecedem a continuidade local
 (18:26 e 18:36 em UTC−3). A diferença de fuso não deve virar uma falsa ordem na edição.
@@ -156,12 +158,14 @@ da tela de rig nem gravação contínua da geração. Os prints brutos exigem re
 de informações pessoais. `PROPOSTA-PATROCINIO-TRIPO.md` é rascunho local não enviado,
 sem patrocínio confirmado e sem autorização implícita de postagem social.
 
-### R6 — validada localmente; publicação pendente
+### R6 — publicada e verificada
 
-Estado registrado em 13/11/2026: build local concluído com **97/97 testes**,
-sem atribuir ainda SHA funcional, deployment ou conferência pública à R6. O
-relatório de build é `shots/r6-build.log`. A publicação R5 acima continua sendo
-o marco público comprovado neste registro até o integrador acrescentar a prova R6.
+Publicada em **`3ac7854649a83183748bd61161d74d4e75fdc87a`**, deployment
+`dpl_GJC9ZKJKEDjx1DFGruB972cwvPGo` **READY**, com os bundles públicos
+`index-Dnf5SMyV.js` e `index-itFozVSF.css` conferidos. O registro
+`shots/production-r6-community/PUBLICACAO-VERIFICADA.json`, observado em
+`2026-11-13T12:02:54.736Z`, relaciona commit, deployment, hashes dos relatórios
+e limites. Build local: **97/97 testes**, em `shots/r6-build.log`.
 
 A entrada e o Colabore passaram ao material de cristal pérola claro, com azul-tinta,
 cobalto, contornos irisados discretos e o cenário real visível. O painel usa três
@@ -204,6 +208,15 @@ a cobertura; não apresentar todos os relatórios como execução simultânea do
 build. Os viewports continuam rodando no PC, sem Safari/iPhone/Android físicos.
 Os testes de gesto/endpoints não comprovam percurso contínuo da R6.
 
+Depois do deploy, **as seis suítes públicas passaram**, sem erros registrados:
+premium e mapa em 1280×800, 390×844 e 320×740; gesto, comunidade e apoio em
+1280×800 e 390×844; integração em WebGPU PC/móvel emulado e WebGL2 PC. Fontes:
+`shots/production-r6-premium/`, `production-r6-worldmap/`,
+`production-r6-gesture/`, `production-r6-community/`, `production-r6-support/`
+e `production-r6-integration/`, todas sob `shots/`. Essa conferência pública inclui
+o build final; preserva as limitações de teleporte preparatório, emulação móvel,
+clipboard/rascunhos interceptados e ausência de pagamento/candidatura real.
+
 Separadamente, a auditoria `shots/r6-gameplay-audit/` percorreu as três missões
 com teclado/mouse reais no baseline **`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`**.
 Seu relatório `docs/MAPA-E-JOGABILIDADE-AUDITORIA-R6.md` antecede o redesign, mapa
@@ -221,8 +234,34 @@ Pedido editorial mais recente: **3–5 segundos de gameplay real, congelar o qua
 e apresentar um conceito gerado sobre o mesmo enquadramento**. A sessão de Reels
 `01a1d480-3c37-74c2-93eb-9adff5607bc6` já recebeu esse briefing. Capturar movimento
 real e preservar o frame de origem; rotular claramente o conceito e manter a
-correspondência de câmera/composição. O briefing não equivale a vídeo produzido,
-aprovado ou publicado. Não houve demonstração de DLSS nesta revisão.
+correspondência de câmera/composição. A pasta privada
+`D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/Fontes-R6/`
+agora contém dois artefatos distintos:
+
+- `Video-Convite-R1/convite-marcos-1-17-gameplay-R6-4s.mp4`: quatro segundos
+  contínuos do jogo real local, H.264, 390×844, 25 fps, 100 quadros, sem áudio.
+  Foi capturado no Chrome do PC com viewport móvel emulado; posição/câmera foram
+  preparadas por debug **antes** da tomada, a tecla E acionou a missão real e não
+  houve edição de estado durante os quatro segundos. Não é caminhada completa,
+  captura de telefone nem demonstração de 25 fps de desempenho do renderer.
+  `metadata.json`/`ffprobe.json` guardam origem e verificação. SHA-256 do MP4:
+  `c40d1a826ea959f97bc68d5fdc8f5fb07c10c797ba466bbf7300e1dd7d4dec4b`.
+- `Conceito-Convite-R1/meta-grafica-convite-r1.png`: imagem de conceito gerada
+  por `image_gen`, 992×1586, com quadro real de origem e prompt/proveniência
+  preservados. SHA-256:
+  `EBEB0DD9D579A0886A9244F2358A38805E1C245574905BA6661DEE50DC9C016B`.
+  Não representa pixels entregues pelo jogo nem processamento DLSS.
+
+A prévia comparativa foi concluída em `Fontes-R6/Previa-Comparativo-R1.mp4`:
+8,466667 s, 720 × 1280, sem áudio. Quatro segundos reais, 0,7 s de congelamento,
+0,6 s de dissolução e o conceito estático. SHA-256:
+`116cfc14203045687e67e82cd8d9a6b4dbb41b437bc8bb54a8904151fa6de194`.
+FFprobe e decode completo passaram; cinco quadros de controle foram inspecionados,
+com leitura adicional do começo, transição e fim pelo integrador. A imagem gerada
+não corresponde pixel a pixel ao cenário; o rótulo conceitual permanece legível.
+Fontes e prévia foram encaminhadas à sessão da série. Narração/trilha e montagem
+do Reel completo continuam naquela sessão; nenhuma publicação social ou
+demonstração de DLSS decorre desses arquivos.
 
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
@@ -275,8 +314,8 @@ permanecem no projeto; o destino é:
 
 ```powershell
 node tools/archive_development.mjs
-# Depois da publicação R6, informar seu SHA completo e verificado:
-node tools/archive_development.mjs --r6-commit SHA_COMPLETO_DA_R6
+# Comando da revisão R6 publicada e verificada:
+node tools/archive_development.mjs --r6-commit 3ac7854649a83183748bd61161d74d4e75fdc87a
 ```
 
 R3 permanece fixa em `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
@@ -288,7 +327,11 @@ fixada em `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`; nunca herda o SHA funciona
 As fontes funcionais R6 incluem `shots/r6-build.log`, `r6-premium`, `r6-gesture`,
 `r6-worldmap-final`, `r6-community`, `r6-support`, `r6-integration` e as respectivas
 pastas `production-r6-*` (mapa: `production-r6-worldmap`). Nesta atualização, o
-arquivador foi conferido por sintaxe/ajuda, sem executar cópia ou registrar produção R6.
+arquivador já foi executado com o SHA funcional R6. O índice privado
+`INDEX-bd171721607b.md` preserva **122 arquivos R6** e **26 da auditoria anterior**,
+com origem/cópia conferidas por SHA-256. Não há vídeos nesse conjunto arquivado;
+os novos materiais de `Serie-Reels-R1/Fontes-R6` estão separados e não devem ser
+inferidos a partir da contagem zero de vídeos do índice.
 Seleções de evidência de futuras revisões
 devem ser adicionadas separadamente, sem relabelar capturas históricas.
 Snapshots, manifests e índices recebem identificadores de conteúdo e são imutáveis:

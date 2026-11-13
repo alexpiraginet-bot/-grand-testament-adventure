@@ -16,16 +16,18 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
 - GitHub público: https://github.com/alexpiraginet-bot/-grand-testament-adventure — o hífen inicial faz
   parte do nome.
 - Jogo: https://grand-testament-adventure-lexprojects.vercel.app/
-- **Base pública R5 atual:** `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`, com metas
+- **Base pública R6 atual:** `3ac7854649a83183748bd61161d74d4e75fdc87a`, deployment
+  `dpl_GJC9ZKJKEDjx1DFGruB972cwvPGo` **READY**. Bundles públicos conferidos:
+  `index-Dnf5SMyV.js` e `index-itFozVSF.css`. Build com 97/97 testes e seis suítes
+  públicas aprovadas; prova em `shots/production-r6-community/PUBLICACAO-VERIFICADA.json`.
+  Entrada/Colabore cristalinos, mapa de visão geral e postura no rig real do herói;
+  discípulos param e olham para Jesus durante a fala. Desembarque depois da fala
+  continua pendente. Emulação no PC não comprova telefone físico.
+- **Histórico público R5:** `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`, com metas
   revisáveis e candidatura voluntária por rascunho GitHub. Deployment
   `dpl_Bg7HYru687BvoPAgK7sKzkwbD8eb` READY, 92 testes, QA público de colaboração e
   apoio em 1280×800 e 390×844. Bundle `index-CSnHhZh8.js` conferido. Preservar as três
   abas do Colabore ao integrar a PR #1. Celular físico e envio de candidatura não foram testados.
-- **R6 local validada, publicação PENDENTE:** `shots/r6-build.log` registra 97/97
-  testes e build concluído. Entrada e Colabore em cristal claro, mapa de visão geral
-  e postura/convite no rig real do herói; discípulos param e olham para Jesus durante
-  a fala. Ainda não associar SHA/deploy público à R6. Evidências, recência dos testes
-  e limites estão na seção R6 do diário; produção precisa de verificação própria.
 - Base pública R4 desta transferência: `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
 - **R4 publicada**: água, Colabore/Pix, prestação de contas e instrumentação de esforço.
   Deployment `dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, `READY`, HTTP 200 e bundle
@@ -35,7 +37,7 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
   de trabalhar. Não sobrescreva arquivos ativos, descarte diffs, execute `reset --hard` ou troque a
   branch deste checkout compartilhado.
 - Use um **worktree próprio** e branch `claude/fable52-<incremento>`, a partir da revisão compartilhada
-  já commitada. R5 é a base pública registrada; R6 está em preparação de publicação.
+  já commitada. R6 é a base pública registrada nesta atualização.
   Combine o SHA efetivamente disponível com o integrador e não copie indiscriminadamente
   o working tree nem confunda evidência de revisões diferentes.
 
@@ -48,7 +50,7 @@ mais recente de Alex e a evidência atual prevalecem.
 Para a R6, leia `docs/DIRECAO-VISUAL-R6.md`, `docs/POSTURA-HEROI-R6.md` e
 `docs/MAPA-E-JOGABILIDADE-AUDITORIA-R6.md`. Esta última é auditoria do baseline
 `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`, anterior às alterações R6; não é
-validação do mapa/gesto novo nem do futuro commit funcional R6.
+validação do mapa/gesto novo nem do commit funcional R6.
 
 Leia também `docs/ESFORCO-E-CUSTOS.md`. O painel e o protocolo distinguem consumo
 registrado, horas estimadas, comparação de API e despesas realmente informadas.
@@ -59,7 +61,17 @@ A série de Reels já tem sessão separada e fontes em
 Novo briefing já entregue à sessão `01a1d480-3c37-74c2-93eb-9adff5607bc6`:
 gravar 3–5 segundos de gameplay real, congelar um quadro e gerar um conceito sobre
 esse mesmo frame. Preservar enquadramento/origem e identificar a parte conceitual;
-briefing não prova vídeo feito ou publicado. A sessão do jogo fornece a captura real.
+o briefing não autoriza publicar. Materiais privados já preservados em
+`Serie-Reels-R1/Fontes-R6/`: vídeo real de quatro segundos em `Video-Convite-R1`
+(H.264, 390×844, 25 fps, sem áudio) e imagem `image_gen` de 992×1586 em
+`Conceito-Convite-R1`. O vídeo veio do build local R6 no Chrome/PC, com câmera e
+posição preparadas por debug antes da tomada; E aciona a missão real, sem edição
+de estado durante o trecho. Não é telefone físico ou percurso completo. O conceito
+é meta visual, não qualidade entregue nem DLSS. Hashes/proveniência estão no diário
+e nos arquivos locais. A prévia comparativa `Fontes-R6/Previa-Comparativo-R1.mp4`
+já foi concluída: 8,47 s, 720×1280, sem áudio, decode integral e quadros-chave
+conferidos. O diário contém seu SHA-256. A sessão de Reels recebeu as fontes;
+o episódio completo com narração/trilha e a publicação social são etapas separadas.
 Escopo atualizado: dezenas de missões dos quatro Evangelhos e geografia dos
 locais por onde Jesus passou. Ler `docs/ESTIMATIVA-PROJETO.md` e
 `docs/VOLUNTARIOS.md`: R$300 mil é referência revisável de caixa, não gasto ou
@@ -246,7 +258,7 @@ Toda nova sessão Claude deve registrar seu próprio esforço e evidência:
 
 ## 7. Roadmap de execução: capacidade máxima com entregas finitas
 
-**P0 — continuidade e baseline.** Coordenar a publicação R6 e a base real, reproduzir build/testes, registrar SHA e cenas
+**P0 — continuidade e baseline.** Partir da R6 publicada e coordenar a base real, reproduzir build/testes, registrar SHA e cenas
 equivalentes. Levantar os três maiores defeitos visuais e três de gameplay com evidência. Não chamar o
 screenshot-alvo de visual já alcançado.
 
@@ -287,8 +299,17 @@ emulado e WebGL2 PC, herói real e 14 assets; não é gameplay contínuo nem tel
 320×740 **antes desse último refinamento**; o CSS e o módulo de mapa não mudaram
 desde então. Preservar essa distinção de recência. A auditoria contínua por
 teclado/mouse em `shots/r6-gameplay-audit/` pertence somente ao baseline
-`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`. Publicação R6, QA no domínio público,
-telefones físicos e gravação contínua da R6 não estão comprovados neste handoff.
+`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`.
+
+A conferência posterior em produção passou nas seis suítes do **build final R6**:
+`shots/production-r6-premium/` e `shots/production-r6-worldmap/` em três viewports;
+`shots/production-r6-gesture/`, `shots/production-r6-community/` e
+`shots/production-r6-support/` em dois; `shots/production-r6-integration/` em três
+casos, WebGPU PC/móvel emulado e WebGL2 PC. Nenhum erro foi registrado. O manifesto
+`shots/production-r6-community/PUBLICACAO-VERIFICADA.json` associa esses relatórios
+por hash ao SHA/deployment indicado na abertura. Telefones físicos e percurso
+completo contínuo da R6 permanecem pendentes; o novo vídeo de quatro segundos
+registra somente o convite preparado, não essas verificações mais amplas.
 
 ```powershell
 npm ci --ignore-scripts
@@ -331,9 +352,12 @@ R5 usa `--r5-commit SHA`, fixada por padrão em
 `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`. R6 usa `--r6-commit SHA`; sem esse
 argumento, somente R6 fica working-tree. `baselineR6Audit` fica separado e preso
 a `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`, nunca ao SHA funcional R6.
-Depois de verificar publicação e SHA, executar
-`node tools/archive_development.mjs --r6-commit SHA_COMPLETO_DA_R6`.
-Nesta atualização foram verificados sintaxe e ajuda, sem executar arquivamento R6.
+Comando da revisão publicada:
+`node tools/archive_development.mjs --r6-commit 3ac7854649a83183748bd61161d74d4e75fdc87a`.
+O arquivamento R6 já foi executado: `INDEX-bd171721607b.md` preserva 122 arquivos
+R6 e 26 do baseline de auditoria, com SHA-256 de origem/cópia conferidos. Nenhum
+vídeo consta desse índice; o vídeo e o conceito novos ficam separadamente em
+`Serie-Reels-R1/Fontes-R6/`.
 Para uma revisão Fable posterior, acrescentar seleção própria antes de usar outro SHA. Nunca rotular
 capturas históricas com um commit novo. Destino de arquivo:
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario`. Referências existentes:
