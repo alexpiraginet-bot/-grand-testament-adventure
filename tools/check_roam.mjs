@@ -41,11 +41,14 @@ async function run(name, ctxOpts) {
   await page.waitForFunction(() => window.__gta.state.phase === "play", null, LONG);
 
   // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is
-  await page.waitForFunction(() => window.__gta.roam().found.includes("Capernaum"), null, LONG);
-  assert.equal(await text("#placename"), "Cafarnaum");
-  assert.equal(await text("#placecount"), "Lugar encontrado · 1 de 5");
-  assert.equal(await text("#placenote"), "Lugar com fonte");
-  assert.equal(await shown("#placefound"), true, "the found place is announced");
+  // read in the same page task that sees the place found: the notice stays up 6 s of real time, and on a software
+  // renderer four separate reads can take longer than that (they did, with the machine busy: 13/11, run on 6878694)
+  const first = await (await page.waitForFunction(() => {
+    const e = document.getElementById("placefound"), t = (id) => document.getElementById(id).textContent;
+    return window.__gta.roam().found.includes("Capernaum")
+      && { name: t("placename"), count: t("placecount"), note: t("placenote"), shown: !e.hidden && getComputedStyle(e).display !== "none" };
+  }, null, LONG)).jsonValue();
+  assert.deepEqual(first, { name: "Cafarnaum", count: "Lugar encontrado · 1 de 5", note: "Lugar com fonte", shown: true }, "the found place is announced");
   await page.screenshot({ path: `${OUT}/${name}-0-lugar.png` });
   assert.equal(await g(() => window.__gta.roam().phase), "off", "no exploring mode while the episode is played");
 
