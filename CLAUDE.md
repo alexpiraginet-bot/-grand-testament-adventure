@@ -1,5 +1,25 @@
 # Grand Testament Adventure — continuidade local
 
+R10 (13/11): casas/solo foram separados em `village-houses.ts`,
+`village-house-placement.ts` e `ground-surface.ts`. Antes de evoluir esses
+trechos, ler `docs/CASAS-R10.md`, `docs/SOLO-R10.md` e `docs/QA-VILA-R10.md`.
+Usar `town.plans` para os footprints finais, inclusive na fauna. Preservar a
+fachada dos lotes e os mapas compartilhados; não recuperar a escala por eixo.
+Esta etapa não substitui a autoria de casas melhores nem entrega novos NPCs.
+
+Direção de interação aprovada por Alex em 13/11: aproximar-se, ouvir e ajudar
+é o centro da experiência; o encontro deve produzir uma mudança perceptível
+na vida da pessoa. Conversas espontâneas, objetos e ações com animais entram
+gradualmente. Montaria e carregar galinhas requerem animações e revisão próprias.
+Ler `docs/INTERACOES-E-ENCONTROS.md`; suas propostas ainda não são funcionalidades
+entregues. Nenhum personagem procedural/A-pose deve voltar para preencher uma
+cena. Falas autorais mantêm a etiqueta narrativa, citações mantêm texto e fonte.
+
+Reforço de Alex: documentar **todas as etapas**, inclusive tentativas rejeitadas,
+limites, antes/depois, testes e hashes da versão publicada. Registrar no diário
+junto do código; guardar evidência local privada para os Reels. Distinguir
+captura jogável, encenação de teste, conceito e resultado ainda não verificado.
+
 Direção visual R9 (13/11): Alex prefere a ausência de um NPC a um boneco de
 esferas/cilindros ou uma malha inacabada. Nenhum humano procedural deve voltar
 como fallback. Os seis candidatos Tripo em A-pose continuam fora da cena até
