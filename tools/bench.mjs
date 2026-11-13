@@ -74,7 +74,7 @@ for (const v of variants) {
   report.runs[v] = result;
   const a = result.all, ms = (x) => (x == null ? "n/d" : x.toFixed(1));
   console.log(`${v.padEnd(12)} ${result.backend} p50 ${ms(a.p50Ms)} ms  p95 ${ms(a.p95Ms)}  p99 ${ms(a.p99Ms)}  ` +
-    `gpu p95 ${ms(a.gpu?.p95Ms)}  cpu p95 ${ms(a.cpu?.p95Ms)}  calls ${Math.max(...result.shots.map((s) => s.calls))}  ` +
+    `gpu p95 ${ms(result.allGpu?.p95Ms)}${result.gpuUnavailable ? ` (${result.gpuUnavailable})` : ""}  cpu p95 ${ms(result.allCpu?.p95Ms)}  calls ${Math.max(...result.shots.map((s) => s.calls))}  ` +
     `tex ${(result.textureBytes / 1e6).toFixed(0)} MB  errors ${errors.length}`);
   if (!uncapped && !refreshHz) console.log("  aviso: sem BENCH_REFRESH_HZ e sem BENCH_UNCAPPED, o tempo de quadro pode estar no teto do vsync");
   else if (refreshHz && !uncapped && Math.abs(a.p50Ms - 1000 / refreshHz) < 0.03 * (1000 / refreshHz))
