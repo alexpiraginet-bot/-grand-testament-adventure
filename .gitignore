@@ -16,6 +16,8 @@ export/
 
 # Assets keep their own license, including nested integration directories.
 *.glb
+# KTX2 textures compressed from those meshes carry the same license as the meshes
+*.ktx2
 *.gltf
 .claude.local/
 .vercel/
