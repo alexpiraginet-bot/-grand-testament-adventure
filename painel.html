@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f0e5">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<title>Painel do projeto · Grand Testament Adventure</title>
+<meta name="description" content="Área de devs: quem contribuiu com o Grand Testament Adventure e quanto, a partir dos dados públicos do GitHub, e o estado da medição de acessos.">
+<link rel="stylesheet" href="/src/ui-theme.css">
+<link rel="stylesheet" href="/src/painel.css">
+</head>
+<body>
+<main class="painel" id="painel">
+  <header class="painel-head">
+    <p class="eyebrow">Grand Testament Adventure · área de devs</p>
+    <h1>Painel do projeto</h1>
+    <p class="lead">Quem contribuiu, quanto, e o que se sabe dos acessos. Os números são lidos agora dos dados públicos do repositório; nada aqui é digitado.</p>
+    <nav class="painel-nav" aria-label="Atalhos">
+      <a href="./">Jogar</a>
+      <a id="link-repo" rel="noopener">Repositório no GitHub</a>
+      <a id="link-contribute" rel="noopener">Como contribuir</a>
+    </nav>
+    <p class="stamp" id="stamp" role="status">Lendo os dados do GitHub…</p>
+  </header>
+
+  <section class="tiles" id="kpis" aria-label="Resumo"></section>
+
+  <section class="block" aria-labelledby="quem-h">
+    <h2 id="quem-h">Quem contribuiu</h2>
+    <p class="note">Os nomes aparecem como estão no histórico do Git. Coautoria é a linha <code>Co-Authored-By</code> dos commits. Só entram commits da branch principal.</p>
+    <div class="cols" id="quem"></div>
+  </section>
+
+  <section class="block" aria-labelledby="dias-h">
+    <h2 id="dias-h">Commits por dia</h2>
+    <p class="note">Dias no horário de São Paulo.</p>
+    <div id="dias"></div>
+  </section>
+
+  <section class="block" aria-labelledby="comunidade-h">
+    <h2 id="comunidade-h">Comunidade</h2>
+    <p class="note">Contas, fora a do projeto, que abriram uma issue ou um pull request: ideias e relatos pelo formulário do jogo, candidaturas de voluntariado e código.</p>
+    <div id="comunidade"></div>
+  </section>
+
+  <section class="block" aria-labelledby="acessos-h">
+    <h2 id="acessos-h">Acessos</h2>
+    <div id="acessos"><p class="note">Conferindo a medição…</p></div>
+  </section>
+
+  <footer class="painel-foot">
+    <p>Fonte: API pública do GitHub, consultada pelo seu navegador ao abrir esta página, sem login (o GitHub vê o endereço de quem consulta). A consulta é guardada por 5 minutos neste navegador para não repetir pedidos.</p>
+    <p>Horas e tokens das sessões de IA ficam no jogo, em Colabore → Apoio e contas.</p>
+  </footer>
+</main>
+<script type="module" src="/src/painel.ts"></script>
+</body>
+</html>

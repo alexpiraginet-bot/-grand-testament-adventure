@@ -44,6 +44,7 @@ node tools/check_roam.mjs      # depois do episódio: "Continuar explorando", ep
 node tools/check_bible.mjs     # a Bíblia do jogo: linha da missão selada até a leitura, versículos literais, ordem da leitura, pausa
 python3 -I tools/build_bible.py ../biblia-conectada           # refaz src/data/biblia-cronologica.json (roteiro + BLIVRE, hash conferido)
 python3 -I tools/build_bible.py ../biblia-conectada --check   # confere se o arquivo versionado ainda bate com as fontes
+node tools/check_painel.mjs    # painel de devs (painel.html) com respostas gravadas do GitHub; --live consulta o GitHub de verdade
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
@@ -60,6 +61,17 @@ ainda aguardam rig. Veja [docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md).
 
 Os binários não vêm no Git. `npm run assets` baixa somente arquivos com hashes fixados no catálogo; o build faz a
 mesma conferência antes de publicar. Se um recurso falhar no navegador, a forma simples preserva a partida.
+
+## Painel do projeto (área de devs)
+
+`painel.html` (link "Painel do projeto" no rodapé do Colabore) mostra quem contribuiu e quanto: commits da branch
+principal por autoria, coautoria (`Co-Authored-By`) e conta do GitHub, commits por dia no horário de São Paulo, pull
+requests, issues e as contas de fora que participaram. Tudo é lido da API pública do GitHub pelo navegador de quem
+abre a página, sem login e sem servidor do jogo; a contagem está em `src/project-stats.ts` e é testada com respostas
+gravadas deste repositório (`test/fixtures/github/`, sem endereços de e-mail). A página não carrega o jogo.
+
+**Acessos ainda não são medidos.** O jogo não tem contador e o Web Analytics da Vercel não está ativo neste projeto;
+o painel diz isso em vez de mostrar um número. A escolha da fonte de medição é de Alex.
 
 ## Progresso salvo
 

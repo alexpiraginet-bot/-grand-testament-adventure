@@ -1,0 +1,408 @@
+[
+ {
+  "sha": "ea39f630591439516e7314089d0a07d0955e3916",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T15:23:03Z"
+   },
+   "message": "Merge pull request #3 from alexpiraginet-bot/codex/fauna-original-r8\n\nFauna própria R8: galinhas, burros e sons espaciais"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "200ad6b2d28a4ff905b087b97b2ceb1d794e23c6",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T15:20:14Z"
+   },
+   "message": "test: document real fauna playback and browser verification"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "524d95b1ccf99329b1186bf078217d961e6328bf",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T15:14:08Z"
+   },
+   "message": "fix: keep animal body radius separate from sound range"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "3a4e4126df480a14944fb1b91909d2e5eccd901a",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T15:05:55Z"
+   },
+   "message": "feat: add original animated fauna and spatial nature audio"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "c664f9ffc22c37984e51d7600e13959f76a0372b",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T13:31:57Z"
+   },
+   "message": "Merge pull request #2 from alexpiraginet-bot/codex/ios-startup-r7\n\nCorrigir inicialização iOS e abertura marfim, bordô e dourado"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "a27846569d4825b23a45f3f309c15e6162bd2da5",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T13:29:31Z"
+   },
+   "message": "fix: bound iOS startup and introduce ivory burgundy opening"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "016079dc9bf763aad2b7e9846d4aa620e0ba748a",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T12:06:47Z"
+   },
+   "message": "docs: record R6 public verification and gameplay concept preview"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "3ac7854649a83183748bd61161d74d4e75fdc87a",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T11:54:42Z"
+   },
+   "message": "feat: refine community, add world map and hero invitation posture"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "d6539ae58bec172b2ddd8e6bb50092e7bcc67244",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T11:12:55Z"
+   },
+   "message": "fix: keep collaboration tab label readable on narrow screens"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "30205f840aff7155191a441c84a2f1a347824e41",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T11:11:58Z"
+   },
+   "message": "docs: record verified R5 release and Tripo series evidence"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "3d3f9c8f74e9aff0b74c32f86acce5327039ad22",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T11:08:53Z"
+   },
+   "message": "feat: publish project estimates and voluntary collaboration fronts"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "b9eefefd4b5a48345558d789575dc7dfb8e15a95",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T10:44:52Z"
+   },
+   "message": "docs: verify R4 release and hand off open-world and Reels roadmap"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "08785fe50b9995b7712a24e2b53bcbbb575d1804",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T10:35:41Z"
+   },
+   "message": "feat: transparent project support, measured usage and lake water R4"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T09:48:33Z"
+   },
+   "message": "Enrich village and NPC surfaces, guide the journey, and archive development evidence"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "424a096ee7e865553eb7d4ad55d7cb1cd881359b",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T00:41:08Z"
+   },
+   "message": "Improve lake shallows and add sourced photographic sky"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "6e35ff1534d4d17aa082d1d03113d997b51da801",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-13T00:25:18Z"
+   },
+   "message": "Integrate animated Tripo hero and build denser Capernaum streets"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "917a69d6a98ef3b6a4d3c7cced0628ae72801646",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T23:09:01Z"
+   },
+   "message": "Document verified public deployment and current prototype limits"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "293fc8415e9aad171775ae8728a25fbcf4c9004c",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T22:59:46Z"
+   },
+   "message": "Configure Vercel and point feedback to the published repository"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "23870fbc15349d2a9cce56c7a01628f37152be7d",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T22:28:02Z"
+   },
+   "message": "Add community feedback form with GitHub issue handoff"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "8bc56a0ad38027048c9b11777c5a38bfc9188e14",
+  "commit": {
+   "author": {
+    "name": "alexpiraginet-bot",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T22:10:23Z"
+   },
+   "message": "Prepare local handoff, asset integration and community feedback"
+  },
+  "author": {
+   "login": "alexpiraginet-bot"
+  }
+ },
+ {
+  "sha": "84443a71eb7376565c1139efdf56176b8a41560a",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T21:36:21Z"
+   },
+   "message": "Add nicknames to the cloud save, and the handoff\n\nThe player picks a nickname (3 to 16 letters, digits, _ or dot), unique\nignoring case and accents, with reserved names and offensive words\nrefused by the server; the recovery code stays the only way in. The\nmigration adds gta_nick_check and gta_nick_set and returns the nickname\nwith the save; it was run twice on a local Postgres 16 with Supabase's\ndefault grants, as anon. The panel becomes 'Apelido e outro aparelho'\nand the start card says who is playing. Still off: the migration has\nnot been applied to the project.\n\nHANDOFF.md has the request, the state, the order of what is pending and\nwhat lives outside git, for the next session.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "1ad61541ae8460bc2ebe51e7ea123f1263cf40f1",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T21:26:09Z"
+   },
+   "message": "Add the cloud copy of the save, and the export for a native PC build\n\nCloud: no account; each player holds a 160-bit recovery code and the\nserver keeps only its SHA-256, behind two RPC functions\n(supabase/migrations/20261112210000_gta_saves_v1.sql). The game pulls,\nmerges and pushes with plain fetch, and the start card gets a panel to\nshow this device's code or take another device's. It is off in\nsrc/data/nuvem.json: the migration has not been applied.\n\nNative build: DLSS only runs in native games, so docs/ALTO-NIVEL.md plans\nan Unreal Engine 5 version that reuses this game's data, and\ntools/export_engine.py writes it (16-bit Landscape heightmap with its\nscale and axes, water mask, missions with points in Unreal centimetres,\nthe save contract). The heightmap is checked by reading it back.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "cdce81c2a0c063f5441747f4d32a8b3631dc6cc7",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T20:58:44Z"
+   },
+   "message": "Save the player's progress, and continue from it\n\nProgress is autosaved in the browser at every ticked mission (with a\n'Progresso salvo' pill), every 15 s of play when he has moved, and when\nthe page is hidden. The save is versioned and checked on every read: a\ncorrupt one is kept aside and the last good copy used, one written by a\nnewer build is neither read nor overwritten, and a browser that refuses\nstorage lets the game go on and says so. The start card offers to\ncontinue the run in progress (mission, counter, followers and his place),\nto start over with a second tap, or to replay a finished episode while\nkeeping its record. mergeSaves() is ready for a cloud copy and never\nloses a finished mission.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "0bda87f8852acc944061d9ccb2db7b8e4e378e9f",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T20:41:30Z"
+   },
+   "message": "Load meshes without meshopt, from .glb or .glb.json, and read #flags\n\nThe claude.ai page does not serve .glb and passes no query string. The\ngame now fetches a model's bytes from <name>.glb, or from <name>.glb.json\n({ b64 }) when the host serves no GLB, and reads #alta, #baixa and #fps\nfrom the hash. Meshes are quantized instead of meshopt-compressed, so the\nloader needs no WebAssembly that a host's CSP could block; the budget\ntest refuses a mesh that still requires EXT_meshopt_compression.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "70e577613e9f4711d668f130562cb1d434483cd4",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T20:33:13Z"
+   },
+   "message": "Open the repository: contributing guide, data license, meshes out of git\n\nAlex asked for the game's code to be open so others can build it with us.\nThe code stays MIT; the data files keep their sources' licenses\n(LICENSE-DATA.md); the Tripo meshes have their own license and are not\nin the repository (.gitignore), registered with hashes in ASSETS.md. The\ngame falls back to the simple shapes without them, and the mesh budget\ntest skips an absent file. CONTRIBUTING.md has setup, the branch and PR\nflow, and the project's rules. ASSETS.md records the split: Codex makes\nand rigs the meshes, Claude keeps gameplay and integration.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "00c37de46d1a2888ee69e6211ef2d405e951a9b1",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T20:22:38Z"
+   },
+   "message": "Put the Tripo hero in the game with a provisional rig\n\nThe first heroi.glb from Tripo has 1,959,077 triangles, 4K textures, faces\n+X and has no skeleton or animations. tools/optimize_model.mjs brings it to\n17,991 triangles and 2048 WebP textures (22.3 MB -> 867 KB); src/rig.ts bakes\nit to the game frame and skins it to an 11-bone skeleton guessed from the\ngeometry, so the walk cycle lowers the A-pose arms and moves the legs.\nA file with its own skin or animations is refused by that path and falls\nback to the simple shapes until the mixer is wired against a real file.\n\nAdds the mesh viewer (tools/viewer, tools/check_model.mjs), a budget test\nfor every mesh in src/data/modelos.json, ASSETS.md with the received file's\nnumbers and the Claude/Codex file split. Originals stay out of git in\nassets-src/.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "c1544615e4624bd57b5b40554ad41ba067be4d7e",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T19:45:47Z"
+   },
+   "message": "Write the full Tripo mesh sheet\n\nEvery mesh the vertical slice needs, in priority order, with the prompt,\nthe triangle and texture budget for phones, rig and animations, and an\nacceptance checklist, so an agent can generate them on the Tripo site.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "ba4652c2591b48a1f146852b30fbb9ea3ac187a1",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T19:40:22Z"
+   },
+   "message": "Serve heights as JSON, flank followers, one prompt on phones\n\nHeights move from .bin to base64 JSON so any static host serves them; the\ntest checks the decoder against the builder's SHA-256. Followers walk beside\nthe player instead of between him and the camera. On a phone the round\nbutton is the only action prompt. The FPS counter uses real time (the game\nclock is capped at 50 ms a frame, which made a 1 fps run read 20 fps).\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ },
+ {
+  "sha": "0dc3eb406afb96cf8afe2255e0654b11bbcefb2c",
+  "commit": {
+   "author": {
+    "name": "Claude",
+    "email": "removed@example.invalid",
+    "date": "2026-11-12T19:30:57Z"
+   },
+   "message": "Start the vertical slice: Pescadores de gente at Capernaum\n\nPlayable prototype in three.js (WebGPU renderer with WebGL 2 fallback),\nVite and TypeScript: the real relief of the Capernaum shore, the player in\nthird person with the camera behind him, the three missions of Mark 1:16-20,\nthe HUD of the reels with literal BLIVRE lines, and visible credits.\n\ntools/build_world.py makes the world data from open sources (AWS Terrain\nTiles, OpenBible.info places, BLIVRE verses) with tile hashes; the tests\ncheck every line against its verse and play the episode through.\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\nClaude-Session: https://claude.ai/code/session_016x9mP2r39qzK6XW7QWLfrF"
+  },
+  "author": {
+   "login": "claude"
+  }
+ }
+]

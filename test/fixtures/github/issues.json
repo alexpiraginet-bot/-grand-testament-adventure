@@ -1,0 +1,51 @@
+[
+ {
+  "number": 4,
+  "title": "[Voluntariado] Engenharia e ferramentas",
+  "state": "open",
+  "user": {
+   "login": "marcosmoski"
+  },
+  "labels": [],
+  "created_at": "2026-11-13T16:16:59Z"
+ },
+ {
+  "number": 3,
+  "title": "Fauna própria R8: galinhas, burros e sons espaciais",
+  "state": "closed",
+  "user": {
+   "login": "alexpiraginet-bot"
+  },
+  "labels": [],
+  "created_at": "2026-11-13T15:08:02Z",
+  "pull_request": {
+   "merged_at": "2026-11-13T15:23:04Z"
+  }
+ },
+ {
+  "number": 2,
+  "title": "Corrigir inicialização iOS e abertura marfim, bordô e dourado",
+  "state": "closed",
+  "user": {
+   "login": "alexpiraginet-bot"
+  },
+  "labels": [],
+  "created_at": "2026-11-13T13:31:37Z",
+  "pull_request": {
+   "merged_at": "2026-11-13T13:31:58Z"
+  }
+ },
+ {
+  "number": 1,
+  "title": "Phone HUD (fixed joystick, hand button) and same-scene benchmark with post-processing under measurement",
+  "state": "open",
+  "user": {
+   "login": "alexpiraginet-bot"
+  },
+  "labels": [],
+  "created_at": "2026-11-13T10:16:32Z",
+  "pull_request": {
+   "merged_at": null
+  }
+ }
+]
