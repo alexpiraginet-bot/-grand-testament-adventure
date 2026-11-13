@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 2,
+  "revision": "fauna-r8-chicken-r2-donkey-walk-idle",
+  "reviewedOn": "2026-11-13",
+  "approvalScope": "Controlled game integration. Terrain, turns, stops and physical iPhone review remain pending.",
+  "rights": {
+    "owner": "Alex",
+    "origin": "Tripo-generated original asset with a locally authored rig/animation derivative",
+    "license": "Separate from the MIT source-code license; the originating Tripo account terms apply.",
+    "redistribution": "This catalogue grants no additional redistribution license."
+  },
+  "species": [
+    {
+      "kind": "chicken",
+      "sources": [
+        {
+          "file": "gta-fauna-galinha-r8-rig-walk.glb",
+          "bytes": 2491440,
+          "sha256": "0eda48666418c7473e308a8667bac8a721dfc6abd7f2756a7c4b9a7d5fe7e1e6",
+          "tripoJob": "eb78abc7-cd1e-4c5d-890e-826c16ba0f09",
+          "originalExport": "tripo_convert_09d8546f-7b9a-4ed2-817a-79aed0afd6a0.glb"
+        }
+      ],
+      "adaptation": {
+        "kind": "chicken",
+        "reviewDocument": "docs/QA-GALINHA-R8-BIRDWALK.md",
+        "changes": [
+          "Common hierarchy normalized to metres, feet Y=0 and forward -Z",
+          "Two foot bones with reviewed lower-chain weight transfer",
+          "Locally authored in-place alternating gait",
+          "WebP PBR maps resized separately for desktop and mobile"
+        ],
+        "triangles": 7886,
+        "vertices": 5790,
+        "bones": 22,
+        "neutralHeightMeters": 0.45,
+        "locomotion": {
+          "clip": "bird-walk-inplace-r8-r2",
+          "seconds": 0.96,
+          "nominalMetersPerSecond": 0.24
+        },
+        "measuredEnvelope": {
+          "method": "Union of neutral source bounds and 121 CPU-skinned gait phases, including all vertices; bounding-box corner radius is conservative.",
+          "minMeters": [
+            -0.12347285161961856,
+            -1.5108447424377553e-7,
+            -0.22679883160881942
+          ],
+          "maxMeters": [
+            0.12347611488889411,
+            0.44999981193561805,
+            0.22470596497897527
+          ],
+          "cornerRadiusMeters": 0.25823257146839745,
+          "bodyRadiusMeters": 0.28,
+          "bodyHalfHeightMeters": 0.23,
+          "individualScaleAppliedLater": true
+        },
+        "limitations": [
+          "No terrain IK",
+          "Idle holds the reviewed cycle's first pose",
+          "No historic density claim",
+          "Source files and prior rejected animations preserved outside Git"
+        ]
+      },
+      "files": [
+        {
+          "profile": "desktop",
+          "url": "models/fauna-r8/chicken-r8-birdwalk-r2-1024-68acfac44214.glb",
+          "bytes": 1250520,
+          "sha256": "68acfac44214863cad4252a4bda4a94fed142eec9bef043ce8bf338f7ffd978d",
+          "maxTextureDimension": 1024
+        },
+        {
+          "profile": "mobile",
+          "url": "models/fauna-r8/chicken-r8-birdwalk-r2-512-33c5201a2085.glb",
+          "bytes": 687972,
+          "sha256": "33c5201a20851cb50fe8a6577bb5c94691969aa1c8cf1055df2da04e04098eb0",
+          "maxTextureDimension": 512
+        }
+      ]
+    },
+    {
+      "kind": "donkey",
+      "sources": [
+        {
+          "file": "gta-fauna-burro-r8-detail-source.glb",
+          "bytes": 4708992,
+          "sha256": "3a12ba3c627780fe20f48aa39a8d6ef76d598a67e4e82a8d8c4ad54b74f1c9d3"
+        },
+        {
+          "file": "gta-fauna-burro-r8-detail-rig-walk.glb",
+          "bytes": 2874308,
+          "sha256": "9d6723abfde81f027cc3d7dfc4ac1f9c4bcc06f07d12a99a285981bfbe508a41",
+          "originalExport": "tripo_convert_475a5e27-87c9-487f-8a2b-40b94b1607e8.glb"
+        }
+      ],
+      "adaptation": {
+        "kind": "donkey",
+        "reviewDocument": "docs/QA-BURRO-R8-WALK.md",
+        "changes": [
+          "Common hierarchy normalized to metres, feet Y=0 and forward -Z",
+          "Locally authored four-hoof gait replaces the rejected automatic preset",
+          "Separate four-support idle clip",
+          "Source vertices, weights and 23 bones preserved",
+          "WebP PBR maps resized separately for desktop and mobile"
+        ],
+        "triangles": 17688,
+        "vertices": 11073,
+        "bones": 23,
+        "neutralHeightMeters": 1.3,
+        "locomotion": {
+          "clip": "donkey-walk-inplace-r8",
+          "seconds": 1.2,
+          "nominalMetersPerSecond": 0.38
+        },
+        "idle": {
+          "clip": "donkey-idle-r8",
+          "seconds": 2.4
+        },
+        "measuredEnvelope": {
+          "method": "Union of neutral source bounds and 138 CPU-skinned phases per final clip, including all vertices; bounding-box corner radius is conservative.",
+          "minMeters": [
+            -0.31853865567795525,
+            -1.0457416543470277e-7,
+            -0.7947029789421765
+          ],
+          "maxMeters": [
+            0.31853856747468134,
+            1.3000001729564556,
+            0.7945272508316811
+          ],
+          "cornerRadiusMeters": 0.8561656965218172,
+          "bodyRadiusMeters": 0.91,
+          "bodyHalfHeightMeters": 0.7,
+          "individualScaleAppliedLater": true
+        },
+        "limitations": [
+          "No terrain IK",
+          "Accepted controlled-integration limit: walk-to-idle blend can transiently penetrate the plane by up to 6.23mm",
+          "No historic density or exact historical size claim",
+          "Source files and rejected automatic gait preserved outside Git",
+          "Mobile512 structurally validated; close-up appearance and physical iPhone require separate review"
+        ]
+      },
+      "files": [
+        {
+          "profile": "desktop",
+          "url": "models/fauna-r8/donkey-r8-walk-1024-de6552cc3150.glb",
+          "bytes": 1807872,
+          "sha256": "de6552cc3150efd81b75059bc95347d7a58c4bd54f54d683ff8a6121e42e034b",
+          "maxTextureDimension": 1024
+        },
+        {
+          "profile": "mobile",
+          "url": "models/fauna-r8/donkey-r8-walk-512-25bd1f401968.glb",
+          "bytes": 1095040,
+          "sha256": "25bd1f401968c7dcbfef983854004b7b009a434e574fc90d434e0c0229b3ac02",
+          "maxTextureDimension": 512
+        }
+      ]
+    }
+  ]
+}

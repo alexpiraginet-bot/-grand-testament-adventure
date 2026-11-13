@@ -4,7 +4,7 @@ import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
-import { missionRoutes, insideObstacle } from './world-layout.ts';
+import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
@@ -18,6 +18,12 @@ import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
+import {FaunaAudio,type FaunaSoundHabitat} from './fauna-audio.ts';
+import {FAUNA_AUDIO_CREDITS,faunaAudioManifest} from './fauna-audio-manifest.ts';
+import {FaunaScene} from './fauna-renderer.ts';
+import {faunaAssetsManifest} from './fauna-assets-manifest.ts';
+import {createFaunaPopulation,type FaunaPopulation} from './fauna-population.ts';
+import {stepFauna,type FaunaAgent} from './fauna-simulation.ts';
 import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
 import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
@@ -184,6 +190,28 @@ async function main() {
   scene.add(town.group);
   const vegetation=props(terrain,keep,q,assets,town.boxes); scene.add(vegetation);
 
+  // Attach ambience to actual tree positions and the mapped shore, not a global sound bed.
+  // props()' first three pools are oliveira-a, oliveira-b and arvore-espinhosa. Read before LOD compaction.
+  const treeSpots:{x:number;y:number;z:number}[]=[],treeMatrix=new THREE.Matrix4(),treePoint=new THREE.Vector3();
+  for(const pool of vegetation.children.slice(0,3)) {
+    const mesh=pool instanceof THREE.InstancedMesh?pool:pool.children.find(child=>child instanceof THREE.InstancedMesh);
+    if(!(mesh instanceof THREE.InstancedMesh))continue;
+    for(let i=0;i<mesh.count;i++) {mesh.getMatrixAt(i,treeMatrix);treePoint.setFromMatrixPosition(treeMatrix);treeSpots.push({x:treePoint.x,y:treePoint.y+2,z:treePoint.z});}
+  }
+  const habitats:FaunaSoundHabitat[]=[];
+  const nearRoute=(p:{x:number;z:number})=>Math.min(...keep.map(s=>distanceToSegment(p.x,p.z,s)));
+  for(const point of treeSpots.sort((a,b)=>nearRoute(a)-nearRoute(b))) {
+    if(nearRoute(point)>65||habitats.filter(h=>h.kind==='birds').length>=24)continue;
+    if(habitats.some(h=>h.kind==='birds'&&Math.hypot(h.x-point.x,h.z-point.z)<55))continue;
+    habitats.push({id:`grove-${habitats.length}`,kind:'birds',...point,radius:48});
+  }
+  const shoreSpots=meta.shoreline.map(([x,z])=>({x,y:.1,z})).filter(p=>terrain.inside(p.x,p.z)&&nearRoute(p)<45).sort((a,b)=>nearRoute(a)-nearRoute(b));
+  for(const point of shoreSpots) {
+    if(habitats.filter(h=>h.kind==='lake').length>=24)break;
+    if(habitats.some(h=>h.kind==='lake'&&Math.hypot(h.x-point.x,h.z-point.z)<45))continue;
+    habitats.push({id:`shore-${habitats.length}`,kind:'lake',...point,radius:40});
+  }
+
   // the boat of Zebedeu, along the shore, and the net of Simão and André in the water
   const theBoat = makeBoat(assets);
   const boatPos = pt(P.barco), shoreB = pt(P.barco_margem);
@@ -231,6 +259,7 @@ async function main() {
   const setPanelPaused = (panel:'feedback'|'worldmap',open:boolean) => {
     if(open)panelPauses.add(panel);else panelPauses.delete(panel);
     input.setSuspended(panelPauses.size>0);
+    syncAudio();
   };
   setupFeedbackPanel((open) => setPanelPaused('feedback',open));
   const sfx = new Sfx();
@@ -238,6 +267,88 @@ async function main() {
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;
+  // One graph, created by Go; audio never participates in startup readiness.
+  let natureAudio:FaunaAudio|null=null,natureRunning=false;
+  let faunaScene:FaunaScene|null=null,faunaPopulation:FaunaPopulation|null=null,faunaAgents:FaunaAgent[]=[];
+  let faunaStarted=false,faunaStatus='not-started',faunaError:string|null=null;
+  let faunaBlocked:(x:number,z:number)=>boolean=()=>false;
+  const AUDIO_KEY='gta:audio-muted';
+  let audioMuted=(()=>{try{return localStorage.getItem(AUDIO_KEY)==='1';}catch{return false;}})();
+  sfx.setMuted(audioMuted);
+  const audioAllowed=()=>!document.hidden&&!startup.signal.aborted&&state.phase!=='intro'&&!panelPauses.size&&
+    $('credits').hidden&&$('nuvem').hidden&&$('end').hidden&&!($('feedback') as HTMLDialogElement).open;
+  const syncAudio=()=>{
+    const allowed=audioAllowed();sfx.setPaused(!allowed);
+    const running=allowed&&!audioMuted;
+    if(natureAudio&&running!==natureRunning){if(running)natureAudio.resume();else natureAudio.stop();natureRunning=running;}
+  };
+  const soundButton=document.createElement('button');soundButton.id='soundbtn';soundButton.type='button';soundButton.className='credbtn';
+  const updateSoundButton=()=>{
+    soundButton.disabled=!sfx.available;
+    soundButton.textContent=!sfx.available?'Som indisponível':audioMuted?'Som desligado':'Som ligado';
+    soundButton.setAttribute('aria-pressed',String(sfx.available&&!audioMuted));
+    soundButton.setAttribute('aria-label',!sfx.available?'Este navegador não oferece áudio para o jogo':audioMuted?'Ativar som do jogo':'Silenciar som do jogo');
+  };
+  updateSoundButton();$('mapbtn').before(soundButton);
+  soundButton.addEventListener('click',()=>{
+    audioMuted=!audioMuted;sfx.setMuted(audioMuted);updateSoundButton();
+    try{localStorage.setItem(AUDIO_KEY,audioMuted?'1':'0');}catch{/* Preference still works for this page. */}
+    if(!audioMuted)sfx.resumeFromGesture();syncAudio();
+  });
+  const resumeAudioFromGesture=()=>{if(audioAllowed()&&!audioMuted)sfx.resumeFromGesture();};
+  addEventListener('pointerdown',resumeAudioFromGesture,{capture:true,passive:true});
+  addEventListener('keydown',resumeAudioFromGesture,{capture:true});
+  document.addEventListener('visibilitychange',syncAudio);
+  addEventListener('pagehide',()=>{natureAudio?.stop();natureRunning=false;sfx.setPaused(true);});
+  const audioPanels=new MutationObserver(syncAudio);
+  for(const id of ['credits','nuvem','end'])audioPanels.observe($(id),{attributes:true,attributeFilter:['hidden']});
+  startup.signal.addEventListener('abort',()=>{
+    natureAudio?.dispose();natureRunning=false;sfx.setPaused(true);audioPanels.disconnect();
+    faunaScene?.dispose();faunaPopulation?.clear();faunaPopulation=null;faunaAgents=[];faunaBlocked=()=>false;faunaStatus='disposed';
+  },{once:true});
+  const audioCreditHeading=document.createElement('h4');audioCreditHeading.textContent='Gravações de natureza';
+  const audioCredit=document.createElement('p');audioCredit.textContent='Gravações modernas usadas na recriação: ';
+  FAUNA_AUDIO_CREDITS.forEach((source,i)=>{if(i)audioCredit.append(', ');const link=document.createElement('a');link.textContent=source.author;link.href=source.url;link.target='_blank';link.rel='noopener';audioCredit.append(link);});
+  audioCredit.append(' (Freesound). ');
+  const audioLicense=document.createElement('a');audioLicense.href='https://creativecommons.org/publicdomain/zero/1.0/';audioLicense.textContent='CC0 1.0';audioLicense.target='_blank';audioLicense.rel='noopener';audioCredit.append(audioLicense,'. ');
+  const audioSources=document.createElement('a');audioSources.href=`${import.meta.env.BASE_URL}audio/fauna/SOURCES.json`;audioSources.textContent='Registro das adaptações';audioSources.target='_blank';audioSources.rel='noopener';audioCredit.append(audioSources);
+  $('credbody').append(audioCreditHeading,audioCredit);
+  const failFauna=(error:unknown)=>{
+    faunaScene?.dispose();faunaPopulation?.clear();faunaPopulation=null;faunaAgents=[];faunaBlocked=()=>false;
+    faunaError=String(error);faunaStatus=startup.signal.aborted?'disposed':'unavailable';
+    if(!startup.signal.aborted)console.warn('Fauna opcional indisponível; a jornada continua.',error);
+  };
+  const startFauna=async()=>{
+    if(faunaStarted||startup.signal.aborted)return;faunaStarted=true;
+    try{
+      const manifest=faunaAssetsManifest(startupProfile.mobile,import.meta.env.BASE_URL);
+      if(!manifest.length){faunaStatus='no-approved-assets';return;}
+      faunaStatus='loading';
+      const maxAgents=startupProfile.mobile?24:48;
+      const optional=new FaunaScene(manifest,{mobile:startupProfile.mobile,signal:startup.signal,maxAgents,
+        animateRadius:45,visibleRadius:90,onError:(kind,error)=>console.warn(`Animal opcional indisponível: ${kind}`,error)});
+      faunaScene=optional;scene.add(optional.root);
+      await optional.load();
+      if(startup.signal.aborted)return;
+      const loaded=new Set(optional.diagnostics().loadedKinds),approved=manifest.filter(asset=>loaded.has(asset.kind));
+      if(!approved.length){faunaStatus='unavailable';return;}
+      // Static obstacle buckets keep each nearby animal query independent of the full town size.
+      const cells=new Map<string,Obstacle[]>(),cellSize=32;
+      for(const box of town.boxes){
+        const radius=Math.hypot(box.hx,box.hz)+.15;
+        for(let z=Math.floor((box.z-radius)/cellSize);z<=Math.floor((box.z+radius)/cellSize);z++)
+          for(let x=Math.floor((box.x-radius)/cellSize);x<=Math.floor((box.x+radius)/cellSize);x++){
+            const id=`${x}:${z}`,items=cells.get(id)??[];items.push(box);cells.set(id,items);
+          }
+      }
+      faunaBlocked=(x,z)=>(cells.get(`${Math.floor(x/cellSize)}:${Math.floor(z/cellSize)}`)??[]).some(box=>insideObstacle(x,z,box,.15));
+      // Same deterministic plans/centre as houses(); never infer houses from prop collider boxes.
+      faunaPopulation=createFaunaPopulation({terrain,routes:keep,buildings:settlementLayout(terrain,keep,cap.x,cap.z),
+        blocked:faunaBlocked,playableMargin:movementMargin,species:approved.map(asset=>asset.kind),
+        bodies:Object.fromEntries(approved.map(asset=>[asset.kind,asset.body])),maxAgents});
+      faunaStatus='ready';
+    }catch(error){failFauna(error);}
+  };
   setupWorldMap({terrain,image:img,episode:ep,routes:keep,goals,buildings:town.boxes,movementMargin,
     player:()=>player,state:()=>state,
     canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
@@ -328,8 +439,10 @@ async function main() {
   let prog = episodeProgress(save, ep.id);
   let resumable = prog.missionsDone > 0 && prog.missionsDone < total;
   const beginPlay = (resume: boolean) => {
-    sfx.start();
+    const graph=sfx.start();
+    if(graph&&!natureAudio)natureAudio=new FaunaAudio(graph.context,graph.output,faunaAudioManifest(import.meta.env.BASE_URL),{habitats,maxVoices:3,onError:(id,error)=>console.warn(`Som opcional indisponível: ${id}`,error)});
     hud.show();
+    sfx.setPaused(false);
     if (resume) {
       Object.assign(state, restoreState(ep, goals, prog.missionsDone));
       const c = save.current;
@@ -345,7 +458,7 @@ async function main() {
       save = restartEpisode(save, ep.id, Date.now());
       handle(startEpisode(state));
     }
-    persist(false);
+    syncAudio();persist(false);void startFauna();
   };
   const showStartCard = () => {
     prog = episodeProgress(save, ep.id);
@@ -451,6 +564,7 @@ async function main() {
   // the bench flies its shots without the start card, so it is never held here
   const waitingToStart=()=>state.phase==='intro' && !bench;
   const frame = () => {
+    syncAudio();
     if(startup.signal.aborted)return;
     if(document.hidden || waitingToStart()){last=performance.now();return;}
     const now = performance.now();
@@ -624,6 +738,17 @@ async function main() {
       camera.lookAt(head.x, head.y + 0.15, head.z);
     }
     hudEl.classList.toggle("cine", k > 0.5);
+    // Animal downloads do not gate Go. Empty/pending catalogues never generate a population.
+    // Muting audio does not freeze animals; menus/visibility use the same independent pause gate.
+    if(faunaPopulation&&faunaScene&&audioAllowed()){
+      try{
+        const view=faunaPopulation.update(player.pos);
+        if(view.agents!==faunaAgents){faunaAgents=view.agents;faunaScene.sync(faunaAgents);}
+        stepFauna(faunaAgents,faunaPopulation.habitatTerrain,faunaBlocked,player.pos,dt,{activeRadius:45});
+        faunaScene.update(dt,player.pos);
+      }catch(error){failFauna(error);}
+    }
+    if(natureRunning)natureAudio?.update(dt,{x:player.pos.x,y:hero.root.position.y+1.55,z:player.pos.z,yaw:cam.yaw},faunaScene?.visibleApprovedAgents()??[]);
     sun.position.set(player.pos.x + sunDir.x * 120, hero.root.position.y + sunDir.y * 120, player.pos.z + sunDir.z * 120);
     sun.target.position.set(player.pos.x, hero.root.position.y, player.pos.z);
 
@@ -681,6 +806,11 @@ async function main() {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
       actor: () => actor?.diagnostics() ?? null,
+      audio:()=>({...sfx.stats,nature:natureAudio?.stats??null,habitats,visibleAnimalEmitters:faunaScene?.visibleApprovedAgents().filter(a=>a.kind!=='fish').length??0}),
+      fauna:()=>({status:faunaStatus,error:faunaError,profile:startupProfile.mobile?'mobile':'desktop',
+        renderer:faunaScene?.diagnostics()??null,population:faunaPopulation?.diagnostics()??null,
+        visible:faunaScene?.visibleApprovedAgents().map(a=>({id:a.id,kind:a.kind,x:a.x,y:a.y,z:a.z,speed:a.speed,
+          heading:a.heading,scale:a.scale,radius:a.radius,halfHeight:a.halfHeight,groundHeight:terrain.heightAt(a.x,a.z),blockedStatic:faunaBlocked(a.x,a.z)}))??[]}),
       assets: Object.keys(assets),
       world: {...town.group.userData.counts,...vegetation.userData.counts},
       routes:keep,

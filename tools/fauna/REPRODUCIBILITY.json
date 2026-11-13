@@ -1,0 +1,54 @@
+{
+  "verifiedAt": "2026-11-13T15:02:17.804Z",
+  "node": "v24.19.0",
+  "platform": "win32",
+  "dependencies": {
+    "three": "0.186.1",
+    "core": "4.5.1",
+    "extensions": "4.5.1",
+    "sharp": "0.35.5"
+  },
+  "method": "Re-export from preserved source using tracked parameterized scripts into fresh ignored directory. SHA-256 equality includes geometry, rig, animation and encoded textures; no GPU used.",
+  "artifacts": [
+    {
+      "file": "chicken-r8-birdwalk-r2-2k.glb",
+      "bytes": 2512352,
+      "sha256": "450b6a2f7b5c495f2abb4d35e664c5612bebf889694e7f918aeb486125b31d27",
+      "byteIdentical": true
+    },
+    {
+      "file": "chicken-r8-birdwalk-r2-1024.glb",
+      "bytes": 1250520,
+      "sha256": "68acfac44214863cad4252a4bda4a94fed142eec9bef043ce8bf338f7ffd978d",
+      "byteIdentical": true
+    },
+    {
+      "file": "chicken-r8-birdwalk-r2-512.glb",
+      "bytes": 687972,
+      "sha256": "33c5201a20851cb50fe8a6577bb5c94691969aa1c8cf1055df2da04e04098eb0",
+      "byteIdentical": true
+    },
+    {
+      "file": "donkey-r8-walk-2k.glb",
+      "bytes": 2911104,
+      "sha256": "5e21dff96316d1f078dc8c8cf654bdb3212376403b9e4a190e04e9d10c378270",
+      "byteIdentical": true
+    },
+    {
+      "file": "donkey-r8-walk-1024.glb",
+      "bytes": 1807872,
+      "sha256": "de6552cc3150efd81b75059bc95347d7a58c4bd54f54d683ff8a6121e42e034b",
+      "byteIdentical": true
+    },
+    {
+      "file": "donkey-r8-walk-512.glb",
+      "bytes": 1095040,
+      "sha256": "25bd1f401968c7dcbfef983854004b7b009a434e574fc90d434e0c0229b3ac02",
+      "byteIdentical": true
+    }
+  ],
+  "guards": {
+    "wrongHashRejected": true,
+    "nonEmptyOutputRejected": true
+  }
+}

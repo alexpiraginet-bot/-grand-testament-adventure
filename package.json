@@ -9,9 +9,9 @@
     "dev": "vite",
     "test": "node --test test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "assets": "node tools/fetch_assets.mjs",
+    "assets": "node tools/fetch_assets.mjs && node tools/fetch_fauna_assets.ts",
     "assets:prepare": "node tools/prepare_tripo.mjs",
-    "build": "node tools/fetch_assets.mjs && tsc --noEmit && node --test test/*.test.ts && vite build",
+    "build": "node tools/fetch_assets.mjs && node tools/fetch_fauna_assets.ts && tsc --noEmit && node --test test/*.test.ts && vite build",
     "preview": "vite preview --port 4173",
     "bench": "node tools/bench.mjs",
     "bench:all": "node tools/bench_all.mjs"
