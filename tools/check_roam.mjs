@@ -51,15 +51,18 @@ async function run(name, ctxOpts) {
       && { name: t("placename"), count: t("placecount"), note: t("placenote"), shown: !e.hidden && getComputedStyle(e).display !== "none" && Number(getComputedStyle(e).opacity) >= 0.2 };
   }, null, LONG)).jsonValue();
   assert.deepEqual(first, { name: "Cafarnaum", count: "Lugar encontrado · 1 de 5", note: "Lugar com fonte", shown: true }, "the found place is announced");
-  // fully in, inside the screen and on top (what is at its centre is the notice itself), and still so after the picture
+  // fully in and inside the screen, with nothing above it in the tree hiding it. (The HUD takes no pointer events, so
+  // "what is at its centre" always answers the canvas: that test said nothing and was dropped. The picture is looked at.)
   const opaque = () => { const e = document.getElementById("placefound"), b = e.getBoundingClientRect();
-    const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    let visible = true;
+    for (let n = e; n && n !== document.documentElement; n = n.parentElement) { const c = getComputedStyle(n);
+      visible &&= c.display !== "none" && c.visibility === "visible" && c.opacity === "1"; }
     return !e.hidden && getComputedStyle(e).opacity === "1"
-      && { inView: b.width > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight, onTop: !!top && e.contains(top) }; };
+      && { inView: b.width > 0 && b.height > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight, visible }; };
   const seen = await (await page.waitForFunction(opaque, null, LONG)).jsonValue();
-  assert.deepEqual(seen, { inView: true, onTop: true }, "the notice is drawn opaque, inside the screen and on top");
+  assert.deepEqual(seen, { inView: true, visible: true }, "the notice is drawn opaque inside the screen");
   await page.screenshot({ path: `${OUT}/${name}-0-lugar.png` });
-  assert.deepEqual(await g(opaque), { inView: true, onTop: true }, "the notice was still fully there when the picture was taken");
+  assert.deepEqual(await g(opaque), { inView: true, visible: true }, "the notice was still fully there when the picture was taken");
   // Second load, on the fast clock, for the rest: the walk resumes where it was and the place stays found
   await load();
   assert.deepEqual(await g(() => window.__gta.roam().found), ["Capernaum"], "the place found is remembered across a reload");
