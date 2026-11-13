@@ -94,6 +94,14 @@ export class Hud {
   }
   private savedTimer: ReturnType<typeof setTimeout> | undefined;
 
+  /** The counter's label and marks (as many as the passage names), `filled` of them on. */
+  private drawCounter(filled: number) {
+    const total = counterTotal(this.ep);
+    const c = $("counter");
+    if (c.childElementCount !== total + 1) c.innerHTML = `<span>${this.ep.contador.rotulo.toUpperCase()}</span>` + "<i></i>".repeat(total);
+    c.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < filled));
+  }
+
   /** A place of the region was just found (places.ts): its name, what kind of fact it is, and the count, for a moment. */
   placeFound(place: Place, found: number, total: number) {
     const el = $("placefound");
@@ -113,7 +121,7 @@ export class Hud {
     $("obj").classList.remove("done");
     this.lastMission = -2;                                          // update() rewrites these if it ever runs again
     $("dist").textContent = v.dist !== null ? `${Math.round(v.dist)} m` : "";
-    $("counter").querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < s.filled));
+    this.drawCounter(s.filled);                                     // built here too: exploring may start without a mission
     if (v.kind !== this.roamKind) { this.roamKind = v.kind; this.narrativeLeft = 7; }
     this.narrativeLeft = Math.max(0, this.narrativeLeft - dt);
     const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line";
@@ -152,10 +160,7 @@ export class Hud {
     }
     $("dist").textContent = !done && dist !== null ? `${Math.round(dist)} m` : "";
 
-    const total = counterTotal(ep);
-    const c = $("counter");
-    if (c.childElementCount !== total + 1) c.innerHTML = `<span>${ep.contador.rotulo.toUpperCase()}</span>` + "<i></i>".repeat(total);
-    c.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < s.filled));
+    this.drawCounter(s.filled);
 
     // Give each encounter a short editorial introduction, then switch to contextual help.
     // Do not compete with scripture, completion cards or the previous mission's tick animation.
