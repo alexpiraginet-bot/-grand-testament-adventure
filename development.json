@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "generatedAt": "2026-11-13T10:33:29.112Z",
+  "source": "local-usage-metadata",
+  "sessions": [
+    {
+      "id": "codex-0b7a7c71804bd46b",
+      "label": "Codex · gpt-6-astra",
+      "agent": "codex",
+      "model": "gpt-6-astra",
+      "startedAtISO": "2026-11-12T19:28:52.842Z",
+      "lastActivityAtISO": "2026-11-13T10:32:54.127Z",
+      "endedAtISO": null,
+      "activeSeconds": 21285,
+      "activityIntervals": [
+        {
+          "start": "2026-11-12T19:28:52.842Z",
+          "end": "2026-11-12T22:39:11.945Z"
+        },
+        {
+          "start": "2026-11-12T22:47:46.795Z",
+          "end": "2026-11-12T23:12:10.466Z"
+        },
+        {
+          "start": "2026-11-12T23:30:56.324Z",
+          "end": "2026-11-13T00:44:23.762Z"
+        },
+        {
+          "start": "2026-11-13T09:26:18.407Z",
+          "end": "2026-11-13T10:32:54.127Z"
+        }
+      ],
+      "inputTokens": 90753281,
+      "cachedInputTokens": 88901504,
+      "outputTokens": 310948,
+      "estimatedApiCostUsd": 122.966674,
+      "estimateBasis": "Equivalente hipotético em USD, API Standard: US$10/1M entrada sem cache, US$1/1M entrada cacheada e US$50/1M saída. Referência 2026-11-13: https://developers.openai.com/api/docs/pricing. Não é cobrança real nem preço da assinatura; exclui ferramentas, impostos e outros encargos."
+    }
+  ],
+  "notes": [
+    "Cobertura parcial: somente sessões listadas possuem medição; ferramentas e gerações externas não são inferidas.",
+    "Tokens de entrada incluem contexto reutilizado. Tokens em cache são parte da entrada, não uma segunda contagem. Raciocínio é parte da saída.",
+    "Horas são atividade estimada da sessão: intervalos entre incrementos de tokens, limitados a 5 minutos, unidos sem sobreposição. Não são horas humanas comprovadas.",
+    "Valores em USD representam somente um equivalente hipotético de API Standard; não são fatura, cobrança da assinatura, arrecadação ou custo efetivamente pago.",
+    "O painel recebe snapshots publicados. Ausência de nova atividade não faz o contador nem a data de atualização avançarem."
+  ],
+  "coverageStart": "2026-11-12T19:28:52.842Z"
+}
