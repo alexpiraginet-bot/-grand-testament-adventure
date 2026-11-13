@@ -27,12 +27,15 @@ async function run(name, ctxOpts) {
   const text = (sel) => page.evaluate((s) => document.querySelector(s)?.textContent ?? null, sel);
   const shown = (sel) => page.evaluate((s) => { const e = document.querySelector(s); return !!e && !e.hidden && getComputedStyle(e).display !== "none"; }, sel);
   const press = async (sel) => { if (touch) await page.tap(sel, { timeout: 300000 }); else await page.click(sel, { timeout: 300000 }); };
-  const load = async () => {
-    await page.goto(`${URL_}?debug=1&dtmax=0.5`, { waitUntil: "load" });
+  const load = async (dtmax = 0.5) => {
+    await page.goto(`${URL_}?debug=1&dtmax=${dtmax}`, { waitUntil: "load" });
     await page.waitForFunction(() => window.__gta?.roam && !document.getElementById("go").disabled, null, LONG);
   };
   const r = {};
-  await load();
+  // First load, on the game's own clock (at most 0.05 s of game time per frame): the notice of the first place. With
+  // the 0.5 s per frame the rest of this check uses, the notice's 6 s are over in twelve frames, fewer than this
+  // renderer needs between seeing it and taking its picture (two runs passed on state alone and showed no notice).
+  await load(0.05);
   const places = await g(() => window.__gta.roam().places);
   r.places = places.map((p) => `${p.id}: ${p.nome} (${p.origem}${p.ref ? `, ${p.ref}` : ""})`);
   assert.equal(places.length, 5, "five places in this region");
@@ -40,20 +43,28 @@ async function run(name, ctxOpts) {
   await press("#go");
   await page.waitForFunction(() => window.__gta.state.phase === "play", null, LONG);
 
-  // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is
-  // read in the same page task that sees the place found. The notice lives 6 s of game time (places.ts): while it was
-  // timed by the clock (a timer and a CSS animation), this renderer drew it at opacity 0 or not at all
+  // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is. Read in the
+  // same page task that sees the place found: the notice is there from that frame, faint, and then comes in.
   const first = await (await page.waitForFunction(() => {
     const e = document.getElementById("placefound"), t = (id) => document.getElementById(id).textContent;
     return window.__gta.roam().found.includes("Capernaum")
       && { name: t("placename"), count: t("placecount"), note: t("placenote"), shown: !e.hidden && getComputedStyle(e).display !== "none" && Number(getComputedStyle(e).opacity) >= 0.2 };
   }, null, LONG)).jsonValue();
   assert.deepEqual(first, { name: "Cafarnaum", count: "Lugar encontrado · 1 de 5", note: "Lugar com fonte", shown: true }, "the found place is announced");
-  // and it comes fully in, on the screen and inside the viewport, before the picture is taken
-  const seen = await (await page.waitForFunction(() => { const e = document.getElementById("placefound"), b = e.getBoundingClientRect();
-    return !e.hidden && getComputedStyle(e).opacity === "1" && { inView: b.width > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight }; }, null, LONG)).jsonValue();
-  assert.equal(seen.inView, true, "the notice is drawn opaque inside the screen");
+  // fully in, inside the screen and on top (what is at its centre is the notice itself), and still so after the picture
+  const opaque = () => { const e = document.getElementById("placefound"), b = e.getBoundingClientRect();
+    const top = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
+    return !e.hidden && getComputedStyle(e).opacity === "1"
+      && { inView: b.width > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight, onTop: !!top && e.contains(top) }; };
+  const seen = await (await page.waitForFunction(opaque, null, LONG)).jsonValue();
+  assert.deepEqual(seen, { inView: true, onTop: true }, "the notice is drawn opaque, inside the screen and on top");
   await page.screenshot({ path: `${OUT}/${name}-0-lugar.png` });
+  assert.deepEqual(await g(opaque), { inView: true, onTop: true }, "the notice was still fully there when the picture was taken");
+  // Second load, on the fast clock, for the rest: the walk resumes where it was and the place stays found
+  await load();
+  assert.deepEqual(await g(() => window.__gta.roam().found), ["Capernaum"], "the place found is remembered across a reload");
+  await press("#go");
+  await page.waitForFunction(() => window.__gta.state.phase === "play", null, LONG);
   assert.equal(await g(() => window.__gta.roam().phase), "off", "no exploring mode while the episode is played");
 
   // the three missions, by the debug hooks
