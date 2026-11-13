@@ -596,6 +596,9 @@ async function main() {
         for (const n of npcList) if (n.following >= 0) { n.pos.x = x; n.pos.z = z; }
       },
       followers: () => npcList.filter((n) => n.following >= 0).map((n) => n.spec.id),
+      // the camera this frame and whether it is inside a building's footprint (no margin), for tools/check_camera.mjs
+      camera: () => { const c = camera.position;
+        return { pos: c.toArray(), mode: camMode, inside: town.boxes.some((b) => c.y > (b.bottom ?? -Infinity) && c.y < (b.top ?? Infinity) && insideObstacle(c.x, c.z, b, 0)) }; },
       info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }
