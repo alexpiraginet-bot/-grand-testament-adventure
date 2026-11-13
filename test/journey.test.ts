@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {buildJourneyHint,journeyNarrative,journeyRoute} from '../src/journey.ts';
+import {buildJourneyHint,journeyNarrative,journeyRoute,sceneDevelopmentNotice} from '../src/journey.ts';
 import {initialState,start,step,distanceToGoal,readingTime,type EpisodeData} from '../src/missions.ts';
 import {goals as makeGoals} from '../src/episode.ts';
 import {Terrain,decodeHeights} from '../src/terrain.ts';
@@ -40,6 +40,19 @@ test('distance alone never advertises an unavailable action and narration is sep
     assert.ok(journeyNarrative(i).length>0);
     assert.ok(!Object.values(ep.versiculos).includes(journeyNarrative(i)));
   }
+});
+
+test('unrendered encounters are labelled nearby and during scripture without interrupting exploration',()=>{
+  const state={phase:'play' as const,mission:1,promptVisible:false};
+  assert.equal(sceneDevelopmentNotice(state,200),'');
+  assert.match(sceneDevelopmentNotice(state,20),/Cena em desenvolvimento/);
+  assert.match(sceneDevelopmentNotice({...state,phase:'line'},200),/personagens em preparação/);
+  assert.match(sceneDevelopmentNotice({...state,promptVisible:true},null),/Cena em desenvolvimento/);
+  assert.equal(sceneDevelopmentNotice({...state,mission:0},0),'');
+  assert.equal(sceneDevelopmentNotice({...state,phase:'done'},0),'');
+  assert.equal(sceneDevelopmentNotice({...state,phase:'intro'},0),'');
+  assert.match(buildJourneyHint(state,20,false),/ponto marcado/);
+  assert.equal(sceneDevelopmentNotice(state,NaN),'');
 });
 
 test('radar route starts on the active path and never projects beyond its current goal',()=>{

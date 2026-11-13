@@ -3,7 +3,7 @@ import type { EpisodeData, State, Vec2 } from "./missions.ts";
 import { counterTotal, readingTime } from "./missions.ts";
 import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
-import { buildJourneyHint, journeyNarrative, journeyRoute } from './journey.ts';
+import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice } from './journey.ts';
 import type { Segment } from './world-layout.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -23,6 +23,7 @@ export class Hud {
   private journey: HTMLParagraphElement;
   private journeyBody: HTMLSpanElement;
   private journeyLabel: HTMLSpanElement;
+  private sceneNotice: HTMLParagraphElement;
   private routes: readonly Segment[];
   private journeyMission = -1;
   private narrativeLeft = 0;
@@ -37,6 +38,8 @@ export class Hud {
     this.journeyLabel=document.createElement('span');this.journeyLabel.className='journey-label';this.journeyLabel.textContent='Narrativa do jogo';
     this.journeyBody=document.createElement('span');this.journeyBody.className='journey-body';
     this.journey.append(this.journeyLabel,this.journeyBody);$('counter').after(this.journey);
+    this.sceneNotice=document.createElement('p');this.sceneNotice.id='scene-development';this.sceneNotice.className='journey';
+    this.sceneNotice.hidden=true;this.sceneNotice.setAttribute('role','status');this.journey.after(this.sceneNotice);
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
@@ -117,6 +120,9 @@ export class Hud {
     const journeyLabel=narrated?'Narrativa do jogo':'Orientação';
     if(this.journeyLabel.textContent!==journeyLabel)this.journeyLabel.textContent=journeyLabel;
     if(this.journeyBody.textContent!==journeyText)this.journeyBody.textContent=journeyText;
+    const notice=sceneDevelopmentNotice(s,dist);
+    this.sceneNotice.hidden=!notice;
+    if(this.sceneNotice.textContent!==notice)this.sceneNotice.textContent=notice;
 
     const pr = $("prompt"), act = $("act");
     const label = m.acao ?? "";

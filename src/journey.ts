@@ -5,6 +5,13 @@ import type {Segment} from './world-layout.ts';
 
 type JourneyState=Pick<State,'phase'|'mission'|'promptVisible'>;
 
+/** Participants are not yet rendered; keep encounters playable and label the missing scene honestly. */
+export function sceneDevelopmentNotice(state:JourneyState,distance:number|null):string {
+  if(state.mission<1||state.mission>2||state.phase==='intro'||state.phase==='done')return '';
+  const near=distance!==null&&Number.isFinite(distance)&&distance>=0&&distance<35;
+  return state.phase==='line'||state.promptVisible||near?'Cena em desenvolvimento · personagens em preparação.':'';
+}
+
 export function journeyNarrative(mission:number):string {
   return [
     'A trilha desce até o lago. Na praia, um encontro está por começar.',
@@ -20,7 +27,7 @@ export function buildJourneyHint(state:JourneyState,distance:number|null,touch:b
   if(state.mission===0)return near?'Continue até a areia junto à água.':'Siga a trilha até a margem do lago.';
   if(state.mission===1){
     if(state.promptVisible)return touch?'Toque em Chamar para convidá-los.':'Aperte E para chamar Simão e André.';
-    return near?'Chegue mais perto dos pescadores.':'Procure Simão e André junto às redes.';
+    return near?'Aproxime-se do ponto marcado junto às redes.':'Siga até o encontro de Simão e André junto às redes.';
   }
   if(state.mission===2){
     if(state.promptVisible)return touch?'Toque em Chamar; pode ficar na margem.':'Aperte E para chamar; pode ficar na margem.';
