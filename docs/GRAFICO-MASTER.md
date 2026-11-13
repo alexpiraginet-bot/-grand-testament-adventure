@@ -58,6 +58,24 @@ Cada item entra como variante de `?fx` ou de qualidade, medido com `tools/bench.
 | 9 | NPCs rigados, `idle`/`run`/`beckon`, vegetação menos facetada | motor nenhum corrige malha e animação | Codex (Tripo) | pendente |
 | 10 | Versão nativa (Unreal 5 + DLSS na RTX 5060) usando `export/engine/` e **os mesmos seis planos** | teto real de qualidade no PC; o DLSS 5 segue sem SDK público (`DLSS5-STATUS.md`) | Alex/Codex na máquina com a placa | pendente |
 
+## "Nível GTA6": a barra, pilar por pilar
+
+Pedido de Alex em 13/11/2026: "Vamos melhorar o projeto a nível gta6". Lido como **barra de qualidade de mundo aberto
+AAA**, não como cópia: continua proibido usar nome, logo, HUD, personagens, cidades ou músicas da Rockstar (regra do
+`HANDOFF.md`). Um jogo desse porte é sobretudo volume de arte, animação e conteúdo; o motor é uma parte. Por pilar:
+
+| Pilar | Hoje (conferido) | Próximo passo que dá para medir ou ver | Quem |
+|---|---|---|---|
+| Luz e atmosfera | sol com uma sombra de 56 m, céu fotográfico LDR, render direto sem pós | `?fx` medido no PC/celulares; sombras em cascata; céu HDR; godrays; névoa de altura | Claude |
+| Apresentação das missões | legenda literal e HUD | **plano cinematográfico nas falas (esta revisão)**; transições entre missões; trilha e ambiente sonoro com licença registrada | Claude (código), Alex (trilha) |
+| Personagens e animação | herói com 65 ossos e só `walk`; seis NPCs em pose A | `idle`/`run`/`beckon`; olhar de quem fala (cabeça) e pés no chão (IK) | Codex (rig e clipes), Claude (IK/olhar) |
+| Mundo vivo | discípulos e empregados; vila sem rotina | aldeões com rotinas (redes, jarros, conversa), barcos no lago, aves, fumaça; depende dos NPCs rigados | Codex (malhas), Claude (sistemas) |
+| Jogabilidade | 3 missões lineares: andar e chamar | mais episódios, interações na vila e atividades livres, com "Narrativa do jogo" rotulada (`docs/NARRATIVA.md`) | Alex (roteiro), Claude |
+| Desempenho | texturas ~1,2 GB na GPU; 166–216 draw calls nos planos do bench | KTX2, LOD, TAAU no celular; bench em aparelhos físicos | Codex, Claude |
+
+O teto fotorrealista no PC da RTX continua sendo a versão nativa (Unreal 5 + DLSS, `docs/ALTO-NIVEL.md`). No navegador,
+a meta é o melhor que um celular sustenta, medido.
+
 ## Motores da lista do Alex
 
 O Codex já registrou fontes e decisão em `docs/MOTORES-GRAFICOS.md`: seguir em three.js e testar o Babylon.js
