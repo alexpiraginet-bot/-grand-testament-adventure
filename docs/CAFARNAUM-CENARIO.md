@@ -38,6 +38,31 @@ orientação. Materiais e silhuetas ainda precisam de revisão artística para c
 
 ## Verificação reproduzível
 
+### Céu e água — R2
+
+- Céu fotográfico CC0 de [Kloofendal 48d Partly Cloudy (Pure Sky)](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky),
+  Greg Zaal e Jarod Guest / Poly Haven. A imagem é referência contemporânea do céu,
+  não um registro de Cafarnaum. Derivado WebP 4096×2048 para fundo, 1024×512 para
+  reflexos, total de 306.662 bytes; fonte, hashes e reprodução em `tools/prepare_sky.mjs`.
+  São imagens LDR já tonemapeadas, não iluminação HDR; o sol direto continua separado.
+- O fundo usa material sem nova curva tonal para não lavar duas vezes a fotografia.
+  Os reflexos usam a versão menor, evitando gerar o ambiente a partir do panorama 4K.
+- A água revela o fundo no raso e aumenta a opacidade com a profundidade. O mapa
+  usa os mesmos dados de fundo já existentes no jogo, com coordenadas nos centros
+  dos texels. Não mudamos o nível do lago, o relevo nem as colisões.
+- Há ajuste de ondulação, cor da neblina distante, exposição e altura do sol.
+  Não há ray tracing, refração física ou DLSS nesta implementação.
+- Verificação local final: build e 34 testes passaram; Chrome WebGPU desktop,
+  viewport móvel 390×844 com toque e WebGL2 carregaram os 14 assets, caminharam,
+  animaram/pararam o herói e pausaram sem erros de página, rede ou console.
+  Amostra desktop WebGPU 87,6–95,2 FPS; móvel emulado 63,5–94,9; WebGL2 74,7–95,8.
+  Recursos transferidos: 17.885.144 bytes; panorama+reflexos representam 306.662.
+  Texturas reportadas pelo renderer: até ~1,21 GB desktop / ~1,05 GB móvel emulado.
+  Evidências: `shots/sky-water-r2-final/` e `shots/sky-water-r2-build.log` (locais).
+  O consumo ainda exige teste em telefone físico; os FPS vêm da RTX deste PC.
+
+### Comandos e limites
+
 `npm run build` verifica tipos, testes e gera o build. `test/world-layout.test.ts` confere
 o corredor caminhável, contato das fundações, preservação do DEM e integridade dos mapas PBR.
 `tools/check_world.mjs` amostra o predicado real de colisão do jogo no corredor e fotografa

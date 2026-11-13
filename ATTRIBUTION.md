@@ -33,6 +33,11 @@ suavização da faixa da margem são nossos.
 - Arqueologia: Christian Media Center / Studium Biblicum Franciscanum e Israel Nature
   and Parks Authority. Fontes, escolhas de composição e limites em `docs/CAFARNAUM-CENARIO.md`.
 
+Céu: Kloofendal 48d Partly Cloudy (Pure Sky), Greg Zaal e Jarod Guest / Poly Haven,
+CC0. Panorama fotográfico contemporâneo; não representa um registro de Cafarnaum.
+Derivados LDR em `public/textures/sky/`, com origem e hashes no `LICENSE.json`.
+https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky · https://polyhaven.com/license
+
 ## Malhas 3D
 
 Geradas no Tripo pela conta do Alex, com licença própria. **Não estão neste repositório público**, não ficam sob a MIT

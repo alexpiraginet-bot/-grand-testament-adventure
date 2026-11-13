@@ -1,7 +1,7 @@
 // The 3D world: ground from the real relief, the lake, the far hills, sky, plants, Capernaum's houses, the boat.
 // Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
-import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float } from 'three/tsl';
+import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float, step, color } from 'three/tsl';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
 import { rng, distanceToSegment, insideObstacle, settlementLayout, type Segment, type Obstacle } from './world-layout.ts';
@@ -86,6 +86,14 @@ export async function loadGroundTextures(): Promise<GroundTextures> {
   return result;
 }
 
+export async function loadSkyTextures(): Promise<{background:THREE.Texture;environment:THREE.Texture}> {
+  const loader=new THREE.TextureLoader();
+  const [background,environment]=await Promise.all(['background','environment'].map(role=>loader.loadAsync(`${import.meta.env.BASE_URL}textures/sky/clouds-${role}.webp`)));
+  background.colorSpace=environment.colorSpace=THREE.SRGBColorSpace;
+  environment.mapping=THREE.EquirectangularReflectionMapping;
+  return {background,environment};
+}
+
 export function groundMesh(t: Terrain, segments: number, routes: Segment[], maps: GroundTextures): THREE.Mesh {
   const geo = new THREE.PlaneGeometry(t.size, t.size, segments, segments);
   geo.rotateX(-Math.PI / 2);
@@ -152,13 +160,28 @@ export function farMesh(far: Int16Array, size: number, n: number): THREE.Mesh {
   return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }));
 }
 
-export function water(size: number): { mesh: THREE.Mesh; update: (t: number) => void } {
+export function water(size: number, terrain: Terrain): { mesh: THREE.Mesh; update: (t: number) => void } {
   const nrm = waveNormals();
   nrm.repeat.set(size / 3.5, size / 3.5);
-  const m = new THREE.MeshStandardMaterial({
-    color: 0x3f747c, roughness: 0.18, metalness: 0.0, normalMap: nrm, normalScale: new THREE.Vector2(0.12, 0.12),
-    transparent: true, opacity: 0.86,
+  // Depth comes from the same authored lake bed used by the existing height field.
+  // Keep the actual surface at y=0; transparent shallows reveal the real rendered floor.
+  const pixels=new Uint8Array(terrain.h.length*4);
+  for(let i=0;i<terrain.h.length;i++){
+    const v=Math.round(Math.max(0,Math.min(9,-terrain.h[i]))/9*255);
+    pixels.set([v,v,v,255],i*4);
+  }
+  const depthMap=new THREE.DataTexture(pixels,terrain.n,terrain.n);
+  depthMap.minFilter=depthMap.magFilter=THREE.LinearFilter;depthMap.needsUpdate=true;
+  const m = new THREE.MeshStandardNodeMaterial({
+    color: 0x3f747c, roughness: 0.11, metalness: 0.0, normalMap: nrm, normalScale: new THREE.Vector2(0.32, 0.32),
+    transparent: true, depthWrite:false,
   });
+  const near=step(positionWorld.x.abs(),float(terrain.size/2)).mul(step(positionWorld.z.abs(),float(terrain.size/2)));
+  // Height samples occupy texel centres, including both terrain endpoints.
+  const depthUV=positionWorld.xz.add(terrain.size/2).div(terrain.step).add(.5).div(terrain.n);
+  const depth=mix(float(9),texture(depthMap,depthUV).r.mul(9),near);
+  m.opacityNode=mix(.18,.96,smoothstep(0,1.6,depth));
+  m.colorNode=mix(color(0x7aaca0),color(0x315f7a),smoothstep(0,6,depth));
   const geo = new THREE.PlaneGeometry(size, size, 1, 1);
   geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, m);
@@ -167,19 +190,24 @@ export function water(size: number): { mesh: THREE.Mesh; update: (t: number) => 
   return { mesh, update: (t) => { nrm.offset.set(t * 0.004, t * 0.0027); } };
 }
 
-/** Sky dome: a vertical gradient with a warm glow toward the sun. */
-export function sky(sunDir: THREE.Vector3): THREE.Mesh {
+/** Sky dome: CC0 photographic panorama; gradient retained for an explicit fallback. */
+export function sky(sunDir: THREE.Vector3, panorama?:THREE.Texture): THREE.Mesh {
   const geo = new THREE.SphereGeometry(40000, 32, 16);
+  if(panorama) {
+    const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({map:panorama,side:THREE.BackSide,fog:false,depthWrite:false,toneMapped:false}));
+    mesh.rotation.y=-.38;mesh.renderOrder=-1;
+    return mesh;
+  }
   const pos = geo.attributes.position as THREE.BufferAttribute;
   const col = new Float32Array(pos.count * 3);
-  const top = new THREE.Color(0x4f86c2), hor = new THREE.Color(0xd9dcd2), glow = new THREE.Color(0xffe2b0), c = new THREE.Color();
+  const top = new THREE.Color(0x337dc5), hor = new THREE.Color(0xc5dce8), glow = new THREE.Color(0xffe5bb), c = new THREE.Color();
   const v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i).normalize();
     const h = Math.max(0, v.y);
-    c.copy(hor).lerp(top, Math.pow(h, 0.55));
-    const g = Math.pow(Math.max(0, v.dot(sunDir)), 6);
-    c.lerp(glow, g * 0.75);
+    c.copy(hor).lerp(top, Math.pow(h, 0.3));
+    const g = Math.pow(Math.max(0, v.dot(sunDir)), 32);
+    c.lerp(glow, g * 0.42);
     if (v.y < 0) c.copy(hor);
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
   }

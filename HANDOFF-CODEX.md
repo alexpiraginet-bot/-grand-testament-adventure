@@ -2,6 +2,12 @@
 
 ## Continuação autorizada por Alex — integração visual
 
+**R1 publicada:** `main` em `6e35ff1534d4d17aa082d1d03113d997b51da801`,
+deploy `dpl_AHxLfGbMGUfi9VSjb3URSK47Uxmb` confirmado `READY`. Testes de integração,
+percurso de cenário e três missões passaram no domínio público. O trabalho seguinte
+melhora céu e água, sem mudar o gameplay. Alex autorizou publicar cada incremento
+verificado. Antes de editar em outra sessão, conferir o `origin/main` mais recente.
+
 Alex pediu ao Codex seguir para a integração, mantendo qualidade gráfica máxima que o navegador sustente.
 Trabalho em `codex/tripo-runtime-r1`: rig nativo do herói, treze malhas de cenário, texturas 2K, instancing,
 LOD por distância e catálogo de assets com hash. Detalhes e testes em `docs/TRIPO-RUNTIME-R1.md`.

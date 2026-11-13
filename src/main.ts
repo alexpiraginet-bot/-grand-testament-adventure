@@ -3,7 +3,7 @@
 import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
-import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, houses, props, sky, water } from "./world.ts";
+import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
 import { missionRoutes, insideObstacle } from './world-layout.ts';
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
@@ -57,7 +57,7 @@ async function main() {
   renderer.setPixelRatio(Math.min(devicePixelRatio, quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.0;
+  renderer.toneMappingExposure = 1.08;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   await renderer.init();
@@ -65,22 +65,16 @@ async function main() {
   const backend = be.isWebGPUBackend ? "WebGPU" : "WebGL2";
   be.device?.lost.then(() => { const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u); });
 
-  const [{ meta, terrain, far, img }, assets, groundTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures()]);
+  const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures(),loadSkyTextures()]);
 
   const scene = new THREE.Scene();
-  const sunDir = new THREE.Vector3(0.45, 0.55, 0.7).normalize();
-  scene.add(sky(sunDir));
-  scene.fog = new THREE.Fog(0xd3d6cc, 400, 16000);
-  {
-    // environment for the reflections: the sky's gradient as an equirectangular picture
-    const c = document.createElement("canvas"); c.width = 256; c.height = 128;
-    const g = c.getContext("2d")!, gr = g.createLinearGradient(0, 0, 0, 128);
-    gr.addColorStop(0, "#4f86c2"); gr.addColorStop(0.47, "#d9dcd2"); gr.addColorStop(0.53, "#8a8064"); gr.addColorStop(1, "#5d5444");
-    g.fillStyle = gr; g.fillRect(0, 0, 256, 128);
-    const env = new THREE.CanvasTexture(c); env.mapping = THREE.EquirectangularReflectionMapping; env.colorSpace = THREE.SRGBColorSpace;
-    scene.environment = env;
-    scene.environmentIntensity = 0.55;
-  }
+  const sunDir = new THREE.Vector3(0.45, 0.92, 0.7).normalize();
+  scene.add(sky(sunDir,skyTextures.background));
+  scene.fog = new THREE.Fog(0x9daab9, 400, 16000);
+  // Smaller panorama for reflections; avoid generating an environment from the 4K background.
+  scene.environment = skyTextures.environment;
+  scene.environmentRotation.y=-.38;
+  scene.environmentIntensity = 0.55;
   scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x7d6c4f, 1.25));
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
@@ -94,7 +88,7 @@ async function main() {
   const keep=missionRoutes(terrain);
   scene.add(groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures));
   const fm = farMesh(far, meta.far.size, meta.far.n); fm.position.y = -0.3; scene.add(fm);
-  const lake = water(meta.far.size); scene.add(lake.mesh);
+  const lake = water(meta.far.size,terrain); scene.add(lake.mesh);
   const cap = meta.places.find((p) => p.id === "Capernaum") ?? { x: 0, z: 0 };
   const town = houses(terrain, cap.x, cap.z, keep, assets);
   scene.add(town.group);

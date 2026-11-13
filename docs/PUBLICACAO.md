@@ -1,5 +1,29 @@
 # Publicação — 12/11/2026
 
+## Publicação visual R1 conferida em produção
+
+- Commit `6e35ff1534d4d17aa082d1d03113d997b51da801` em `main`;
+  deployment `dpl_AHxLfGbMGUfi9VSjb3URSK47Uxmb`, estado `READY`, fonte Git conferida.
+- Endereço público sem autenticação: https://grand-testament-adventure-lexprojects.vercel.app/
+- Herói animado, treze malhas de cenário, 131 construções, 30 pátios e 48 jarros.
+  Contagens vêm do gerador de cenário, não são estimativas históricas de população.
+- 34 testes/build local; o build Vercel também terminou. Recursos Tripo baixados e
+  verificados no build; nenhum GLB foi colocado no Git público.
+- Teste **no domínio público**: WebGPU desktop e viewport móvel com toque, WebGL2
+  desktop, 14/14 assets, nenhum erro de página, aviso de console ou HTTP registrado.
+- A amostra de integração pública registrou 82,4–94,4 FPS desktop WebGPU,
+  60,9–93,9 no viewport móvel e 78,7–94,2 em WebGL2. Todos rodaram neste PC.
+- As três missões completaram nos dois viewports, com os quatro seguidores;
+  o teste usa teleporte/ação de depuração nas missões. O corredor de cenário
+  também passou na amostragem real de colisão.
+- Evidências locais ignoradas pelo Git: `shots/production-r1-integration/`,
+  `shots/production-r1-world/`, `shots/production-r1-episode/`.
+
+Os NPCs continuam provisórios sem rig. Telefone físico, nuvem e DLSS permanecem
+pendentes. A composição ainda está abaixo do realismo da imagem-alvo de Alex.
+
+## Histórico da primeira publicação
+
 Atualização visual autorizada depois desta primeira publicação: integração R1 documentada em
 [TRIPO-RUNTIME-R1.md](TRIPO-RUNTIME-R1.md). O herói e treze malhas de cenário substituem os respectivos
 provisórios. O relato abaixo preserva as evidências da primeira publicação, que ainda usava formas simples.
@@ -49,7 +73,7 @@ Evidências locais (fora do Git): `shots/publicacao/build.log`,
 `shots/publicacao/feedback/`, `shots/publicacao/episodio/` e
 `shots/publicacao/runtime-errors.jsonl`.
 
-## Limitações vigentes
+## Limitações da primeira publicação (registro histórico)
 
 - **Modelos provisórios:** o GLB do herói não está no deploy Git. As tentativas de
   `models/heroi.glb` e `.glb.json` retornam 404 e o jogo usa as formas simples.
@@ -65,7 +89,7 @@ Evidências locais (fora do Git): `shots/publicacao/build.log`,
 - Não houve teste em celular físico, prova com leitor de tela, benchmark prolongado
   ou integração de monitoramento de erros. Drains não foram inspecionados.
 
-## Próxima revisão
+## Próxima revisão prevista naquele momento
 
 Partir da `main` atual, criar `claude/...` ou `codex/...` e abrir PR em rascunho.
 Integrar o herói com seu esqueleto original e o clip `walk`; preservar as licenças

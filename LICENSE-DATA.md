@@ -20,3 +20,7 @@ As malhas 3D do Tripo não estão aqui e não entram nesta licença (`ASSETS.md`
 Os mapas de textura `public/textures/ground/*.webp` são derivados de Rocky Gravel / Poly Haven,
 **CC0-1.0**, não da licença dos dados acima. Autoria, origem e hashes em
 `public/textures/ground/LICENSE.json`.
+
+Os panoramas `public/textures/sky/*.webp` derivam de Kloofendal 48d Partly Cloudy
+(Pure Sky), Greg Zaal e Jarod Guest / Poly Haven, **CC0-1.0**. Origem, transformações
+e hashes em `public/textures/sky/LICENSE.json`.

@@ -1,0 +1,32 @@
+{
+  "asset": "Kloofendal 48d Partly Cloudy (Pure Sky)",
+  "source": "https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "authors": [
+    "Greg Zaal",
+    "Jarod Guest"
+  ],
+  "note": "Photographic sky reference, not a photograph of first-century Capernaum. Tonemapped LDR derivatives, not HDR lighting.",
+  "original": {
+    "url": "https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemapped%20JPG/kloofendal_48d_partly_cloudy_puresky.jpg",
+    "md5": "3f2b19fa9c14943b34e5d4f480ba13ba",
+    "sha256": "2bdd7abe32f1d2f7a626e0a6e45bb808313f29bd41d758eacbdba91560e93f04"
+  },
+  "maps": {
+    "background": {
+      "path": "public/textures/sky/clouds-background.webp",
+      "bytes": 270242,
+      "sha256": "01d4279e927e55087124a109bd6475df8e12ec83c8b6516cbc1cf5e2f753d58a",
+      "width": 4096,
+      "height": 2048
+    },
+    "environment": {
+      "path": "public/textures/sky/clouds-environment.webp",
+      "bytes": 36420,
+      "sha256": "296bae89be02c7343b29d4ae136ee5cabf476aee871257035b501775a78507aa",
+      "width": 1024,
+      "height": 512
+    }
+  }
+}

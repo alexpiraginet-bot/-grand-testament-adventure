@@ -29,11 +29,13 @@ test('village walls meet the terrain and geometry generation does not modify the
   assert.deepEqual(t.h,before);
 });
 
-test('ground PBR maps match their separately credited CC0 manifest',()=>{
-  const manifest=JSON.parse(read('public/textures/ground/LICENSE.json').toString());
+test('ground and sky maps match their separately credited CC0 manifests',()=>{
+ for(const directory of ['ground','sky']){
+  const manifest=JSON.parse(read(`public/textures/${directory}/LICENSE.json`).toString());
   assert.equal(manifest.license,'CC0-1.0');
   for(const map of Object.values(manifest.maps) as {path:string;sha256:string;bytes:number}[]){
     const bytes=read(map.path);assert.equal(bytes.length,map.bytes);
     assert.equal(createHash('sha256').update(bytes).digest('hex'),map.sha256);
   }
+ }
 });
