@@ -1,5 +1,37 @@
 # Publicação — 12/11/2026
 
+## R12 — jornada e Simão, publicação verificada em 13/11/2026
+
+As PRs #7 e #8 foram integradas à branch de Claude; a PR #1 foi integrada
+em `main` no commit `81f4d2afae42e0eb7274ec20cf99986b58dcc256`.
+Deploy de produção `dpl_9ALGJPaPvZbighm2D5BtUPiigRuk`, estado Ready,
+projeto existente `-grand-testament-adventure`, equipe `lexprojects`.
+
+- Endereço público: https://grand-testament-adventure-lexprojects.vercel.app/?release=simao-r12
+- HTTP anônimo 200, sem login. Bundle `index-D5_CuN9U.js`, SHA-256
+  `ac4f907ca2243bd165282c903cbbf74e7edbe1ef41f0cd2588d5d56e80fb289b`,
+  contém o commit publicado. Os dois GLBs Simão no domínio do jogo tiveram
+  tamanho e hash conferidos contra o catálogo.
+- Build/TypeScript e 301 testes CPU passaram. A rodada local teve 199
+  verificações nomeadas, Chrome desktop/móvel e WebKit, com falhas injetadas,
+  painel e 56 PNGs. Detalhes e tentativas anteriores em `QA-R12.md`.
+- Smoke público: Chrome 1280×800 e 390×844, 18 verificações por contexto;
+  14 assets principais, duas espécies, Simão/idle, E/toque, legenda literal
+  e único seguidor real. Sem erros inesperados. Seis capturas, relatório e
+  manifesto em `shots/r12-public-smoke-r1/` (arquivo privado do projeto).
+- Analytics foi interceptado no smoke para não gerar visitas artificiais.
+  O script real foi consultado separadamente: HTTP 200, 4.522 bytes. Isso
+  comprova disponibilidade do script, não contagem recebida no painel Vercel.
+- Assets externos: deploy `dpl_4BF685t2G3vGWhd71ZBwVz2t7Qk8`; 22 arquivos
+  conferidos por hash, incluindo os 19 anteriores preservados. GLBs continuam
+  fora do Git e separados da licença MIT do código.
+
+As capturas são gameplay real com posicionamento de QA, sem alegar percurso
+integral caminhado. Móvel emulado e WebKit Windows não validam iPhone físico.
+Simão tem somente idle/caminhada; os demais NPCs aguardam rig e revisão.
+Esta entrada identifica a publicação funcional testada. Commits posteriores
+exclusivamente documentais podem alterar o carimbo do bundle sem mudar o jogo.
+
 ## Publicação visual R1 conferida em produção
 
 - Commit `6e35ff1534d4d17aa082d1d03113d997b51da801` em `main`;

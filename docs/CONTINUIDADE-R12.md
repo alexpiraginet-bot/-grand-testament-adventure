@@ -54,6 +54,11 @@ nenhum log privado, prompt ou consumo presumido de Claude foi publicado.
 
 ## Limites encontrados na revisão
 
+Publicação do jogo concluída e verificada no commit `81f4d2a`, pela PR #1,
+depois da integração da PR #8. O smoke no domínio público passou 36
+verificações (18 desktop e 18 móvel emulado), além da QA local. Consultar
+`PUBLICACAO.md` para deploy, bundle, hashes e limites da evidência.
+
 A revisão de código identificou uma condição já presente em `main`: Créditos
 e Nuvem suspendem áudio/NPC, mas não todo o relógio de missão. Uma fala pode
 terminar atrás desses painéis. Não houve alteração desse comportamento na R12;
