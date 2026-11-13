@@ -1,5 +1,18 @@
 # Grand Testament Adventure — continuidade local
 
+Direção visual R9 (13/11): Alex prefere a ausência de um NPC a um boneco de
+esferas/cilindros ou uma malha inacabada. Nenhum humano procedural deve voltar
+como fallback. Os seis candidatos Tripo em A-pose continuam fora da cena até
+terem rig, animação e revisão visual no jogo. A falha do herói deve abrir o
+fluxo de recuperação, sem substituto. Progresso narrativo não é ator visível,
+colisor ou ponto de seguidor no radar. Ver `docs/DIAGNOSTICO-VISUAL-R9.md`.
+
+Alinhamento confirmado por Alex com Claude: a Bíblia orienta, mas não tranca
+o mundo. Chegar ao lugar certo permite agir sem exigir leitura prévia. Não
+introduzir esse bloqueio durante mudanças de visual ou de jornada. Preservar
+a branch de Claude; conciliar alterações em `main.ts`, `hud.ts` e `journey.ts`
+antes de integrar o trabalho paralelo.
+
 Fauna R8 (13/11): ler `docs/FAUNA-PRODUCAO-R8.md`, os dois relatórios
 `QA-*-R8-*.md` e `tools/fauna/README.md` antes de mexer nos animais. Galinha e
 burro próprios têm rigs/caminhadas corrigidos e hashes por perfil; os presets

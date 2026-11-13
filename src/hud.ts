@@ -3,7 +3,7 @@ import type { EpisodeData, Fala, State, Vec2 } from "./missions.ts";
 import { counterTotal, readingTime } from "./missions.ts";
 import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
-import { buildJourneyHint, journeyNarrative, journeyRoute } from './journey.ts';
+import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice, SCENE_DEVELOPMENT_NOTICE } from './journey.ts';
 import type { Segment } from './world-layout.ts';
 import { ORIGIN_LABEL, type Place } from "./places.ts";
 
@@ -42,6 +42,7 @@ export class Hud {
   private journey: HTMLParagraphElement;
   private journeyBody: HTMLSpanElement;
   private journeyLabel: HTMLSpanElement;
+  private sceneNotice: HTMLParagraphElement;
   private routes: readonly Segment[];
   private journeyMission = -1;
   private narrativeLeft = 0;
@@ -59,6 +60,8 @@ export class Hud {
     this.journeyLabel=document.createElement('span');this.journeyLabel.className='journey-label';this.journeyLabel.textContent='Narrativa do jogo';
     this.journeyBody=document.createElement('span');this.journeyBody.className='journey-body';
     this.journey.append(this.journeyLabel,this.journeyBody);$('counter').after(this.journey);
+    this.sceneNotice=document.createElement('p');this.sceneNotice.id='scene-development';this.sceneNotice.className='journey';
+    this.sceneNotice.hidden=true;this.sceneNotice.setAttribute('role','status');this.journey.after(this.sceneNotice);
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
@@ -151,6 +154,10 @@ export class Hud {
     const label = narrated ? "Narrativa do jogo" : "Orientação";
     if (this.journeyLabel.textContent !== label) this.journeyLabel.textContent = label;
     if (this.journeyBody.textContent !== text) this.journeyBody.textContent = text;
+    // the way back and its verse tell of those who followed him; none is drawn yet, and the HUD says so (R9)
+    const scene = v.kind === "free" ? "" : SCENE_DEVELOPMENT_NOTICE;
+    this.sceneNotice.hidden = !scene;
+    if (this.sceneNotice.textContent !== scene) this.sceneNotice.textContent = scene;
     $("prompt").hidden = true; $("act").hidden = true;
     const sub = $("sub");
     sub.hidden = !v.line;
@@ -200,6 +207,9 @@ export class Hud {
     const journeyLabel=narrated&&!notice?'Narrativa do jogo':'Orientação';
     if(this.journeyLabel.textContent!==journeyLabel)this.journeyLabel.textContent=journeyLabel;
     if(this.journeyBody.textContent!==journeyText)this.journeyBody.textContent=journeyText;
+    const scene=sceneDevelopmentNotice(s,dist);                    // `notice` is this branch's edge-of-region notice
+    this.sceneNotice.hidden=!scene;
+    if(this.sceneNotice.textContent!==scene)this.sceneNotice.textContent=scene;
 
     const pr = $("prompt"), act = $("act");
     const label = m.acao ?? "";

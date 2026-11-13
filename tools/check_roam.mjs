@@ -88,7 +88,8 @@ async function run(name, ctxOpts) {
   assert.equal(await text(".journey-label"), "Narrativa do jogo");
   assert.equal(await text(".journey-body"), "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila.");
   assert.equal(await shown("#sub"), false, "no line on screen yet");
-  assert.deepEqual(await g(() => window.__gta.followers().length), 4, "the four walk with him");
+  assert.deepEqual(await g(() => window.__gta.narrativeFollowers().length), 4, "the four follow him in the story");
+  assert.deepEqual(await g(() => window.__gta.followers()), [], "no participant is drawn or put on the radar (R9)");
   await page.screenshot({ path: `${OUT}/${name}-2-epilogo.png` });
 
   // he can walk again (the episode's end had stopped him): a few game seconds forward change his position
@@ -158,7 +159,7 @@ async function run(name, ctxOpts) {
   await press("#novo");
   await page.waitForFunction(() => window.__gta.roam().phase === "free" && window.__gta.state.phase === "done", null, LONG);
   await page.waitForFunction(() => document.getElementById("mk").textContent === "EXPLORAÇÃO LIVRE", null, LONG);
-  assert.equal(await g(() => window.__gta.followers().length), 4, "the four are with him");
+  assert.equal(await g(() => window.__gta.narrativeFollowers().length), 4, "the four are with him in the story");
   assert.equal(await g(() => document.querySelectorAll("#counter i.on").length), 4, "the counter is drawn full without a mission having run");
   assert.equal(await text("#objt"), "Explore a região");
   assert.equal(await shown("#sub"), false, "no line is replayed for a player who only came to explore");

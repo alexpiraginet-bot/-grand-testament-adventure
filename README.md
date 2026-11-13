@@ -57,10 +57,12 @@ rodando e do Playwright instalado à parte: `npm i -g playwright && npx playwrig
 
 O herói usa seu esqueleto nativo de 65 ossos e a caminhada exportada no Tripo. Treze malhas de cenário substituem
 as formas simples. Texturas mantidas em 2K, instâncias próximas detalhadas e versões simples ao longe. Os seis NPCs
-ainda aguardam rig. Veja [docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md).
+ainda aguardam rig e, desde a R9, nenhum é desenhado: os encontros seguem jogáveis, com o aviso "Cena em
+desenvolvimento" ([docs/QA-NPC-QUALIDADE-R9.md](docs/QA-NPC-QUALIDADE-R9.md)). Veja [docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md).
 
 Os binários não vêm no Git. `npm run assets` baixa somente arquivos com hashes fixados no catálogo; o build faz a
-mesma conferência antes de publicar. Se um recurso falhar no navegador, a forma simples preserva a partida.
+mesma conferência antes de publicar. Se uma malha de cenário falhar no navegador, a forma simples preserva a partida; o herói não tem substituto: sem
+ele a abertura mostra o erro e "Tentar novamente".
 
 ## Painel do projeto (área de devs)
 
@@ -109,7 +111,7 @@ Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
   "Abrir modo compatível", sem recarregar sozinho. **Vite 8.3.5**, **TypeScript 7.0.2**.
   Versões travadas no `package-lock.json`.
 - **Sem Rapier por enquanto.** `@dimforge/rapier3d-compat@0.21.0` pesa 1,66 MB com gzip (medido no `dist/rapier.mjs`),
-  é uma dependência adicional ainda desnecessária. A fatia só precisa de chão por altura e colisão com casas e pessoas, feitos em
+  é uma dependência adicional ainda desnecessária. A fatia só precisa de chão por altura e colisão com casas, feitos em
   `src/main.ts`. Rapier volta quando houver física de verdade (barco na água, rede, empurrar coisas).
 - `tools/build_world.py` gera tudo o que o jogo trata como fato:
   - relevo de 3 km × 3 km em volta do ponto de Cafarnaum (AWS Terrain Tiles z14, ~8 m por pixel; a fonte é o SRTM

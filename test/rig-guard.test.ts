@@ -62,8 +62,11 @@ test("the import scanner recognises every way of naming src/rig.ts", () => {
 test("no file under src/ or tools/, nor index.html, refers to the provisional rig", () => {
   assert.ok(existsSync(RIG), "src/rig.ts is gone or renamed: update or drop this guard with it");
   const files = [...sources(join(ROOT, "src")), ...sources(join(ROOT, "tools")), join(ROOT, "index.html")];
-  // the scanner must actually see this codebase's imports, or an empty match would pass for the wrong reason
-  assert.ok(specifiers(readFileSync(join(ROOT, "src", "main.ts"), "utf8")).includes("./animated-actor.ts"), "scanner sees no imports in src/main.ts");
+  // the scanner must actually see this codebase's imports, or an empty match would pass for the wrong reason. Since R9
+  // the hero reaches animated-actor.ts through character-quality.ts (requireHero), which main.ts imports.
+  assert.ok(specifiers(readFileSync(join(ROOT, "src", "main.ts"), "utf8")).includes("./character-quality.ts"), "scanner sees no imports in src/main.ts");
+  assert.ok(specifiers(readFileSync(join(ROOT, "src", "character-quality.ts"), "utf8")).includes("./animated-actor.ts"),
+    "the hero no longer reaches src/animated-actor.ts through src/character-quality.ts");
   const offenders = files.filter((f) => f !== RIG)
     .flatMap((f) => specifiers(readFileSync(f, "utf8")).filter((s) => namesRig(f, s)).map((s) => `${relative(ROOT, f)} -> ${s}`));
   assert.deepEqual(offenders, [], "the real hero rig plays through src/animated-actor.ts; do not apply src/rig.ts (CLAUDE.md)");
