@@ -378,6 +378,75 @@ O modelo da sessão foi trocado por Alex durante a tarde; a linha `claude-fable-
 da API que acompanha o Claude Code (US$ 8 entrada, US$ 40 saída, US$ 0,20 leitura de cache por milhão), acrescentado
 ao script neste commit. Cinco respostas sintéticas (sem tokens) ficam fora da tabela. Conversão para reais não feita.
 
+#### Noite de 13/11 — R10, visitas, conferências da árvore final, interrupção e retomada
+
+**Conciliação com a R10 (`b1959be`, 18:25 UTC):** a `main` recebeu casas e solo do Codex (`cdf7360`). Um conflito, a
+linha de import do `main.ts` (a R10 deixou de importar `settlementLayout` ali; este branch tinha acrescentado o import
+do contador ao lado). A integração da R10 ficou como escrita. 269/269 testes, `tsc` limpo.
+
+**Frente de casas descartada, nunca enviada:** antes de saber que o Codex tinha assumido casas e solo, escrevi
+`house-fit.ts` (casa em proporção própria dentro do lote: de até 2,148× entre eixos para no máximo 1,12×, os três
+modelos em uso, 89/43/26, corredor da missão refeito nos testes; 263/263). Ficou só numa árvore local e não entra em
+lugar nenhum: a R10 cobre proporção e bases. Custo real de duplicar trabalho por falta de aviso a tempo.
+
+**Conferências de navegador, na ordem (Chromium com WebGL 2 por software, uma por vez):**
+
+| Árvore | Passou | Falhou / não rodou |
+|---|---|---|
+| `6878694` (conciliada com a R9) | `check_bible` (390×844 e 1280×800), `check_touch` (três tamanhos; plano cinematográfico entra sem NPCs, 3/3 no quadro), `check_npc_visual` celular (22 verificações) e herói 404 | `check_roam` falhou (ver 1 abaixo); `check_npc_visual` desktop, `check_loading` e `check_painel` não rodaram: a fila foi trocada quando a `main` mudou |
+| `b1959be` (com a R10) | `check_bible`, `check_touch`, `check_npc_visual` celular; `check_analytics` nos dois builds | `check_roam` falhou (ver 2); `check_loading` começou às 18:54:48 UTC e foi cortado pela interrupção da sessão |
+| `aa2340f` (a `main` publicada, `9dcd6cc`, mais o ajuste do teste) | `check_painel`, `check_analytics`, `check_bible`, `check_touch`; `check_loading` 6 de 7 casos | `check_roam`: celular completo, PC falhou (ver 3); `check_loading` caso `slow-desktop` (erros `Couldn't load texture blob:` da fauna opcional cancelada aos 30 s reais, a mesma assinatura de `caf7244`: limite deste renderizador, não mudança desta sessão) |
+
+O que as falhas do `check_roam` eram, uma a uma:
+1. O teste lia o aviso de lugar encontrado em quatro idas ao navegador; com a máquina ocupada por comandos meus, levou
+   mais que os 6 s do aviso. Leitura passou a ser única (`9cc3444`).
+2. O teste lia a etiqueta "Narrativa do jogo" da volta à vila depois de abrir e fechar a Bíblia; a narrativa dura 7 s de
+   jogo e a orientação já estava no lugar. O estado de abertura do epílogo passou a ser lido de uma vez, incluindo o
+   aviso "Cena em desenvolvimento" (`7dc836b`).
+3. **Defeito do jogo, não do teste:** em 1280×800 o aviso do primeiro lugar nunca chegou a ser desenhado. Ele era
+   escondido por um temporizador de relógio de 6 s, e o primeiro lugar é encontrado no primeiro quadro depois de
+   Começar, justamente quando um quadro pode demorar mais que isso. Agora o aviso conta o tempo de jogo que o HUD
+   recebe a cada quadro, como a narrativa ao lado (`e70e1ba`).
+   Também atualizei o teste para a R12: Simão é o único que pode aparecer seguindo, e só quando o ator dele carregou
+   (`aa2340f`).
+
+**Interrupção:** por volta de 18:55 UTC a sessão parou pelo limite de uso da conta e voltou às 21:43 UTC; os processos
+em segundo plano (fila de conferências, servidores de prévia) se perderam. Nada do que estava enviado se perdeu.
+
+**O que aconteceu nesse intervalo, conferido no Git ao voltar (não é trabalho desta sessão):** o Codex assumiu a
+continuidade a pedido de Alex. A PR #7 (R11: profundidade sem MSAA para o GTAO no WebGPU, SMAA rejeitado) foi
+integrada neste branch em `7d27546`; a PR #8 (R12: Simão, primeiro NPC com rig e animação) em `d1e92ac`; a **PR #1 foi
+marcada como pronta e integrada na `main` pela conta do Alex às 20:42 UTC (`81f4d2a`)**; a PR #9 registrou a
+publicação (`9dcd6cc`). Ver `CONTINUIDADE-R12.md`, `QA-R12.md` e `PUBLICACAO.md`. A cobertura em GPU real dos fluxos
+desta sessão (Bíblia, epílogo, exploração, toque) é a da QA do Codex na R12.
+
+**Conferido em produção ao voltar (21:48 UTC, só leitura):** bundle `index-C2WyNIhZ.js`, 1.253.357 bytes, SHA-256
+`444f649c16d68661c871059373154701f1f30c3a336361a74ab78257f0e60f87`. O contador de visitas está ligado nele (o
+padrão de `countVisits` é verdadeiro, contra falso no build local) e a Vercel serve o script (o mesmo
+`050e35bf7e6e9659…`). `painel.html` responde 200. **A API de consulta da Vercel ainda responde "Web Analytics not
+found"**: daqui não dá para afirmar que visitas estão sendo registradas; a confirmação é a aba Analytics do projeto.
+
+**Repetição do `check_roam` sobre `e70e1ba`:** em andamento quando este registro foi escrito; o resultado entra na
+linha seguinte do diário e na PR #10. Até lá, a correção do aviso tem só os 301 testes de CPU e o `tsc` a seu favor.
+
+**Encontros e interações:** li `INTERACOES-E-ENCONTROS.md`. Nada foi implementado por esta sessão. O que caberia aqui
+sem arte nova é a base lógica (um consumidor do botão de ação por quadro, estados puros do encontro, registro local
+versionado); ficou perguntado a Alex se é comigo ou com o Codex, para não repetir o caso das casas.
+
+**Consumo real da sessão até 13/11/2026 22:21:33 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+respostas desde 09:39:24 UTC). Substitui o retrato das 17:53:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 297 | 636 | 432.942 | 165.343.564 | 0 | 2.107.933 | 84.12 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 270,76**. Atividade estimada: **7,65 h** (intervalos entre respostas
+até 5 min, sem sobreposição; não inclui as ~3 h em que a sessão ficou parada). Não é fatura: a sessão roda no plano da
+conta claude.ai, e foi o limite desse plano que a interrompeu. 35 respostas sintéticas (sem tokens) ficam fora da
+tabela. Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
+
 ### Publicação R3 registrada
 
 O commit completo é `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`, com data de autoria
