@@ -56,13 +56,16 @@ porque um shader compila ou uma captura estática parece íntegra.
 Verificação CPU: 11 testes específicos de pós-processamento e typecheck passaram. Os testes conferem profundidade
 sem MSAA em todas as entradas do GTAO, entradas originais de profundidade/velocidade/câmera do TRAA, metadata
 temporal correta e descarte único dos alvos, inclusive RTT/histórico/resolve, sem destruir materiais ou texturas
-compartilhados. CPU não compila WGSL nem prova o resultado na tela. O Alto do primeiro candidato deixou de
-produzir o erro de shader no desktop RTX; o fechamento da fonte final restaurada exige smoke próprio dos
-perfis Alto/Master e dos dois modos de AO. Não transferir automaticamente aprovação do bundle SMAA rejeitado
-ao bundle final nem atribuir a ele as medições da tentativa anterior.
+compartilhados. CPU não compila WGSL nem prova o resultado na tela. O build final conservador passou depois
+em smoke próprio: Alto, seis poses e dois viewports; Master, 32 verificações jogáveis e um smoke com AO indireta.
+Zero erros capturados, metadata TRAA/temporal real e hashes conferidos. Ver [QA-RTX-R11.md](QA-RTX-R11.md).
+A aprovação não foi transferida do bundle SMAA rejeitado; cada build mantém identidade e resultados próprios.
 
 Autoria da tentativa preservada em `assets-src/r11/rejected-smaa-source`: fonte e testes foram reconstruídos
 pela reversão do patch local SMAA→TRAA da mesma rodada; **não são declarados como cópia byte a byte anterior**.
+Um replay posterior dessa fonte reconstituiu o JavaScript com o mesmo SHA-256
+`ad06dddb1826d6f160f20e43b3c609018ba4794de671995c2b9bce91bd9d5d4f` e 1.284.763 bytes.
+O nome gerado diferiu; ambos os nomes e a proveniência foram registrados em `BUNDLE-BYTE-VERIFICATION.json`.
 `RECONSTRUCTION.json` guarda essa proveniência, hashes e o bundle congelado. Os 11 testes desse arquivo
 arquivado também passam. A reconstrução não usou JavaScript minificado. Essas fontes não devem substituir
 os arquivos ativos nem ser publicadas como variante aprovada.
@@ -135,7 +138,7 @@ Cada item entra como variante de `?fx` ou de qualidade, medido com `tools/bench.
 
 | # | Degrau | Por quê | Quem | Estado |
 |---|---|---|---|---|
-| 1 | Medir `fx=off/alto/master` no PC da RTX e em 1 Android + 1 iPhone físicos | decidir padrão por aparelho com número, não impressão | Codex/Claude; Alex nos aparelhos físicos | base RTX medida; Alto corrigido; substituição SMAA rejeitada; Master TRAA preservado e smoke final pendente; aparelhos físicos pendentes |
+| 1 | Medir `fx=off/alto/master` no PC da RTX e em 1 Android + 1 iPhone físicos | decidir padrão por aparelho com número, não impressão | Codex/Claude; Alex nos aparelhos físicos | base RTX medida; Alto corrigido; substituição SMAA rejeitada; Master TRAA preservado e smoke final aprovado tecnicamente; aparelhos físicos pendentes |
 | 2 | Texturas KTX2 (UASTC nas normais, ETC1S/UASTC nas cores) + meshopt | as texturas ocupam ~1,2 GB na GPU; KTX2 fica comprimido na própria GPU, o que abre espaço para 4K no herói sem estourar o celular. Ganho a medir | Codex (derivados e host de assets) + Claude (`KTX2Loader`) | não iniciado; `toktx`/`basisu` não estão instalados nesta máquina |
 | 3 | Céu HDR de verdade (a mesma fonte CC0 da Poly Haven tem versão HDR) para a luz ambiente | hoje o ambiente vem de um panorama LDR já tonemapeado: reflexos e luz rebatida ficam chapados | Claude | não iniciado |
 | 4 | Sombras em cascata (`CSMShadowNode`) e sombras de contato (SSS) | uma sombra única de 56 m some na vila e no panorama | Claude | `?shadow=csm` em medição (`src/look.ts`): três cascatas até 600 m; a primeira versão deixava quase tudo sem sombra além de ~24 m (câmera de sombra com `far` 220), corrigido em `9c05537` e conferido por simulação com o `CSMShadowNode` real. Sombras de contato: não iniciado |
