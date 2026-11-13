@@ -102,7 +102,12 @@ async function run(name, ctxOpts) {
     `after the Bible the journey line is the narrative or the guidance: ${JSON.stringify(journey)}`);
   assert.equal(await shown("#sub"), false, "no line on screen yet");
   assert.deepEqual(await g(() => window.__gta.narrativeFollowers().length), 4, "the four follow him in the story");
-  assert.deepEqual(await g(() => window.__gta.followers()), [], "no participant is drawn or put on the radar (R9)");
+  // Of the four, only Simão has an approved actor (R12), and he is optional: he is on the radar when his model has
+  // loaded, and nobody else ever is. On a slow renderer he may still be loading here.
+  const drawn = await g(() => ({ followers: window.__gta.followers().length, npc: window.__gta.npc().status, radar: window.__gta.characters().radarFollowers.map((f) => f.id) }));
+  assert.ok(drawn.followers <= 1 && drawn.radar.every((id) => id === "simao"), `only Simão may be drawn following: ${JSON.stringify(drawn)}`);
+  assert.equal(drawn.followers, drawn.npc === "ready" ? 1 : 0, `Simão follows exactly when his actor is ready: ${JSON.stringify(drawn)}`);
+  r.simao = drawn.npc;
   await page.screenshot({ path: `${OUT}/${name}-2-epilogo.png` });
 
   // he can walk again (the episode's end had stopped him): a few game seconds forward change his position
