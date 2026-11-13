@@ -78,18 +78,28 @@ async function run(name, ctxOpts) {
   await page.screenshot({ path: `${OUT}/${name}-1-fim.png` });
   await press("#roam");
   await page.waitForFunction(() => window.__gta.roam().phase === "return" && document.getElementById("end").hidden, null, LONG);
-  await page.waitForFunction(() => document.getElementById("mk").textContent === "EPÍLOGO", null, LONG);
-  // the way back is the next verse: unread, the line asks for the Bible (tools/check_bible.mjs checks the panel)
-  assert.equal(await text("#objt"), "Abra a Bíblia");
-  assert.equal(await text("#dist"), "Marcos 1:21");
+  // The way back opens with its narrative, shown for 7 s of game time, and its line is the next verse, still unread,
+  // so it asks for the Bible (tools/check_bible.mjs checks the panel). No one is drawn beside him, and the HUD says the
+  // scene is in development (R9). All read in one page task: separate reads outlast the narrative on a software
+  // renderer (they did on b1959be, where the label was read after the Bible had been opened and closed).
+  const NARRATIVE = "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila.";
+  const opening = await (await page.waitForFunction(() => {
+    const t = (s) => document.querySelector(s)?.textContent ?? null, scene = document.getElementById("scene-development");
+    return t("#mk") === "EPÍLOGO" && { objective: t("#objt"), dist: t("#dist"), label: t(".journey-label"), body: t(".journey-body"),
+      scene: scene && !scene.hidden ? scene.textContent : null };
+  }, null, LONG)).jsonValue();
+  assert.deepEqual(opening, { objective: "Abra a Bíblia", dist: "Marcos 1:21", label: "Narrativa do jogo", body: NARRATIVE,
+    scene: "Cena em desenvolvimento · personagens em preparação." });
   await g(() => window.__gta.openBible());
   await page.waitForFunction(() => document.getElementById("biblia")?.open === true, null, LONG);
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.getElementById("biblia")?.open === false && document.getElementById("objt").textContent === "Volte a Cafarnaum", null, LONG);
   assert.equal(await text("#objt"), "Volte a Cafarnaum");
   assert.match(await text("#dist"), /^\d+ m$/);
-  assert.equal(await text(".journey-label"), "Narrativa do jogo");
-  assert.equal(await text(".journey-body"), "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila.");
+  // by now the narrative may have given way to the guidance; either is right, each under its own label
+  const journey = await g(() => ({ label: document.querySelector(".journey-label").textContent, body: document.querySelector(".journey-body").textContent }));
+  assert.ok((journey.label === "Narrativa do jogo" && journey.body === NARRATIVE) || (journey.label === "Orientação" && journey.body === "Suba pela trilha até as casas."),
+    `after the Bible the journey line is the narrative or the guidance: ${JSON.stringify(journey)}`);
   assert.equal(await shown("#sub"), false, "no line on screen yet");
   assert.deepEqual(await g(() => window.__gta.narrativeFollowers().length), 4, "the four follow him in the story");
   assert.deepEqual(await g(() => window.__gta.followers()), [], "no participant is drawn or put on the radar (R9)");
