@@ -64,6 +64,56 @@ Commit e deployment de produção: **pendentes** até revisão/merge; não presu
   encosta (0 px) na última linha da placa do radar, sem cobri-la.
 - **Possível Reel:** antes/depois do HUD de celular. Ainda sem gravação de vídeo nem aprovação.
 
+### Sessão Claude na nuvem de 13/11/2026 — todas as mudanças e o consumo
+
+Branch `claude/quirky-hamilton-bt0y7w`, PR em rascunho
+[#1](https://github.com/alexpiraginet-bot/-grand-testament-adventure/pull/1), base `4d7cf86`.
+Nada desta sessão está em produção até a PR ser revisada e integrada.
+
+**Mudanças, na ordem dos commits:**
+
+| Commit | O que mudou | Evidência | Limite |
+|---|---|---|---|
+| `a21d215` | Joystick sempre visível no celular (`src/joystick.ts`), botão de ação com mão em SVG provisório, paisagem sem cobrir a placa do radar, `tools/check_touch.mjs` | 41/41 testes no build com assets; `check_touch` em 390×844, 844×390 e 1280×800 sobre `4d7cf86`; varredura de layout 320×568 a 932×430 | viewport emulado; ícone provisório |
+| `feb946b` | Diário do HUD, README, tabela de referência; pedido de arte do ícone ao Codex/Higgsfield em `ASSETS.md` | — | — |
+| `4a61f47` | Mesma cena medida (`src/bench.ts`, `?bench`, `tools/bench.mjs`) e pós-processamento sob medição (`src/postfx.ts`, `?fx=alto/master`, desligado por padrão); `docs/GRAFICO-MASTER.md` | 44/44 testes; bench roda as variantes e grava imagens | sem GPU aqui: nenhum FPS vale para o jogo |
+| `87ef481` | Registro da repetição 1280×800 no diário | relatório `shots/touch-r1/report.json` (local) | — |
+| `dab8a9f` | Correção: o GTAO precisa de um amostrador de normal; nomes `packNormalToRGB`/`unpackRGBToNormal` da r186 | antes: `fx=alto` com 2 erros de console (`normalNode.sample is not a function`); depois: `alto` e `master` percorrem a rota com 0 erros | a oclusão não funcionava no primeiro commit |
+| `d0eeb85` | Plano cinematográfico nas falas (`src/cinematic.ts`): dois planos escolhidos ao começar a fala, faixas de cinema, HUD recolhido, sai ao andar, respeita movimento reduzido | 48/48 testes (4 novos); conferência de navegador registrada na PR | conferido só em viewport emulado |
+| `fbaeb0b` | "Nível GTA6" como barra de qualidade, pilar por pilar, sem copiar nada da Rockstar | — | plano, não entrega |
+| `2a8a8e1` | Conferências determinísticas em renderizador lento: captura atômica do plano, `__gta.freeze()` (só `?debug`, segura o relógio da história), gesto reto no joystick, bench espera 24 quadros por foto | 48/48 testes; repetição da conferência registrada na PR | ver "Tentativas" abaixo |
+| (este registro) | `tools/session_usage.py`: soma do consumo de tokens pelo transcrito e valor equivalente em preço de API | executado nesta sessão | ver nota de valor |
+
+Fora do Git: ambiente de nuvem pessoal "Grand Testament + Bíblia Conectada" criado com aprovação do Alex,
+liberando só `grand-testament-assets.vercel.app` e `grand-testament-adventure-lexprojects.vercel.app`.
+A PR #1 foi aberta como rascunho. Nenhuma issue, cobrança, migração de banco ou deploy de produção foi feito.
+
+**Tentativas que falharam, com causa raiz (material honesto para os Reels):**
+
+1. `fx=alto` e `fx=master` no primeiro commit (`4a61f47`) davam 2 erros de console e rodavam **sem oclusão**: o GTAO
+   amostra a normal com `.sample(uv)` e recebeu um valor já desempacotado. Corrigido em `dab8a9f`.
+2. A conferência do plano cinematográfico falhou três vezes. Hipóteses testadas uma de cada vez: obstáculos sem
+   altura (falsa: todos têm `top`), qualidade alta (falsa: o plano entra também), corrida no teste (verdadeira: o
+   estado era lido numa segunda chamada, depois de a fala de ~7 quadros acabar). Corrigido em `2a8a8e1`.
+3. Uma repetição falhou antes, na caminhada: o herói parou num jarro da viela porque o gesto empurrava levemente para
+   a direita. Colisão parar a animação é o jogo funcionando; o teste passou a empurrar reto.
+4. As fotos do bench em `fx=master` pareciam sem água no raso. Medição da cor (água G>R, chão R>G) mostrou água em
+   todas as variantes depois de mais quadros: era o histórico do TRAA atravessando um corte de câmera (a three r186
+   só o zera em mudança de resolução). Pendência real: zerar o histórico em cortes antes de um eventual padrão.
+
+**Consumo de tokens desta sessão (retrato no momento deste registro, 8 arquivos; respostas de 2026-11-13T09:39:24.792Z a 2026-11-13T11:02:47.196Z):**
+
+| grupo | modelo | velocidade | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | cache_write_sem_ttl | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|---|---|
+| principal | claude-opus-5-5 | standard | 197 | 413 | 214.524 | 74.495.859 | 0 | 560.883 | 0 | 23.68 |
+| workflow | claude-opus-5-5 | standard | 294 | 588 | 313.323 | 56.838.981 | 1.393.382 | 0 | 0 | 24.60 |
+
+Total equivalente em preço de API: US$ 48.28. O valor é **equivalente em preço de lista da API** (claude-opus-5-5: entrada US$ 4,00, saída US$ 20,00,
+leitura de cache US$ 0,20 por milhão; escrita de cache 1,25× a entrada com TTL de 5 min e 2× com TTL de 1 h), não
+fatura: a sessão roda no plano da conta claude.ai, cobrado pelo plano. Conversão para reais não feita (precisa de
+uma cotação com fonte). Reproduzir: `python3 -I tools/session_usage.py <pasta-do-transcrito-da-sessão>`.
+O workflow do plano "nível GTA6" ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
+
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
 1. **“Começamos com formas simples: o que já precisava funcionar?”** Mostrar a
