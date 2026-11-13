@@ -92,6 +92,11 @@ navegador com o nível pedido; para o teto nativo o plano continua Unreal 5, que
 - Os valores de `FX_SETTINGS` são um ponto de partida, não calibração. A oclusão aplicada multiplica a cor final
   (barata, um passe só); a versão fisicamente mais correta aplica a oclusão só na luz indireta e precisa de um passe
   extra da cena: decidir com o bench.
-- O TRAA usa o buffer de movimento da three; o rastro em partes animadas (herói, NPCs, água) precisa ser olhado nas
-  imagens do PC antes de qualquer padrão.
+- **`fx=master` está bloqueado:** com o TRAA a água transparente do lago some na maioria dos quadros (medido por cor
+  no plano "barco": chão R 76/G 56 contra água R 93/G 99; a água aparece só em quadros isolados). Refutado: histórico
+  após corte de câmera e alfa da cor. Isolado: sem o TRAA a água aparece. Hipóteses restantes: o TRAA usa profundidade
+  e velocidade de quem está **atrás** da água (ela não grava profundidade e sobrescreve a velocidade no MRT sem
+  mistura); desenhar os transparentes depois do TRAA, ou trocar por SMAA (sem histórico) e medir. `fx=alto` não tem o
+  problema.
+- O rastro do TRAA em partes animadas (herói, NPCs) ainda precisa ser olhado nas imagens do PC.
 - Ícones e imagens: pedidos ao Codex ou Higgsfield (`ASSETS.md` → "Pedidos de arte").

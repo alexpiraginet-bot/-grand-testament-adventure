@@ -97,9 +97,12 @@ A PR #1 foi aberta como rascunho. Nenhuma issue, cobrança, migração de banco 
    estado era lido numa segunda chamada, depois de a fala de ~7 quadros acabar). Corrigido em `2a8a8e1`.
 3. Uma repetição falhou antes, na caminhada: o herói parou num jarro da viela porque o gesto empurrava levemente para
    a direita. Colisão parar a animação é o jogo funcionando; o teste passou a empurrar reto.
-4. As fotos do bench em `fx=master` pareciam sem água no raso. Medição da cor (água G>R, chão R>G) mostrou água em
-   todas as variantes depois de mais quadros: era o histórico do TRAA atravessando um corte de câmera (a three r186
-   só o zera em mudança de resolução). Pendência real: zerar o histórico em cortes antes de um eventual padrão.
+4. As fotos do bench em `fx=master` saíram sem a água do raso. **Primeiro diagnóstico (errado, registrado no commit
+   `2a8a8e1`):** histórico do TRAA atravessando o corte de câmera. A curva de cor quadro a quadro (água G>R, chão R>G)
+   desmentiu: a água fica ausente na maioria dos quadros e aparece em quadros isolados, mesmo 24 quadros depois.
+   Testado e refutado: reiniciar o histórico do TRAA no corte (`setSize`, duas variações) e entregar cor com alfa 1.
+   Isolado: sem TRAA (com velocidade no MRT e sem MSAA) a água aparece. **Bloqueio aberto:** o `master` (TRAA) não
+   desenha direito superfícies transparentes como a água; `fx=master` não deve virar padrão até resolver.
 
 **Consumo de tokens desta sessão (retrato no momento deste registro, 8 arquivos; respostas de 2026-11-13T09:39:24.792Z a 2026-11-13T11:02:47.196Z):**
 
