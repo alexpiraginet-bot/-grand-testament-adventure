@@ -1,5 +1,13 @@
 # Grand Testament Adventure — continuidade local
 
+R13 (13/11): Alex aceitou concentrar a produção numa amostra convincente.
+Branch `codex/demo-direcao-r13`, PR #11. Ler `docs/CONTINUIDADE-R13.md` e
+`docs/QA-CAFARNAUM-R13.md` antes de evoluir solo, fachadas ou água. Os novos
+materiais CC0 têm perfis 512/1024 e hashes; loaders descartam resultados tardios.
+A água usa reflexão planar só no desktop, não DLSS. O Marco A ainda não entrega
+um kit completo de casas ou o encontro de 5–10 minutos. Preservar a baseline,
+tentativas rejeitadas e a distinção entre captura diagnóstica e caminhada real.
+
 R12 (13/11): por pedido de Alex, Codex assumiu a integração da PR #1 na
 branch `codex/takeover-r12`. Ler `docs/CONTINUIDADE-R12.md`,
 `docs/NPC-INTEGRACAO-R12.md`, `docs/NPC-ASSETS-R12.md` e `docs/QA-R12.md`.

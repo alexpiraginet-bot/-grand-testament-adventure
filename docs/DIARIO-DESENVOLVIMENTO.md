@@ -886,3 +886,37 @@ compramos assets e não modificamos o runtime ou as metas financeiras públicas.
 Esta etapa entrega diagnóstico e plano, não novo cenário, benchmark de engine
 ou gameplay melhorado. Horas totais e tokens desta revisão ficaram sem medição;
 nenhum consumo foi inventado ou somado manualmente ao painel público.
+
+### R13 — execução do primeiro marco após aceite de Alex
+
+Alex respondeu “Vou seguir o que recomendar”. A primeira implementação mantém
+Three e o jogo existente; divide solo, fachadas e QA entre agentes, com água,
+integração e revisão final sob Codex. Primeiro horário de execução aferido:
+22:10:45 UTC, depois do início real não cronometrado. A baseline R12 permaneceu
+intacta, com cenário/câmeras/viewport pinados para a comparação.
+
+Entraram materiais distintos de terra e areia CC0, madeira CC0, 13 fachadas
+selecionadas nos primeiros 100 m, orientação corrigida de duas casas B, pórticos
+curtos e novo material/malha local de água. Autores, derivados, hashes, perfis
+e limitações estão nos documentos R13. Não houve Tripo pago, nova engine nem
+novos humanos procedurais. O carregamento de mapas e água recebeu descarte em
+abort/falha, e a estimativa de memória passou a incluir mapas em nós TSL.
+
+A primeira água parecia espelho cinza e foi rejeitada apesar de zero erros.
+A revisão integrada, em 16 poses com câmeras efetivas iguais às da baseline,
+revelou solo dourado nas laterais e portas com aparência de grade. A primeira
+correção expandiu Dirt às laterais sem novos samplers. A segunda identificou
+seções de tábuas orientadas no mundo em vez de acompanhar a rotação da casa.
+Registrar o problema e corrigir precedeu qualquer publicação desta amostra.
+
+Uso observado da própria sessão agregado/publicado às 22:37:37 UTC, branch
+`metrics/development`, commit `0fa2ef2d2fd8a6b7f236fd25c2f862717cd67f85`.
+É cobertura parcial de Codex; não inclui Claude/subagentes. Horas são atividade
+estimada, preço de API é comparação teórica, não gasto bancário. Nenhum log
+privado foi publicado. O conector Vercel respondeu indisponível; usamos a
+integração Git/CLI existente, sem mudar autenticação, plano ou permissões.
+
+A validação final e o hash publicado ficam na PR #11 e em `QA-CAFARNAUM-R13.md`.
+Amostra não significa demo completa: kit de casas, costa irregular e o encontro
+com ação/consequência continuam como próximos trabalhos. Os registros privados
+servem aos Reels; nenhum vídeo foi publicado em rede social.

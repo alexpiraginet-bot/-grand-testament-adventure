@@ -2,9 +2,12 @@
 
 Data: 13/11/2026. Responsável: Codex, com três revisões independentes.
 Base auditada: árvore da main `9dcd6cc08e60eda562575813d07b6eba34d81d08`.
-Estado: proposta de produção e diagnóstico de código. Nenhuma migração,
-compra, geração paga, alteração de runtime ou teste comparativo de engine
-foi realizado nesta revisão.
+Estado inicial: proposta de produção e diagnóstico de código. Após Alex aceitar
+a recomendação, iniciamos o Marco A na mesma branch: primeira amostra de solo,
+fachadas e água. A execução está em `CONTINUIDADE-R13.md`, `SOLO-R13.md`,
+`FACHADAS-R13.md`, `LAGO-R13.md` e `QA-CAFARNAUM-R13.md`. O plano abaixo preserva
+a distinção entre essa amostra e a demonstração completa ainda por produzir.
+Nenhuma migração, compra, geração paga ou comparação de engine foi executada.
 
 ## Decisão proposta
 

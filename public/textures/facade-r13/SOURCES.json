@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "id": "rough-wood-r13",
+  "assetUrl": "https://polyhaven.com/a/rough_wood",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "author": "Rob Tuytel",
+  "tileMeters": 0.5,
+  "derivation": "Resize source JPG (1k) to 512/1024; WebP quality 88 albedo, 92 linear data. No retouching. GL normal.",
+  "sources": [
+    {
+      "channel": "Diffuse",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rough_wood/rough_wood_diff_1k.jpg",
+      "bytes": 567074,
+      "sha256": "abc46d8e3163d911220f4ec3a4043b68d2b0c6d750513f80871211acfefb2a98",
+      "md5": "92d4b3dd46bab95248f5a7680b7882e7"
+    },
+    {
+      "channel": "nor_gl",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rough_wood/rough_wood_nor_gl_1k.jpg",
+      "bytes": 790334,
+      "sha256": "3d1c6f098b66d93e52071b41834dd14a424d8cd2f7c4130c62dc062acfa65011",
+      "md5": "1c9829c9023f74c74eaeba28e56e5144"
+    },
+    {
+      "channel": "Rough",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/rough_wood/rough_wood_rough_1k.jpg",
+      "bytes": 195056,
+      "sha256": "4e9ea9962a7e8b69057937e6723c4b0134b949c1ee5cdb5f3687a54113027b09",
+      "md5": "ef62954e4ea0e9cd78757ce79e6eeb58"
+    }
+  ],
+  "profiles": {
+    "mobile": {
+      "map": {
+        "url": "textures/facade-r13/rough-wood-map-512-28a25cee08ba.webp",
+        "bytes": 67106,
+        "sha256": "28a25cee08ba8eb47027bd416087fe0d3c2142cb92fee60b6186562f8cf07d61",
+        "size": 512,
+        "colorSpace": "srgb"
+      },
+      "normalMap": {
+        "url": "textures/facade-r13/rough-wood-normalMap-512-da2baf0ffd7b.webp",
+        "bytes": 73006,
+        "sha256": "da2baf0ffd7bcfe82b83bf006ee0ec530bcc41603c1623f968fe988320541cc8",
+        "size": 512,
+        "colorSpace": "linear"
+      },
+      "roughnessMap": {
+        "url": "textures/facade-r13/rough-wood-roughnessMap-512-13817e91b82b.webp",
+        "bytes": 20718,
+        "sha256": "13817e91b82b8db14713cfdb8279e420d885989e169703bf0bb28ae2e9e7a821",
+        "size": 512,
+        "colorSpace": "linear"
+      }
+    },
+    "desktop": {
+      "map": {
+        "url": "textures/facade-r13/rough-wood-map-1024-12a6d4c0554d.webp",
+        "bytes": 282512,
+        "sha256": "12a6d4c0554d13c735a9b1cce749006c0bf6fd68eab918c8c62fb6bee176944a",
+        "size": 1024,
+        "colorSpace": "srgb"
+      },
+      "normalMap": {
+        "url": "textures/facade-r13/rough-wood-normalMap-1024-81176f49df4c.webp",
+        "bytes": 354756,
+        "sha256": "81176f49df4cdb9b54833038f11d84c7faae899c8ff84a9eeee61d05b4938fdb",
+        "size": 1024,
+        "colorSpace": "linear"
+      },
+      "roughnessMap": {
+        "url": "textures/facade-r13/rough-wood-roughnessMap-1024-e70288bb1f0d.webp",
+        "bytes": 78904,
+        "sha256": "e70288bb1f0dc7682b64e182b9a269d46a4983640f237a58ed73166e3ca46181",
+        "size": 1024,
+        "colorSpace": "linear"
+      }
+    }
+  }
+}
