@@ -3,7 +3,7 @@
 // same shots. It becomes a default only after that measurement on the RTX PC and on physical phones
 // (docs/GRAFICO-MASTER.md). Nothing here changes the scene, its meshes or its data.
 import * as THREE from "three/webgpu";
-import { float, mix, mrt, normalView, output, packNormalToRGB, pass, sample, unpackRGBToNormal, vec4, velocity } from "three/tsl";
+import { builtinAOContext, float, mix, mrt, normalView, output, packNormalToRGB, pass, sample, screenUV, unpackRGBToNormal, vec4, velocity } from "three/tsl";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 import { traa } from "three/addons/tsl/display/TRAANode.js";
@@ -16,6 +16,15 @@ export function parseFx(value: string | null | undefined): FxLevel {
   return value === "alto" || value === "master" ? value : "off";
 }
 
+/** Where the occlusion goes. final: multiplies the finished colour, sunlit surfaces included (the shipped alto).
+ *  indireta (?ao=indireta): a depth + normal pre-pass feeds GTAO, and the lit pass applies it only to the materials'
+ *  ambient and indirect light (three's builtinAOContext), so the sun is never darkened. Costs a second geometry pass. */
+export type AoMode = "final" | "indireta";
+
+export function parseAo(value: string | null | undefined): AoMode {
+  return value === "indireta" ? "indireta" : "final";
+}
+
 /** Tunables kept together so a measurement names exactly what it measured. */
 export const FX_SETTINGS = {
   aoStrength: 0.85,        // 0 = no occlusion, 1 = full GTAO factor on the lit colour
@@ -26,11 +35,13 @@ export const FX_SETTINGS = {
   bloomThreshold: 0.95,    // linear luminance; the LDR sky panorama stays under it
 } as const;
 
-export type PostFx = { level: FxLevel; render(): void; dispose(): void };
+export type PostFx = { level: FxLevel; ao: AoMode; render(): void; dispose(): void };
 
 /** The render pipeline for `level`, or null for "off" (the caller then renders directly, as before). */
-export function createPostFx(renderer: THREE.WebGPURenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, level: FxLevel): PostFx | null {
+export function createPostFx(renderer: THREE.WebGPURenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, level: FxLevel,
+  aoMode: AoMode = "final"): PostFx | null {
   if (level === "off") return null;
+  if (aoMode === "indireta") return indirectAo(renderer, scene, camera, level);
   const s = FX_SETTINGS;
   // One scene pass writes colour, view-space normal and (for TRAA) motion; no second geometry pass.
   const scenePass = pass(scene, camera, { samples: level === "master" ? 0 : 4 });
@@ -54,5 +65,31 @@ export function createPostFx(renderer: THREE.WebGPURenderer, scene: THREE.Scene,
 
   const pipeline = new THREE.RenderPipeline(renderer);
   pipeline.outputNode = out;
-  return { level, render: () => pipeline.render(), dispose: () => { pipeline.dispose(); scenePass.dispose(); } };
+  return { level, ao: "final", render: () => pipeline.render(), dispose: () => { pipeline.dispose(); scenePass.dispose(); } };
+}
+
+/** ?ao=indireta: the pattern of three's GTAONode documentation (r186). The pre-pass draws the scene once more, writing
+ * only depth and the view-space normal (half-float target, so no packing); transparent materials, like the lake, are
+ * left without occlusion by builtinAOContext itself. Same strength, radius and bloom as "final". */
+function indirectAo(renderer: THREE.WebGPURenderer, scene: THREE.Scene, camera: THREE.PerspectiveCamera, level: FxLevel): PostFx {
+  const s = FX_SETTINGS;
+  const prePass = pass(scene, camera);
+  prePass.setMRT(mrt({ output: normalView }));
+  const occlusion = ao(prePass.getTextureNode("depth"), prePass.getTextureNode(), camera);
+  occlusion.resolutionScale = s.aoResolution;
+  occlusion.radius.value = s.aoRadius;
+  const aoFactor = mix(float(1), occlusion.getTextureNode().sample(screenUV).r, float(s.aoStrength));
+
+  const scenePass = pass(scene, camera, { samples: level === "master" ? 0 : 4 });
+  if (level === "master") scenePass.setMRT(mrt({ output, velocity }));
+  scenePass.contextNode = builtinAOContext(aoFactor);
+  const color = scenePass.getTextureNode("output");
+  const glow = bloom(color, s.bloomStrength, s.bloomRadius, s.bloomThreshold);
+  let out = color.add(glow);
+  if (level === "master") out = traa(out, scenePass.getTextureNode("depth"), scenePass.getTextureNode("velocity"), camera);
+
+  const pipeline = new THREE.RenderPipeline(renderer);
+  pipeline.outputNode = out;
+  return { level, ao: "indireta", render: () => pipeline.render(),
+    dispose: () => { pipeline.dispose(); scenePass.dispose(); prePass.dispose(); } };
 }

@@ -19,7 +19,7 @@ import { Sfx } from "./audio.ts";
 import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets } from './tripo-assets.ts';
 import { BenchRun, benchShots } from "./bench.ts";
-import { createPostFx, parseFx } from "./postfx.ts";
+import { createPostFx, parseAo, parseFx } from "./postfx.ts";
 import { atmosphereFog, cascadedShadows, parseAtmo, parseExposure, parseShadow, parseTone, TONE_MAPPING } from "./look.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
 import { BUILD_SHA, describeGpu } from "./build-info.ts";
@@ -297,7 +297,7 @@ async function main() {
   let gpuPending = false, gpuLast: number | null = null, lastShotName = "";
   let benchLoadMs = NaN, benchHold = -1;             // after the timed route, hold(i) re-shows a shot for its picture
   if (bench) $("start").hidden = true;
-  const fx = createPostFx(renderer, scene, camera, fxLevel);
+  const fx = createPostFx(renderer, scene, camera, fxLevel, parseAo(params.get("ao")));
   if (cloud.enabled) setupCloudPanel({
     ensureCode: async () => {
       let code = readCode();
@@ -545,7 +545,7 @@ async function main() {
   if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
-    results: () => ({ ...bench.results(), fx: fxLevel, look: visual, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null, look: visual, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
       build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
       models: { loaded: Object.keys(assets).length },
       // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)
