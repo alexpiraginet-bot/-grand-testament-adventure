@@ -102,6 +102,24 @@ Nada desta sessão está em produção até a PR ser revisada e integrada.
 | (este registro) | `tools/session_usage.py`: soma do consumo de tokens pelo transcrito e valor equivalente em preço de API | executado nesta sessão | ver nota de valor |
 | `906ff83` | Correção do diagnóstico do `fx=master`: o TRAA derruba a água transparente na maioria dos quadros; `master` bloqueado | curva de cor quadro a quadro; duas hipóteses refutadas e uma isolada (ver "Tentativas") | causa exata em aberto |
 | `072ca70` | A mira do plano cinematográfico acompanha o grupo enquanto os chamados andam até Jesus; `framed` exige os três no quadro; caminhadas do teste partem do corredor da missão | `check_touch` verde em 390×844, 844×390 e 1280×800: plano entra, 3/3 no quadro, sai ao andar (PC), 0 erros, 17.897.302 bytes servidos localmente | viewport emulado; NPCs ainda são formas provisórias |
+| `bbefb20` | Registro da conferência verde do plano cinematográfico | ver linha acima | — |
+| `2e3211c` | Plano AAA verificado (R4–R17, `docs/PLANO-AAA.md`) e correções de registros apontadas por ele | revisão adversarial do plano | plano, não entrega |
+| `7cecdfc` | Build carimbado com o commit (`src/build-info.ts`, créditos) e `tools/bench.mjs` com máquina, teto de quadros, cache quente e rede (`BENCH_NET=4g`) | relatório de `2e3211c` (árvore alterada): 2ª visita com cache quente 11.931 bytes contra 17.901.187 na 1ª | perfil de rede é deste repositório, não medição de operadora |
+| `68c4939` | `tools/compare_bench.mjs`: compara dois relatórios plano a plano e recusa máquina, tela ou commit diferentes | testes de carimbo estrito | — |
+| `09963bd` | Testes-guarda: orçamento das malhas, rig provisório fora do herói, nenhum binário rastreado | 83/83 testes em `b471dfb` | — |
+| `40b9f83` | Diário de sessão local (`src/session-log.ts`): recargas, quedas, erros, só nesta aba | testes com valores literais | base do teste de 10 min no celular, ainda não feito |
+| `e703d01` | Tempo de GPU/CPU por quadro e estimativa de memória de textura no bench | relatório: GPU "n/d" com motivo (SwiftShader sem `EXT_disjoint_timer_query_webgl2`), CPU p95 0,8 ms, textura 1.204 MB pelo renderer contra 1.010,8 MB estimados (49 RGBA8) | software; nenhum tempo vale para o jogo |
+| `af77202` | Correções das revisões adversariais das peças do R4 | revisão + testes | — |
+| `b471dfb` `5bca3b3` `cd06f51` | Diário de sessão, tempos e memória ligados ao jogo; etapas da prova de sessão registradas; resumo do bench corrigido | 83/83 testes | — |
+| `a47dbb5` | Prova do diário de sessão no navegador terminada | `{"ok":true,"loads":3,"uncleanEnds":1}`: recarga limpa não acusa nada; queda do renderizador (CDP `Page.crash`) é achada na recarga | Chromium emulado, não celular |
+| `02781cd` | Variantes de visual sob medição (`src/look.ts`): `?tm=`, `?exp=`, `?atmo=1`, `?shadow=csm` | 88/88 testes; imagens A/B na base antiga (ver abaixo) | desligadas por padrão |
+| `08d51c1` | `?ao=indireta`: GTAO só na luz ambiente/indireta (pré-passe de profundidade/normal, `builtinAOContext` da r186) | 89/89 testes | custa um segundo passe de geometria |
+| `c1cb55a` `8b9f00d` | `?cam=mola` (`src/camera.ts`) e `tools/check_camera.mjs` | 95/95 testes | — |
+| `af033e9` | Merge da `main` (`c664f9f`, inicialização segura no iOS e R4–R6 do Codex) | 165/165 testes, `tsc` limpo, build com assets; prévia Vercel pronta | ver "Integração com a main" |
+| `fd65c11` | Mapa/Colabore/Créditos clicáveis durante a fala; arrastar o olhar sai do plano cinematográfico | achado pelo `check_hero_gesture` do Codex no build integrado | — |
+| `9c05537` | Correções da revisão adversarial (10 achados confirmados, ver abaixo) | 167/167 testes; simulação do `CSMShadowNode` real | — |
+| `cecfa1e` | Atividade estimada no `tools/session_usage.py`; resultados das variantes no roteiro gráfico | conferência da união de intervalos | — |
+| `b7f62b8` | A barra de links elevada deixa o toque passar para a mão e o joystick; painéis voltam depois das faixas de cinema | achado pelo `check_touch` deitado (844×390) no build integrado | reconferência no navegador em andamento |
 
 Fora do Git: ambiente de nuvem pessoal "Grand Testament + Bíblia Conectada" criado com aprovação do Alex,
 liberando só `grand-testament-assets.vercel.app` e `grand-testament-adventure-lexprojects.vercel.app`.
@@ -140,6 +158,54 @@ leitura de cache US$ 0,20 por milhão; escrita de cache 1,25× a entrada com TTL
 fatura: a sessão roda no plano da conta claude.ai, cobrado pelo plano. Conversão para reais não feita (precisa de
 uma cotação com fonte). Reproduzir: `python3 -I tools/session_usage.py <pasta-do-transcrito-da-sessão>`.
 O workflow do plano de qualidade AAA ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
+
+#### Tarde de 13/11 — variantes de visual, integração com a `main` e revisão
+
+Alex escolheu seguir **só no navegador** (resposta "A"), buscando o melhor visual web; a versão nativa saiu do plano.
+
+**Imagens A/B na base antiga (`02781cd`, software, 1280×800, mesmos seis planos):** `?atmo=1` muda em média
+0,16–0,54 (de 255) nos planos próximos e 4,27 no panorama: com os valores escolhidos a névoa quase não aparece.
+`?tm=agx` muda 11,9–17,3, mas deixa a imagem lavada e com menos contraste na exposição 1,08: pior, não promover.
+Nenhuma das duas acrescenta draw call (máximo de 203 por plano nas três variantes). As cascatas e a combinação não
+chegaram a sair nessa base (rodada interrompida para medir sobre a base integrada).
+
+**Integração com a `main`:** a `main` recebeu o hotfix de inicialização do iOS (`c664f9f`) com 73 arquivos novos ou
+alterados desde a base desta PR. O merge (`af033e9`) manteve o fluxo do Codex inteiro: carga com prazo, primeiro
+quadro antes do cartão, perda de dispositivo/contexto como erro final com "Tentar novamente", sem recarga automática.
+O diário de sessão deixou de recarregar com `?gl=1` e só anota a perda. A PR ficou sem conflito (`mergeable_state:
+clean`). Esta PR acrescenta 16,16 kB gzip ao JS da `main` (341,47 kB em `9c05537` contra 325,31 kB em `c664f9f`,
+builds feitos aqui com `vite build`).
+
+**Revisão adversarial (4 lentes, 8 agentes; cada achado confirmado por um segundo agente):** a primeira tentativa não
+rodou (limite de uso da conta atingido; resultado vazio não foi tratado como "nada encontrado"). Na segunda:
+1. `?shadow=csm` quase sem sombra além de ~24 m: cada cascata herdava a câmera de sombra da caixa (`far` 220) e o
+   `CSMShadowNode` a põe 200 m na direção do sol. Simulação com o nó real da r186, fração do chão visível fora da
+   profundidade da cascata: antes 1–65% / 92–100% / 100%; depois de `9c05537`, 0% nas três, em seis ângulos.
+2. **O `?bench` parou de funcionar depois do merge**: a `main` segura o quadro enquanto a fase é `intro`; o bench agora
+   é exceção.
+3. O diário anotaria perda de dispositivo falsa quando a `main` descarta o renderizador depois de uma falha.
+4. Mola da câmera não era exata com o herói andando (atraso caía ~v·dt/2 em fps baixo); agora o passo trata o alvo
+   como movendo em linha reta no quadro e o atraso é 2v/ω em qualquer fps (testado de 1/144 a 0,25 s).
+5. Cascatas não acompanhavam o redimensionamento; 3× a memória de sombra no celular e em `q=low`; `?tm=off` gravava
+   uma exposição que o three ignora; o pipeline do `?fx` não compilava antes do cartão; README falava em recarga.
+
+**Tentativas que falharam nesta tarde (causa raiz):**
+1. A prova do diário de sessão travou duas vezes: primeiro competindo com o bench pela CPU; depois esperando a
+   resposta de `Page.crash`, que nunca chega (o renderizador morre antes). Esperar o evento `crash` e recarregar pelo
+   CDP resolveu (`a47dbb5`); o Playwright recusa recarregar uma página que caiu.
+2. Duas asserções de teste minhas estavam erradas, não o código: tolerância de continuidade apertada demais
+   (`look.test.ts`) e uma conta da união de intervalos (`session_usage.py`). Corrigidas com a conta explícita.
+3. O modo cinema escondia Mapa/Colabore/Créditos durante a fala (achado pelo teste do Codex); a correção elevou a
+   barra e ela passou a cobrir a mão e o joystick deitado (achado pelo meu `check_touch`); corrigido em `b7f62b8`.
+4. Ao reiniciar a conferência apaguei a pasta local `shots/merge-r1` (provas de `af033e9`: 7/7 no `check_loading`,
+   falha do `check_hero_gesture`). Ficaram no registro da sessão; a rodada sobre `9c05537` substitui essas provas.
+
+**Conferência de navegador do build integrado (`9c05537`, Chromium com WebGL2 por software, sequencial):**
+`check_loading` 7/7 casos (lento PC/celular, falha e nova tentativa, modo seguro, perda de contexto na carga e com o
+jogo pronto, sem recarga automática). `check_touch` 390×844 passou; 844×390 falhou pelo toque coberto (corrigido em
+`b7f62b8`, reconferência em andamento). `check_hero_gesture` passa pela pausa do Colabore e os três ângulos agora
+diferem, mas esgota os 15 s reais que o script dá para a missão avançar a ~1 fps; um controle com a `main` pura no
+mesmo ambiente está na fila para separar ambiente de regressão. Demais suítes: em andamento.
 
 ### Publicação R3 registrada
 
