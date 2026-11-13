@@ -72,6 +72,25 @@ export function discover(places: readonly Place[], found: Set<string>, pos: Vec2
   return fresh;
 }
 
+/** The place not yet found that is nearest to the player, and how far; null when all were found. */
+export function nearestUnfound(places: readonly Place[], found: ReadonlySet<string>, pos: Vec2): { place: Place; dist: number } | null {
+  let best: { place: Place; dist: number } | null = null;
+  for (const place of places) {
+    if (found.has(place.id)) continue;
+    const dist = Math.hypot(place.x - pos.x, place.z - pos.z);
+    if (!best || dist < best.dist) best = { place, dist };
+  }
+  return best;
+}
+
+const WINDS = ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"] as const;
+
+/** Which of the eight winds a step of (dx, dz) points to; the world's x grows east and z grows south. */
+export function windName(dx: number, dz: number): (typeof WINDS)[number] {
+  const eighth = Math.round(Math.atan2(dx, -dz) / (Math.PI / 4));
+  return WINDS[((eighth % 8) + 8) % 8];
+}
+
 // ---------------------------------------------------------------- the edge of the region
 
 /** How near the limit of the walkable square the player is told about it (the audit of R6 found an invisible wall). */

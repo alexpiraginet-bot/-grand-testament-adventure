@@ -2,7 +2,7 @@
 // the text itself: Mark 1:21 opens with their entering Capernaum, so returning to the village shows that clause,
 // literal and with its reference, and then the region stays open. No mission is added to the episode's data and the
 // mission logic (missions.ts) is untouched. Pure and deterministic: test/freeroam.test.ts plays it through.
-import { readingTime, type EpisodeData, type Fala, type Vec2 } from "./missions.ts";
+import { initialState, readingTime, type EpisodeData, type Fala, type Goal, type State, type Vec2 } from "./missions.ts";
 
 /** off: the episode is still being played, or its end card is up. return: exploring, the way back still ahead.
  *  line: the clause of Mark 1:21 is on screen. free: exploring with nothing left to do in this episode. */
@@ -52,6 +52,22 @@ export function stepRoam(s: RoamState, goal: RoamGoal, fala: Fala | null, pos: V
     if (s.lineLeft <= 0) { s.line = null; s.lineLeft = 0; s.phase = "free"; ev.push({ type: "epilogue-done" }); }
   }
   return ev;
+}
+
+/** A player who already finished the episode comes back only to walk the region: free at once, no way back to stage. */
+export function startFree(s: RoamState): void {
+  if (s.phase === "off") s.phase = "free";
+}
+
+/** The mission state of an episode already finished: every mission ticked, the counter full, everyone called
+ * following. The same state a played-through episode ends in (the test plays one and compares). */
+export function finishedState(ep: EpisodeData, goals: Goal[]): State {
+  const s = initialState();
+  s.phase = "done";
+  s.mission = Math.max(0, ep.missoes.length - 1);
+  s.filled = ep.missoes.at(-1)?.conta ?? 0;
+  ep.missoes.forEach((_, i) => { s.completedAt.push(0); const g = goals[i]; if (g?.kind === "call") s.followers.push(...g.npcs); });
+  return s;
 }
 
 /** Metres from the player to the end of the way back, for the HUD; null once there is nowhere left to go. */

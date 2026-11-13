@@ -38,6 +38,11 @@ Não foi criada missão nova nos dados do episódio: `src/missions.ts` e
 trecho levam a etiqueta "Narrativa do jogo"; a contagem de lugares e o aviso do limite
 da região levam "Orientação".
 
+Quem já concluiu o episódio encontra, no cartão inicial, **Explorar a região**: entra
+direto na região com os quatro, sem repetir as missões e sem reexibir a oração de
+Marcos 1:21; o registro salvo não muda. Na exploração livre o painel e o radar apontam
+o lugar mais próximo ainda não encontrado ("fica a noroeste"), até não faltar nenhum.
+
 Os **lugares da região** (`src/places.ts`) declaram de que tipo de fato se trata:
 "Lugar com fonte" (Cafarnaum, coordenadas do OpenBible), "Posição escolhida pelo jogo"
 (a margem, as redes e o barco que a passagem cita; a posição é nossa, ver

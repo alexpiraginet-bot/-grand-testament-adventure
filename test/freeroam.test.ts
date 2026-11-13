@@ -2,8 +2,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { readingTime, type EpisodeData } from "../src/missions.ts";
-import { EPILOGUE_RADIUS_M, EPILOGUE_VERSE, epilogueLine, initialRoam, roamDistance, startRoam, stepRoam, verseRef } from "../src/freeroam.ts";
+import { initialState, readingTime, start, step, type EpisodeData } from "../src/missions.ts";
+import { EPILOGUE_RADIUS_M, EPILOGUE_VERSE, epilogueLine, finishedState, initialRoam, roamDistance, startFree, startRoam, stepRoam, verseRef } from "../src/freeroam.ts";
+import { goals as makeGoals } from "../src/episode.ts";
+import type { WorldMeta } from "../src/terrain.ts";
 
 const ep = JSON.parse(readFileSync(new URL("../src/data/mc-pescadores.json", import.meta.url), "utf8")) as EpisodeData;
 const goal = { at: { x: 0, z: 0 }, radius: EPILOGUE_RADIUS_M };
@@ -63,4 +65,26 @@ test("exploring: the same end whatever the frame step; no line to stage means st
   const s = initialRoam(); startRoam(s, null);
   assert.equal(s.phase, "free");
   assert.deepEqual(stepRoam(s, goal, null, { x: 0, z: 0 }, 1), []);
+});
+
+test("coming back to explore: the state of a finished episode equals the one a played episode ends in", () => {
+  const meta = JSON.parse(readFileSync(new URL("../public/world/cafarnaum.json", import.meta.url), "utf8")) as WorldMeta;
+  const goals = makeGoals(meta);
+  // play it through: stand on each goal and act
+  const s = initialState(); start(s);
+  for (let i = 0; i < 4000 && s.phase !== "done"; i++) step(s, ep, goals, { pos: goals[s.mission].at, groundHeight: 5, action: true }, 0.1);
+  assert.equal(s.phase, "done");
+  const f = finishedState(ep, goals);
+  assert.equal(f.phase, "done");
+  assert.equal(f.mission, s.mission);
+  assert.equal(f.filled, s.filled);
+  assert.deepEqual(f.followers, s.followers);
+  assert.deepEqual(f.followers, ["simao", "andre", "tiago", "joao"]);     // literal: the four the passage names
+  assert.equal(f.completedAt.length, s.completedAt.length);
+  assert.equal(f.line, null); assert.equal(f.promptVisible, false);
+  // free at once, and only from off
+  const r = initialRoam(); startFree(r); assert.equal(r.phase, "free");
+  const fala = epilogueLine(ep)!;
+  assert.deepEqual(stepRoam(r, goal, fala, { x: 0, z: 0 }, 1), [], "no epilogue line for a player who only came to explore");
+  const back = initialRoam(); startRoam(back, fala); startFree(back); assert.equal(back.phase, "return", "does not skip a way back already started");
 });

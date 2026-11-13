@@ -3,8 +3,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "../src/terrain.ts";
-import { discover, distanceToEdge, EDGE_NOTICE_M, highestNear, LOOKOUT_SEARCH_M, ORIGIN_LABEL, parseFound, PLACE_RADIUS_M, PLACES_VERSION,
-  regionPlaces, serializeFound } from "../src/places.ts";
+import { discover, distanceToEdge, EDGE_NOTICE_M, highestNear, LOOKOUT_SEARCH_M, nearestUnfound, ORIGIN_LABEL, parseFound, PLACE_RADIUS_M,
+  PLACES_VERSION, regionPlaces, serializeFound, windName } from "../src/places.ts";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const ep = JSON.parse(read("src/data/mc-pescadores.json")) as { ref_pt: string; lugar: string; personagens: { id: string; ref: string; nome: string }[] };
@@ -95,4 +95,22 @@ test("the edge of the region: distance to the limit of the walkable square", () 
   assert.equal(terrain.inside(0, -(half - MARGIN) + 0.01, MARGIN), true);
   assert.equal(terrain.inside(0, -(half - MARGIN) - 0.01, MARGIN), false);
   assert.ok(EDGE_NOTICE_M > 0 && EDGE_NOTICE_M < 100);
+});
+
+test("the nearest place still to find, and the wind it lies to", () => {
+  const start = { x: meta.points.start[0], z: meta.points.start[1] };
+  const all = new Set(places.map((p) => p.id));
+  assert.equal(nearestUnfound(places, all, start), null);
+  const butLookout = new Set(["Capernaum", "margem", "redes", "barco"]);
+  const next = nearestUnfound(places, butLookout, start)!;
+  assert.equal(next.place.id, "mirante");
+  // literal: from the start (-9.1, 35.1) to the lookout (-264, -300) is sqrt(254.9² + 335.1²) = 421.03 m, north-west
+  assert.ok(Math.abs(next.dist - 421.03) < 0.005, `distance ${next.dist}`);
+  assert.equal(windName(next.place.x - start.x, next.place.z - start.z), "noroeste");
+  assert.equal(nearestUnfound(places, new Set(), start)!.place.id, "Capernaum", "with nothing found, the village he stands in");
+  // x grows east, z grows south
+  assert.deepEqual([[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]].map(([dx, dz]) => windName(dx, dz)),
+    ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"]);
+  assert.equal(windName(1, -3), "norte", "within 22.5° of north");
+  assert.equal(windName(-0.01, 1), "sul");
 });

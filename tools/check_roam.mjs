@@ -18,9 +18,9 @@ async function run(name, ctxOpts) {
   const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   const ctx = await browser.newContext(ctxOpts);
   const page = await ctx.newPage();
-  const errors = [];
+  const errors = [], warnings = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 300)); });
+  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 300)); else if (m.type() === "warning") warnings.push(m.text().slice(0, 300)); });
   page.on("response", (r) => { if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`); });
   const touch = !!ctxOpts.hasTouch;
   const g = (fn, arg) => page.evaluate(fn, arg);
@@ -107,8 +107,11 @@ async function run(name, ctxOpts) {
   await page.screenshot({ path: `${OUT}/${name}-3-fala.png` });
   await page.waitForFunction(() => window.__gta.roam().phase === "free", null, LONG);
   await page.waitForFunction(() => document.getElementById("mk").textContent === "EXPLORAÇÃO LIVRE" && document.getElementById("sub").hidden, null, LONG);
-  assert.equal(await text("#objt"), "Explore a região");
-  assert.equal(await text("#dist"), "");
+  // free: one place is still to be found, so the panel and the radar point to it
+  assert.equal(await text("#objt"), "Encontre os lugares da região");
+  assert.match(await text("#dist"), /^\d+ m$/);
+  await page.waitForFunction(() => document.querySelector(".journey-label").textContent === "Orientação", null, LONG);
+  assert.equal(await text(".journey-body"), "Lugares encontrados: 4 de 5. O mais próximo por encontrar fica a noroeste.");
   await page.screenshot({ path: `${OUT}/${name}-4-livre.png` });
 
   // the lookout: a place only the relief gives, named by the game and labelled as such
@@ -118,8 +121,10 @@ async function run(name, ctxOpts) {
   assert.equal(await text("#placename"), "Mirante do mar da Galileia");
   assert.equal(await text("#placecount"), "Lugar encontrado · 5 de 5");
   assert.equal(await text("#placenote"), "Nome do jogo sobre o relevo real");
-  await page.waitForFunction(() => document.querySelector(".journey-body").textContent === "Lugares encontrados: 5 de 5.", null, LONG);
+  await page.waitForFunction(() => document.querySelector(".journey-body").textContent === "Todos os 5 lugares desta região foram encontrados.", null, LONG);
   assert.equal(await text(".journey-label"), "Orientação");
+  assert.equal(await text("#objt"), "Explore a região");
+  assert.equal(await text("#dist"), "");
   await page.screenshot({ path: `${OUT}/${name}-5-mirante.png` });
 
   // the edge of the region: said before the invisible limit stops him
@@ -138,13 +143,31 @@ async function run(name, ctxOpts) {
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.getElementById("worldmap")?.open === false, null, LONG);
 
-  // what was found is kept in this browser
+  // what was found is kept in this browser, and a finished episode can be skipped to walk the region with the four
   await load();
   assert.equal(await g(() => window.__gta.roam().found.length), 5, "found places survive a reload");
-  assert.deepEqual(errors, [], "no page, console or HTTP errors");
-  r.errors = errors.length;
+  assert.equal(await text("#go"), "Jogar de novo");
+  assert.equal(await text("#novo"), "Explorar a região");
+  await press("#novo");
+  await page.waitForFunction(() => window.__gta.roam().phase === "free" && window.__gta.state.phase === "done", null, LONG);
+  await page.waitForFunction(() => document.getElementById("mk").textContent === "EXPLORAÇÃO LIVRE", null, LONG);
+  assert.equal(await g(() => window.__gta.followers().length), 4, "the four are with him");
+  assert.equal(await text("#objt"), "Explore a região");
+  assert.equal(await shown("#sub"), false, "no line is replayed for a player who only came to explore");
+  const save = await g(() => { const s = window.__gta.save(); return { current: s.current, completions: Object.values(s.episodes)[0]?.completions }; });
+  assert.deepEqual(save, { current: null, completions: 1 }, "exploring leaves the saved record as it was");
+  await page.screenshot({ path: `${OUT}/${name}-7-explorar.png` });
+
+  // The optional fauna (fauna-renderer.ts) gives each asset 30 s of real time. On a software renderer that expires,
+  // its texture loads are aborted and GLTFLoader logs "Couldn't load texture blob:". Only when the game itself
+  // reported that timeout are those lines set apart, and counted in the report; any other error fails the check.
+  const faunaTimedOut = warnings.some((w) => /Animal opcional indisponível/.test(w) && /timed out|TimeoutError/i.test(w));
+  const real = faunaTimedOut ? errors.filter((e) => !/^THREE\.GLTFLoader: Couldn't load texture blob:/.test(e)) : errors;
+  assert.deepEqual(real, [], `no page, console or HTTP errors (warnings: ${JSON.stringify(warnings.slice(0, 6))})`);
+  r.errors = real.length; r.faunaTimedOut = faunaTimedOut; r.faunaTextureErrorsSetApart = errors.length - real.length;
   report.runs[name] = r;
-  console.log(`${name}: ok ${JSON.stringify(r.cine)}${r.walkedM !== undefined ? `, andou ${r.walkedM} m` : ""}, limite a ${r.edgeM} m`);
+  console.log(`${name}: ok ${JSON.stringify(r.cine)}${r.walkedM !== undefined ? `, andou ${r.walkedM} m` : ""}, limite a ${r.edgeM} m` +
+    (faunaTimedOut ? `; fauna opcional expirou neste renderizador (30 s reais): ${r.faunaTextureErrorsSetApart} erros de textura dela postos à parte` : ""));
   await browser.close();
 }
 

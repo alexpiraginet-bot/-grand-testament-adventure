@@ -8,8 +8,8 @@ import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, typ
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
-import { EPILOGUE_RADIUS_M, epilogueLine, initialRoam, roamDistance, startRoam, stepRoam } from "./freeroam.ts";
-import { discover, distanceToEdge, EDGE_NOTICE_M, parseFound, PLACES_KEY, regionPlaces, serializeFound } from "./places.ts";
+import { EPILOGUE_RADIUS_M, epilogueLine, finishedState, initialRoam, roamDistance, startFree, startRoam, stepRoam } from "./freeroam.ts";
+import { discover, distanceToEdge, EDGE_NOTICE_M, nearestUnfound, parseFound, PLACES_KEY, regionPlaces, serializeFound, windName } from "./places.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
@@ -450,11 +450,27 @@ async function main() {
   const total = ep.missoes.length;
   let prog = episodeProgress(save, ep.id);
   let resumable = prog.missionsDone > 0 && prog.missionsDone < total;
-  const beginPlay = (resume: boolean) => {
+  const openGame = () => {
     const graph=sfx.start();
     if(graph&&!natureAudio)natureAudio=new FaunaAudio(graph.context,graph.output,faunaAudioManifest(import.meta.env.BASE_URL),{habitats,maxVoices:3,onError:(id,error)=>console.warn(`Som opcional indisponível: ${id}`,error)});
     hud.show();
     sfx.setPaused(false);
+  };
+  /** A player who already finished the episode walks the region with the four, without playing it again; the saved
+   * record is left as it is. */
+  const beginExplore = () => {
+    openGame();
+    Object.assign(state, finishedState(ep, goals));
+    ended = true;
+    player.pos.x = P.start[0]; player.pos.z = P.start[1];
+    player.heading = Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1]));
+    cam.yaw = player.heading;
+    follow(state.followers, true);
+    startFree(roam);
+    syncAudio();void startFauna();
+  };
+  const beginPlay = (resume: boolean) => {
+    openGame();
     if (resume) {
       Object.assign(state, restoreState(ep, goals, prog.missionsDone));
       const c = save.current;
@@ -481,7 +497,7 @@ async function main() {
       : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
       : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
     if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
-    else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
+    else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", secondary: "Explorar a região", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
     else hud.startCard({ primary: "Começar", note });
   };
   // ---- same-scene benchmark (bench.ts, tools/bench.mjs): ?bench flies the fixed shots, no HUD, and times every frame
@@ -533,6 +549,8 @@ async function main() {
   // starting over erases a run in progress: the button asks once more, in place
   let armed: ReturnType<typeof setTimeout> | undefined;
   novo.addEventListener("click", () => {
+    // with the episode finished and no run in progress, the second button is "Explorar a região": nothing to erase
+    if (!resumable && prog.completions > 0) { beginExplore(); return; }
     if (!armed) {
       novo.textContent = "Apagar a missão em andamento? Toque de novo"; novo.classList.add("armed");
       armed = setTimeout(() => { armed = undefined; novo.textContent = "Começar do zero"; novo.classList.remove("armed"); }, 4000);
@@ -795,15 +813,20 @@ async function main() {
       const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
       if (roaming) {
         const back = roam.phase === "return";
+        // free: the radar points to the nearest place not yet found, so the open region has somewhere to go
+        const next = roam.phase === "free" ? nearestUnfound(regionList, foundPlaces, player.pos) : null;
+        const count = `Lugares encontrados: ${foundPlaces.size} de ${regionList.length}.`;
         hud.roam({
           kind: roam.phase === "line" ? "line" : back ? "return" : "free",
-          objective: back || roam.phase === "line" ? `Volte a ${homeName ?? "onde a caminhada começou"}` : "Explore a região",
-          dist: roamDistance(roam, roamGoal, player.pos), line: roam.line,
+          objective: back || roam.phase === "line" ? `Volte a ${homeName ?? "onde a caminhada começou"}` : next ? "Encontre os lugares da região" : "Explore a região",
+          dist: back ? roamDistance(roam, roamGoal, player.pos) : next ? next.dist : null, line: roam.line,
           narrative: back ? "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila."
             : "O episódio termina aqui. A região continua aberta para caminhar.",
-          guidance: back ? "Suba pela trilha até as casas." : `Lugares encontrados: ${foundPlaces.size} de ${regionList.length}.`,
-          routes: wayBack,
-        }, state, player.pos, player.heading, back ? roamGoal.at : null, followers, notice, dt);
+          guidance: back ? "Suba pela trilha até as casas."
+            : next ? `${count} O mais próximo por encontrar fica a ${windName(next.place.x - player.pos.x, next.place.z - player.pos.z)}.`
+            : `Todos os ${regionList.length} lugares desta região foram encontrados.`,
+          routes: back ? wayBack : [],
+        }, state, player.pos, player.heading, back ? roamGoal.at : next ? { x: next.place.x, z: next.place.z } : null, followers, notice, dt);
       } else hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
@@ -872,7 +895,7 @@ async function main() {
       // exploring after the episode (freeroam.ts) and the region's places (places.ts)
       roam: () => ({ phase: roam.phase, line: roam.line, goal: roamGoal, places: regionList, found: [...foundPlaces],
         edge: distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z) }),
-      beginRoam,
+      beginRoam, beginExplore,
       session: () => ({ status: slog.status, previous: slog.previous, record: slog.snapshot() }),
       cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
         // fraction of the shot's people whose chest projects inside the central 90% of the picture
