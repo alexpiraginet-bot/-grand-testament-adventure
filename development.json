@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-11-13T12:54:52.563Z",
+  "generatedAt": "2026-11-13T13:31:27.322Z",
   "source": "local-usage-metadata",
   "sessions": [
     {
@@ -9,9 +9,9 @@
       "agent": "codex",
       "model": "gpt-6-astra",
       "startedAtISO": "2026-11-12T19:28:52.842Z",
-      "lastActivityAtISO": "2026-11-13T12:54:27.534Z",
+      "lastActivityAtISO": "2026-11-13T13:31:09.341Z",
       "endedAtISO": null,
-      "activeSeconds": 29723,
+      "activeSeconds": 31925,
       "activityIntervals": [
         {
           "start": "2026-11-12T19:28:52.842Z",
@@ -31,13 +31,13 @@
         },
         {
           "start": "2026-11-13T12:40:29.149Z",
-          "end": "2026-11-13T12:54:27.534Z"
+          "end": "2026-11-13T13:31:09.341Z"
         }
       ],
-      "inputTokens": 127433472,
-      "cachedInputTokens": 125069184,
-      "outputTokens": 423961,
-      "estimatedApiCostUsd": 169.910114,
+      "inputTokens": 138201162,
+      "cachedInputTokens": 135662464,
+      "outputTokens": 453123,
+      "estimatedApiCostUsd": 183.705594,
       "estimateBasis": "Equivalente hipotético em USD, API Standard: US$10/1M entrada sem cache, US$1/1M entrada cacheada e US$50/1M saída. Referência 2026-11-13: https://developers.openai.com/api/docs/pricing. Não é cobrança real nem preço da assinatura; exclui ferramentas, impostos e outros encargos."
     }
   ],
