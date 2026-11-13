@@ -36,6 +36,35 @@ O cenário contém 158 casas, 20 pátios, 89 jarros, 69 toldos e oito segmentos 
 caminho; são contagens do cenário artístico, não demografia histórica.
 Esses dados não substituem a conferência pública posterior nem um telefone físico.
 
+### Incremento Claude — HUD móvel (13/11/2026, sobre `4d7cf86`)
+
+Autoria: sessão Claude Code na nuvem, branch `claude/quirky-hamilton-bt0y7w`, PR em rascunho.
+Commit e deployment de produção: **pendentes** até revisão/merge; não presumir publicação.
+
+- **Problema observado:** no celular o joystick só aparecia onde o dedo tocava e o botão de ação
+  era um círculo com texto; `docs/ALTO-NIVEL.md` pedia joystick sempre visível e ícone de mão.
+  Na paisagem 844×390, o botão de ação (posição anterior) cobria a linha "MARCOS 1:16-20" da placa.
+- **Mudança:** joystick em repouso fixo no canto inferior esquerdo. Toque perto dele o conduz
+  a partir do centro fixo; toque longe, ainda no lado esquerdo, traz a base para baixo do dedo
+  durante o gesto e ela volta ao soltar. Raio do controle lido do layout. Botão com mão em SVG
+  desenhado no código (sem emoji, `aria-hidden`), nome acessível = verbo da ação ("Chamar").
+  Na paisagem, joystick e botão descem às bordas; em telas deitadas de até 340 px de altura
+  o joystick fica com 96 px e a linha de referência da placa é omitida (a referência segue na legenda).
+- **Arquivos:** `src/joystick.ts` (novo), `src/input.ts`, `src/hud.ts`, `src/hud.css`, `index.html`,
+  `test/joystick.test.ts` (novo), `tools/check_touch.mjs` (novo), README e este diário.
+- **Fontes/licenças:** nenhuma fonte externa nova; o desenho da mão é código deste repositório (MIT).
+- **Evidência:** build completo com assets verificados por SHA-256 e 41/41 testes. `tools/check_touch.mjs`
+  em 390×844 e 844×390 (toque) sobre `4d7cf86`, e 1280×800 sobre `424a096` (repetição sobre `4d7cf86`
+  registrada na PR): controle fixo e recentrado andam, soltar para o herói,
+  `AnimationMixer` real com `walk` ≥ 0,9 de peso e ossos mudando, toque real no botão da mão
+  dispara a fala, sem sobreposição com missão, radar, links e legenda, zero erros de página/HTTP.
+  Varredura de layout de 320×568 a 932×430 em retrato e paisagem. Capturas e relatório em
+  `shots/touch-r1/` (fora do Git).
+- **Limites:** Chromium sem GPU (WebGL2 por software, cerca de 0,5–1 fps); FPS dessa máquina
+  não representa jogo nem telefone. Viewport emulado não é celular físico. Em 568×320 o botão
+  encosta (0 px) na última linha da placa do radar, sem cobri-la.
+- **Possível Reel:** antes/depois do HUD de celular. Ainda sem gravação de vídeo nem aprovação.
+
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
 1. **“Começamos com formas simples: o que já precisava funcionar?”** Mostrar a

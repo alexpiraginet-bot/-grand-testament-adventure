@@ -72,8 +72,9 @@ conta. As propostas passam por análise; alterações no jogo dependem de aprova
 Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
 
 - PC: WASD ou setas, Shift corre, arrastar o mouse olha (duplo clique trava o cursor), **E** age.
-- Celular: arraste no lado esquerdo para andar (joystick aparece onde o dedo toca), no lado direito para olhar, botão
-  redondo para agir.
+- Celular: joystick sempre visível no canto inferior esquerdo (tocar longe dele, ainda no lado esquerdo, traz a base
+  para baixo do dedo durante o gesto); arraste no lado direito para olhar; o botão redondo com a mão aparece quando
+  há uma ação. Conferência de navegador: `node tools/check_touch.mjs` (viewport emulado, não celular físico).
 
 ## Como é feito
 

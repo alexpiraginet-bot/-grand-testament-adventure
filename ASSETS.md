@@ -65,6 +65,16 @@ as animações. **Não conferido aqui; não está pronto.**
 |---|---|---|
 | `assets-src/referencias/conceito-visual-01.png` | `ea81dd752e8342e9737f62bcc65d21128ac625811fb26ad9e50021dbe859bee6` | conceito em imagem gerada, enviado pelo Alex em 12/11/2026 como referência final; análise em `docs/ALTO-NIVEL.md` |
 
+## Pedidos de arte (Claude → Codex)
+
+Regra de Alex, 13/11/2026: imagens e ícones são gerados pelo Codex, no gerador de imagem dele, ou no Higgsfield.
+O Claude deixa só marcadores e a especificação. Cada entrega registra origem, licença/termos do gerador e SHA-256.
+
+| Pedido | Onde entra | Especificação | Estado |
+|---|---|---|---|
+| Ícone **mão chamando** do botão de ação no celular | `index.html` (`#act svg.hand`), tamanho de exibição 40×40 px dentro de um círculo creme de 84 px | gesto de chamar com a mão aberta, desenho próprio (nada de emoji ou ícone de terceiros), cor única `#18120c` sobre fundo transparente; entregar SVG (preferido) ou PNG/WebP 160×160 com alfa; legível a 32 px | marcador SVG provisório do Claude no lugar |
+| Base e alavanca do joystick (opcional) | `.joy` / `.knob` em `src/hud.css` | aro e alavanca no estilo do HUD dos reels; transparência para não esconder o chão; 112 px (96 px em telas deitadas baixas) | CSS provisório |
+
 ## Divisão de arquivos
 
 Branch base `main`; cada um na sua (`claude/...`, `codex/...`, `feature/...` de quem mais vier), com PR em rascunho.
