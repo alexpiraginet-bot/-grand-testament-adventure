@@ -16,7 +16,7 @@ const report={startedAt:new Date().toISOString(),url:base.href,tests:[],limits:[
  'Visibility is a synthetic DOM event, not background suspension by an operating system.',
  'Five-second FPS window is a short measurement on this PC. GET/HEAD only; no publication or form submission.',
 ]};
-const cases=[{name:'chrome-desktop',width:1280,height:800},{name:'chrome-mobile',width:390,height:844,mobile:true},{name:'webkit-mobile',width:390,height:844,mobile:true,webkit:true},{name:'chrome-fauna-404',width:390,height:844,mobile:true,failFauna:true},{name:'chrome-fauna-partial-404',width:390,height:844,mobile:true,failFauna:'donkey'}].filter(c=>!filter||c.name===filter);
+const cases=[{name:'chrome-desktop',width:1280,height:800},{name:'chrome-mobile',width:390,height:844,mobile:true},{name:'webkit-mobile',width:390,height:844,mobile:true,webkit:true},{name:'webkit-smoke',width:390,height:844,mobile:true,webkit:true,smoke:true},{name:'chrome-fauna-404',width:390,height:844,mobile:true,failFauna:true},{name:'chrome-fauna-partial-404',width:390,height:844,mobile:true,failFauna:'donkey'}].filter(c=>filter?c.name===filter:!c.smoke);
 assert.ok(cases.length,'unknown case');
 const save=()=>writeFileSync(`${out}/report${filter?`-${filter}`:''}.json`,JSON.stringify(report,null,2));
 const isFauna=url=>/\/models\/fauna-r8\/[^/]+\.glb(?:\?|$)/.test(url);
@@ -89,6 +89,8 @@ for(const c of cases){
    check(loaded.fauna.renderer.failedKinds.length===0&&loaded.fauna.renderer.pending===0,'no fauna decode failure or pending load');
    check(loaded.fauna.renderer.textureLimit===(c.mobile?512:2048),'renderer uses mobile/desktop texture cap');
    check(loaded.fauna.renderer.receivedBytes===expected.reduce((sum,a)=>sum+a.expectedBytes,0),'measured model bytes equal selected profile');
+   if(c.smoke){r.smokeOnly=true;check(expected.every(a=>loaded.fauna.visible.some(b=>b.kind===a.kind)),'smoke sees both approved species after Go');if(!loaded.audio.available)check(await page.locator('#soundbtn').isDisabled(),'unsupported audio remains disabled');await shot('smoke-ready');}
+   else{
    const stage=await page.evaluate(()=>{
     const g=window.__gta,a=g.fauna().visible.filter(a=>a.kind!=='fish').sort((a,b)=>Math.hypot(a.x-g.player.pos.x,a.z-g.player.pos.z)-Math.hypot(b.x-g.player.pos.x,b.z-g.player.pos.z))[0]??g.fauna().visible[0];
     for(let i=0;i<12;i++){const angle=i*Math.PI/6,x=a.x+Math.sin(angle)*3,z=a.z+Math.cos(angle)*3;
@@ -122,6 +124,7 @@ for(const c of cases){
    }else check(await page.locator('#soundbtn').isDisabled(),'no Web Audio is honestly disabled, not reported as audio proof');
    r.performance=await page.evaluate(async()=>{const g=window.__gta,first=g.fpsLog.length,start=performance.now();let frames=0;await new Promise(resolve=>{function next(now){frames++;if(now-start>=5000)resolve();else requestAnimationFrame(next);}requestAnimationFrame(next);});return{elapsedMs:performance.now()-start,rafFrames:frames,rendererFPSSamples:g.fpsLog.slice(first),renderer:g.info(),fauna:g.fauna(),audio:g.audio()};});
    await shot('final');
+   }
   }
   await Promise.all(responseTasks);r.resourceTiming=await page.evaluate(()=>performance.getEntriesByType('resource').map(e=>({name:e.name,transferSize:e.transferSize,encodedBodySize:e.encodedBodySize,duration:e.duration})));
   r.bytes={responseHeaderBytes:r.responses.reduce((sum,e)=>sum+e.contentLength,0),faunaHeaderBytes:r.responses.filter(e=>isFauna(e.url)&&e.status<400).reduce((sum,e)=>sum+e.contentLength,0),resourceEncodedBytes:r.resourceTiming.reduce((sum,e)=>sum+e.encodedBodySize,0)};

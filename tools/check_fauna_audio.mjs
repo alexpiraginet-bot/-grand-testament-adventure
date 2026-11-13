@@ -12,6 +12,7 @@ const report={startedAt:new Date().toISOString(),url:base.href,tests:[],limits:[
  'Debug teleport stages acoustic habitats; no claim of a continuous walking route or mission completion.',
  'Visibility is simulated with document.hidden/visibilityState plus visibilitychange, explicitly not an OS background/process-kill test.',
  'Audio evidence is real AudioContext state, decoded buffer/cache and scheduled source counters. No perceptual listening/mix approval.',
+ 'The QA wrapper waits for SHA-256 attribution alongside native decode; source.start is recorded only after the native call succeeds. It does not synthesize audio or change game counters.',
  'FPS is a controlled five-second window, not a sustained thermal or device benchmark.',
  'Only GET/HEAD requests permitted; no feedback form is submitted.'
 ]};
@@ -100,6 +101,11 @@ for(const config of cases){
    await snap('audio-unavailable');await shot('audio-unavailable');
   }else{
   check(await page.locator('#soundbtn').getAttribute('aria-pressed')==='true','sound starts enabled and accessible');
+  if(!config.failAudio){
+   await page.waitForFunction(()=>!['not-started','loading'].includes(window.__gta.fauna?.().status),null,{timeout:75000});
+   await page.waitForTimeout(200);
+   r.animalAnchors=await page.evaluate(()=>window.__gta.fauna?.().visible??[]);
+  }
   await stage('birds');
   if(config.failAudio){
    await waitAudio(()=>window.__gta.audio().nature.failedClips.includes('birds'));
@@ -121,7 +127,7 @@ for(const config of cases){
    check(r.requests.filter(q=>/\/(donkey|chicken|sheep)\.mp3$/.test(q.url)).every(q=>loadedKinds.includes(q.url.match(/\/([^/]+)\.mp3$/)[1])),'animal audio requires a loaded approved species');
    for(const kind of loadedKinds.filter(kind=>['chicken','donkey','sheep','goat'].includes(kind))){
     if(!await page.evaluate(kind=>window.__faunaAudioQA.started.some(s=>s.kind===kind),kind)){
-     const staged=await page.evaluate(kind=>{const g=window.__gta,a=g.fauna().visible.find(a=>a.kind===kind);if(!a)return null;for(let i=0;i<12;i++){const angle=i*Math.PI/6,x=a.x+Math.sin(angle)*3,z=a.z+Math.cos(angle)*3;if(!g.blocked(x,z,false)){g.teleport(x,z,Math.atan2(a.x-x,-(a.z-z)));return{id:a.id,x,z};}}return null;},kind);
+     const staged=await page.evaluate(({kind,anchors})=>{const g=window.__gta,a=g.fauna().visible.find(a=>a.kind===kind)??anchors.find(a=>a.kind===kind);if(!a)return null;for(let i=0;i<12;i++){const angle=i*Math.PI/6,x=a.x+Math.sin(angle)*3,z=a.z+Math.cos(angle)*3;if(!g.blocked(x,z,false)){g.teleport(x,z,Math.atan2(a.x-x,-(a.z-z)));return{id:a.id,x,z};}}return null;},{kind,anchors:r.animalAnchors});
      check(!!staged,`a real ${kind} can stage its recording`);r.observations.push({label:`animal-audio-staging-${kind}`,staged});
      await page.waitForFunction(kind=>window.__faunaAudioQA.started.some(s=>s.kind===kind),kind,{timeout:45000,polling:150});
     }
@@ -166,7 +172,7 @@ for(const config of cases){
   check(r.httpErrors.every(e=>e.intentional),'no unexpected HTTP failures');
   check(r.consoleErrors.every(e=>config.failAudio&&(/404/.test(e.text)||isAudio(e.location?.url||''))),'no unexpected console errors');
   r.passed=true;
- }catch(error){r.failure=String(error.stack||error);try{await snap('failure');await shot('failure');}catch{} }
+ }catch(error){r.failure=String(error.stack||error);try{r.audioProof=await page.evaluate(()=>window.__faunaAudioQA);await snap('failure');await shot('failure');}catch{} }
  finally{r.finishedAt=new Date().toISOString();await context.close();await browser.close();persist();console.log(JSON.stringify({name:r.name,passed:r.passed,checks:r.checks.length,failure:r.failure,readyMs:r.readyMs,bytes:r.byteSummary,fps:r.performance?.rendererFPSSamples}));}
 }
 report.finishedAt=new Date().toISOString();report.passed=report.tests.every(t=>t.passed);persist();if(!report.passed)process.exitCode=1;

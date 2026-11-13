@@ -198,3 +198,19 @@ da API como limitação explícita, sem chamar esse caso de áudio aprovado.
 aprovados, repetir o navegador após as alterações posteriores e testar
 recuperação/estabilidade no Safari físico. Evidências anteriores foram
 preservadas, inclusive tentativas com falha.
+
+### Atualização após integração de galinha e burro
+
+A integração visual e a repetição posterior estão documentadas em
+`QA-FAUNA-R8-NAVEGADOR.md`. O ensaio detectou e corrigiu o uso indevido do raio
+físico do corpo como alcance sonoro. No bundle corrigido `index-BvfTbjcg.js`,
+Chrome desktop e móvel passaram respectivamente **33 e 34 verificações**,
+com MP3 identificado por SHA-256 no decode e chamadas nativas reais de
+`AudioBufferSourceNode.start()` para galinha, burro, aves e água. Não houve
+erro de página/console/HTTP; mute, menus e retomada por gesto passaram.
+
+WebKit Windows passou uma nova fumaça com 14 recursos principais e as duas
+espécies, mantendo “Som indisponível” porque esse runtime não oferece Web Audio.
+Não se afirma suporte sonoro no Safari físico. A medição técnica tampouco
+substitui audição da mix. O estado inicial “somente aves e água” descrito acima
+é histórico: a revisão corrigida já admite as duas espécies visuais aprovadas.
