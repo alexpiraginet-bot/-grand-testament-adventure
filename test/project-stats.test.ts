@@ -3,7 +3,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { coAuthors, commitStats, localDay, parseCommits, parseRepo, parseTickets, plural, ticketStats } from "../src/project-stats.ts";
+import { ACCESS, coAuthors, commitStats, localDay, parseCommits, parseRepo, parseTickets, plural, ticketStats } from "../src/project-stats.ts";
 
 const fixture = (name: string) => JSON.parse(readFileSync(new URL(`./fixtures/github/${name}.json`, import.meta.url), "utf8")) as unknown;
 
@@ -63,4 +63,14 @@ test("a response that is not what was asked for is refused, not half-read", () =
 test("counted nouns in Portuguese", () => {
   assert.equal(plural(1, "commit", "commits"), "1 commit"); assert.equal(plural(0, "pessoa", "pessoas"), "0 pessoas");
   assert.equal(plural(1234, "commit", "commits"), "1.234 commits");
+});
+
+test("accesses: what the panel says matches what the pages load", () => {
+  assert.match(ACCESS.checked, /^\d{4}-\d{2}-\d{2}$/);
+  assert.ok(Number.isFinite(Date.parse(ACCESS.checked)), "the day of the check is a real date");
+  // while no source is declared, no page may load a visit counter: the panel would be saying "not measured" about a
+  // game that is being measured
+  const pages = ["index.html", "painel.html"].map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
+  const counting = /insights\/script\.js|@vercel\/analytics|window\.va\b|googletagmanager|gtag\(/.test(pages);
+  assert.equal(counting, ACCESS.source !== null, "ACCESS.source and the pages' scripts disagree");
 });

@@ -8,6 +8,10 @@ export const GITHUB_API = `https://api.github.com/repos/${REPO.owner}/${REPO.nam
 export const GITHUB_WEB = `https://github.com/${REPO.owner}/${REPO.name}`;
 /** The day a commit or an issue belongs to is the day in São Paulo, where the project is run. */
 export const PANEL_TIMEZONE = "America/Sao_Paulo";
+/** Where visit counts come from. `source: null` means nothing counts visits: on `checked`, Vercel's API answered
+ * "Web Analytics not found" for this project and the game had no counter of its own. Update both fields when a source
+ * is connected or the check is repeated; the panel says exactly this and shows no number without a source. */
+export const ACCESS: { source: string | null; checked: string } = { source: null, checked: "2026-11-13" };
 /** The titles the two issue forms start with (.github/ISSUE_TEMPLATE). */
 export const ISSUE_PREFIX = { voluntariado: "[Voluntariado]", comunidade: "[Comunidade]" } as const;
 

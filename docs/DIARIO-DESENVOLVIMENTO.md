@@ -245,8 +245,11 @@ oração de Marcos 1:21 e a Bíblia mostra o versículo inteiro; o mapa do Codex
 a leitura não é guardada entre visitas. O painel é construído por um `vite.painel.config.ts` próprio: como segunda
 página do mesmo build ele tirava o CSS do tema e o auxiliar de pré-carga do Vite para arquivos à parte, ou seja, dois
 pedidos a mais na abertura do jogo; separado, o CSS do jogo sai com o mesmo nome e hash (`index-CoqAIWud.css`).
-**Acessos não são medidos hoje:** `/_vercel/insights/script.js` responde 404 em produção (Web Analytics da Vercel
-desligado) e o jogo não tem contador. Nenhum número de acesso foi inventado; a fonte de medição depende de Alex.
+**Acessos não são medidos hoje:** a API da Vercel responde "Web Analytics not found" para o projeto do jogo
+(consulta de leitura em 13/11, 17:57 UTC) e o jogo não tem contador. O painel declara isso a partir de um registro no
+repositório (`ACCESS` em `src/project-stats.ts`, com a data da conferência), e um teste impede que alguma página
+carregue um contador enquanto o registro disser que não há fonte. Nenhum número de acesso foi inventado; a fonte de
+medição depende de Alex.
 
 **Conciliação com a R9 (`6878694`):** os trechos da R9 em `main.ts`, `hud.ts` e `journey.ts` ficaram como o Codex
 escreveu (herói sem substituto, nenhum ator/colisor/seguidor de radar para participantes, aviso de cena em

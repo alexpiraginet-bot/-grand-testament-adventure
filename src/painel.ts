@@ -1,7 +1,7 @@
 // The devs' panel (painel.html): fetches what GitHub's public API says about this repository and draws it. The counting
 // is in project-stats.ts. No game code loads here, nothing is sent anywhere but those GET requests, and every string
 // from a response goes into the page as text, never as markup.
-import { commitStats, GITHUB_API, GITHUB_WEB, PANEL_TIMEZONE, parseCommits, parseRepo, parseTickets, plural, REPO, ticketStats,
+import { ACCESS, commitStats, GITHUB_API, GITHUB_WEB, PANEL_TIMEZONE, parseCommits, parseRepo, parseTickets, plural, REPO, ticketStats,
   type Commit, type CommitStats, type RepoFacts, type Tally, type TicketStats } from "./project-stats.ts";
 
 const $ = (id: string) => document.getElementById(id)!;
@@ -130,23 +130,17 @@ async function refresh(fresh = false) {
   }
 }
 
-/** Is anything counting visits? Vercel serves its Web Analytics script at this path only when the feature is on for
- * the project; the game has no counter of its own. A static server may answer any path with the page itself, so the
- * answer must be a script to count as on. */
-async function accessStatus() {
-  let on = false, known = true;
-  try {
-    const r = await fetch("/_vercel/insights/script.js", { method: "HEAD", cache: "no-store" });
-    on = r.ok && /javascript/i.test(r.headers.get("content-type") ?? "");
-  } catch { known = false; }
-  const box = el("div", `status ${!known ? "" : on ? "is-on" : "is-off"}`.trim()); box.id = "access-status"; box.dataset.state = !known ? "unknown" : on ? "on" : "off";
+/** What is known about visits (project-stats.ts ACCESS): said from the repository's own record, with the day it was
+ * checked. Nothing is asked of the server here: there is no number to fetch until a source is connected. */
+function accessStatus() {
+  const on = ACCESS.source !== null, checked = day(ACCESS.checked);
+  const box = el("div", `status ${on ? "is-on" : "is-off"}`); box.id = "access-status"; box.dataset.state = on ? "on" : "off";
   const text = el("div");
-  if (!known) text.append(el("strong", undefined, "Não deu para conferir a medição agora"), el("p", undefined, "Sem resposta do servidor ao perguntar pela medição de acessos."));
-  else if (on) text.append(el("strong", undefined, "Medição ligada na Vercel"),
-    el("p", undefined, "O Web Analytics da Vercel está ativo neste endereço e conta as visitas sem cookies. Os números ficam no painel da Vercel; trazê-los para esta página depende de publicar um resumo deles."));
+  if (on) text.append(el("strong", undefined, "Medição ligada"),
+    el("p", undefined, `Fonte: ${ACCESS.source}. Os números ficam nessa fonte; trazê-los para esta página depende de publicar um resumo deles.`));
   else text.append(el("strong", undefined, "Sem medição de acessos"),
-    el("p", undefined, "Hoje nenhuma visita ao jogo é contada: o Web Analytics da Vercel não está ativo neste projeto e o jogo não tem contador próprio. Por isso não há número de acessos para mostrar. Quando uma fonte de medição for ligada, os números aparecem aqui."));
-  box.append(el("span", "mark", !known ? "?" : on ? "✓" : "×"), text);
+    el("p", undefined, `Hoje nenhuma visita ao jogo é contada: o Web Analytics da Vercel não está ativo neste projeto (conferido em ${checked}) e o jogo não tem contador próprio. Por isso não há número de acessos para mostrar. Quando uma fonte de medição for ligada, os números aparecem aqui.`));
+  box.append(el("span", "mark", on ? "✓" : "×"), text);
   $("acessos").replaceChildren(box);
 }
 
@@ -154,4 +148,4 @@ async function accessStatus() {
 (document.getElementById("link-contribute") as HTMLAnchorElement).href = `${GITHUB_WEB}/blob/main/CONTRIBUTING.md`;
 document.title = `Painel do projeto · ${REPO.name.replace(/^-/, "").replace(/-/g, " ")}`;
 void refresh();
-void accessStatus();
+accessStatus();

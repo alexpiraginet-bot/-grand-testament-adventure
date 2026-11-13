@@ -72,8 +72,9 @@ requests, issues e as contas de fora que participaram. Tudo é lido da API públ
 abre a página, sem login e sem servidor do jogo; a contagem está em `src/project-stats.ts` e é testada com respostas
 gravadas deste repositório (`test/fixtures/github/`, sem endereços de e-mail). A página não carrega o jogo.
 
-**Acessos ainda não são medidos.** O jogo não tem contador e o Web Analytics da Vercel não está ativo neste projeto;
-o painel diz isso em vez de mostrar um número. A escolha da fonte de medição é de Alex.
+**Acessos ainda não são medidos.** O jogo não tem contador e o Web Analytics da Vercel não está ativo neste projeto
+(conferido pela API da Vercel em 13/11/2026; registro em `ACCESS`, `src/project-stats.ts`). O painel diz isso em vez
+de mostrar um número. A escolha da fonte de medição é de Alex.
 
 ## Progresso salvo
 

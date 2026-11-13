@@ -63,9 +63,10 @@ for (const [name, ctx] of [["pc", { viewport: { width: 1280, height: 800 } }], [
   } else {
     assert.ok(r.tiles.every((t) => /^\d/.test(t[0])), "every tile has a number");
   }
-  // nothing is counting visits on a plain static server: the panel says so instead of showing a number
+  // nothing counts visits yet (project-stats.ts ACCESS): the panel says so, with the day it was checked, and shows no number
   assert.equal(await page.evaluate(() => document.getElementById("access-status").dataset.state), "off");
   assert.equal(await page.evaluate(() => document.querySelector("#access-status strong").textContent), "Sem medição de acessos");
+  assert.equal(await page.evaluate(() => /\d/.test(document.querySelector("#access-status p").textContent.replace(/\d{2}\/\d{2}\/\d{4}/, ""))), false, "no figure in the access box besides the date of the check");
   const text = await page.evaluate(() => document.body.innerText);
   assert.ok(!/[\w.+-]+@[\w-]+\.[\w.]+/.test(text), "no e-mail address on the page");
   assert.match(await page.evaluate(() => document.getElementById("stamp").textContent), /^Dados do GitHub lidos em \d{2}\/\d{2}\/\d{4},? \d{2}:\d{2} \(horário de São Paulo\)\. Último envio ao repositório: /);
