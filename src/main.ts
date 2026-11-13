@@ -5,6 +5,7 @@ import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
 import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
+import { countVisits } from './analytics.ts';
 import { goals as makeGoals, npcs as makeNpcs, shoreDir } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { EPILOGUE_RADIUS_M, epilogueLine, finishedState, initialRoam, roamDistance, startFree, startRoam, stepRoam } from "./freeroam.ts";
@@ -898,6 +899,7 @@ async function main() {
   }
 }
 
+countVisits();
 main().catch((e) => {
   console.error(e);
   failStartup(e);

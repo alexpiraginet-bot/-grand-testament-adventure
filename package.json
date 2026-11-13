@@ -17,6 +17,7 @@
     "bench:all": "node tools/bench_all.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "2.0.1",
     "three": "0.186.1"
   },
   "devDependencies": {

@@ -137,7 +137,7 @@ function accessStatus() {
   const box = el("div", `status ${on ? "is-on" : "is-off"}`); box.id = "access-status"; box.dataset.state = on ? "on" : "off";
   const text = el("div");
   if (on) text.append(el("strong", undefined, "Medição ligada"),
-    el("p", undefined, `Fonte: ${ACCESS.source}. Os números ficam nessa fonte; trazê-los para esta página depende de publicar um resumo deles.`));
+    el("p", undefined, `As visitas ao jogo publicado são contadas pelo ${ACCESS.source} (conferido em ${checked}): contagem agregada, só do endereço da página, sem os parâmetros. Os números ficam no painel da Vercel; esta página ainda não mostra um resumo deles, e não mostra número nenhum até lá.`));
   else text.append(el("strong", undefined, "Sem medição de acessos"),
     el("p", undefined, `Hoje nenhuma visita ao jogo é contada: o Web Analytics da Vercel não está ativo neste projeto (conferido em ${checked}) e o jogo não tem contador próprio. Por isso não há número de acessos para mostrar. Quando uma fonte de medição for ligada, os números aparecem aqui.`));
   box.append(el("span", "mark", on ? "✓" : "×"), text);

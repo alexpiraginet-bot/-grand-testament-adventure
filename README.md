@@ -45,6 +45,7 @@ node tools/check_bible.mjs     # a Bíblia do jogo: linha da missão selada até
 python3 -I tools/build_bible.py ../biblia-conectada           # refaz src/data/biblia-cronologica.json (roteiro + BLIVRE, hash conferido)
 python3 -I tools/build_bible.py ../biblia-conectada --check   # confere se o arquivo versionado ainda bate com as fontes
 node tools/check_painel.mjs    # painel de devs (painel.html) com respostas gravadas do GitHub; --live consulta o GitHub de verdade
+VA_SCRIPT=script.js node tools/check_analytics.mjs <url-build-local> <url-build-VERCEL_ENV=production>   # contagem de visitas: o que é pedido e enviado
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
@@ -72,9 +73,12 @@ requests, issues e as contas de fora que participaram. Tudo é lido da API públ
 abre a página, sem login e sem servidor do jogo; a contagem está em `src/project-stats.ts` e é testada com respostas
 gravadas deste repositório (`test/fixtures/github/`, sem endereços de e-mail). A página não carrega o jogo.
 
-**Acessos ainda não são medidos.** O jogo não tem contador e o Web Analytics da Vercel não está ativo neste projeto
-(conferido pela API da Vercel em 13/11/2026; registro em `ACCESS`, `src/project-stats.ts`). O painel diz isso em vez
-de mostrar um número. A escolha da fonte de medição é de Alex.
+**Acessos:** desde 13/11/2026 o build de produção conta visitas com o Web Analytics da Vercel (`@vercel/analytics`,
+`src/analytics.ts`; ligado no projeto e pedido por Alex). Só o build que a Vercel faz para produção carrega o script
+(`VERCEL_ENV=production`); build local, prévia e testes não carregam nem enviam nada. Do endereço da página vai só o
+caminho, sem os parâmetros; o script não grava cookies e não conta navegador automatizado
+(`tools/check_analytics.mjs`). O painel de devs não é contado e ainda não mostra números: eles ficam no painel da
+Vercel até um resumo datado ser publicado junto (registro em `ACCESS`, `src/project-stats.ts`).
 
 ## Progresso salvo
 

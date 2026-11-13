@@ -17,6 +17,7 @@ function buildSha(): string {
 
 export default defineConfig({
   base: "./",
-  define: { __BUILD_SHA__: JSON.stringify(buildSha()) },
+  // __COUNT_VISITS__: visits are counted (src/analytics.ts) only in the build Vercel makes for production
+  define: { __BUILD_SHA__: JSON.stringify(buildSha()), __COUNT_VISITS__: JSON.stringify(process.env.VERCEL_ENV === "production") },
   build: { target: "es2022", chunkSizeWarningLimit: 1500, reportCompressedSize: true },
 });

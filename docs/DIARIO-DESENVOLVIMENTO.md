@@ -251,6 +251,19 @@ repositório (`ACCESS` em `src/project-stats.ts`, com a data da conferência), e
 carregue um contador enquanto o registro disser que não há fonte. Nenhum número de acesso foi inventado; a fonte de
 medição depende de Alex.
 
+**Contagem de visitas (pedido de Alex às ~18:07 UTC: `npm i @vercel/analytics`):** a produção passou a responder
+200 em `/_vercel/insights/script.js` (antes 404), sinal de que o Web Analytics foi ligado no projeto. Instalado
+`@vercel/analytics` 2.0.1 (MIT, sem dependências obrigatórias; versão exata no `package.json`, como as demais).
+`src/analytics.ts` chama o `inject()` do pacote **só no build que a Vercel faz para produção** e corta do endereço
+tudo depois de `?` ou `#` antes do envio. Medido: +2.435 bytes no JS do jogo (+1,09 kB gzip pelo relatório do Vite).
+`tools/check_analytics.mjs`, com uma cópia do script servido em produção (SHA-256 `050e35bf7e6e9659…`, 4.522 bytes)
+e os pedidos respondidos localmente: build local não pede nada; build de produção carrega o script e envia **uma**
+visita com `{"o": endereço sem parâmetros, "sv", "sdkn", "sdkv", "r": ""}`; nenhum cookie, nada no armazenamento;
+navegador automatizado carrega o script e **não** envia visita (os testes e agentes não inflam a contagem). Os
+créditos do jogo ganharam a seção "Visitas" dizendo isso. O painel de devs não é contado. A API de consulta ainda
+responde "Web Analytics not found": só haverá número depois que esta versão estiver em produção e receber visitas.
+`npm` avisou de 4 vulnerabilidades moderadas no conjunto de dependências; não foram investigadas nem alteradas aqui.
+
 **Conciliação com a R9 (`6878694`):** os trechos da R9 em `main.ts`, `hud.ts` e `journey.ts` ficaram como o Codex
 escreveu (herói sem substituto, nenhum ator/colisor/seguidor de radar para participantes, aviso de cena em
 desenvolvimento). Dois conflitos em `main.ts` (a chamada do HUD da jornada/Bíblia e os ganchos de depuração). O que
@@ -271,6 +284,11 @@ rig (o herói chega ao `animated-actor.ts` por `character-quality.ts`). O JS do 
 5. O painel como segunda página do build mudou o bundle do jogo (ver acima); refeito com configuração própria.
 6. A guarda do rig falhou depois do merge da R9 por conferir um import que mudou de arquivo; a conferência agora
    segue o caminho novo e continua exigindo o `animated-actor.ts`.
+7. `check_roam` falhou na árvore conciliada em 23 s ("the found place is announced"): o aviso de lugar encontrado dura
+   6 s reais e o teste o lia em quatro idas ao navegador, com a máquina ocupada por um `npm`/`tsc` meu ao mesmo tempo.
+   A leitura passou a ser uma só, no mesmo instante em que o lugar é encontrado; repetição na fila.
+8. A primeira asserção do `check_analytics` esperava a visita sem o campo do site de origem; o script da Vercel envia
+   `"r": ""` quando a página é aberta direto. Corrigida a expectativa, não o código.
 
 **Consumo real da sessão até 13/11/2026 17:53:25 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
 38 arquivos; respostas desde 09:39:24 UTC). Substitui o retrato anterior, que era parcial:

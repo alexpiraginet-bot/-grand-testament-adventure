@@ -68,9 +68,13 @@ test("counted nouns in Portuguese", () => {
 test("accesses: what the panel says matches what the pages load", () => {
   assert.match(ACCESS.checked, /^\d{4}-\d{2}-\d{2}$/);
   assert.ok(Number.isFinite(Date.parse(ACCESS.checked)), "the day of the check is a real date");
-  // while no source is declared, no page may load a visit counter: the panel would be saying "not measured" about a
-  // game that is being measured
-  const pages = ["index.html", "painel.html"].map((f) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8")).join("\n");
-  const counting = /insights\/script\.js|@vercel\/analytics|window\.va\b|googletagmanager|gtag\(/.test(pages);
-  assert.equal(counting, ACCESS.source !== null, "ACCESS.source and the pages' scripts disagree");
+  // the record and the code must agree: the game starts the counter (src/analytics.ts, called by src/main.ts) exactly
+  // when a source is declared; otherwise the panel would say "not measured" about a game that is, or the reverse
+  const src = (f: string) => readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
+  const gameCounts = /^countVisits\(\);$/m.test(src("src/main.ts")) && /from "@vercel\/analytics"/.test(src("src/analytics.ts"));
+  assert.equal(gameCounts, ACCESS.source !== null, "ACCESS.source and the game's code disagree");
+  // no page carries a counter of its own in its HTML, and the panel's code starts none
+  const html = ["index.html", "painel.html"].map(src).join("\n");
+  assert.equal(/insights\/script\.js|window\.va\b|googletagmanager|gtag\(/.test(html), false, "a counting script written into a page");
+  assert.equal(/analytics/.test(src("src/painel.ts").replace(/Web Analytics da Vercel/g, "")), false, "the devs' panel must not be counted");
 });
