@@ -17,6 +17,10 @@ import { setupFeedbackPanel } from "./feedbackui.ts";
 import { setupWorldMap } from './worldmap.ts';
 import './worldmap.css';
 import nuvem from "./data/nuvem.json";
+import bibleData from "./data/biblia-cronologica.json";
+import { currentStep, episodeSteps, readingOrder, type BibleData } from "./bible.ts";
+import { setupBible } from "./bibleui.ts";
+import { BLIVRE_NOTICE } from "./credits.ts";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
@@ -257,8 +261,8 @@ async function main() {
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   // Each modal owns its pause reason; closing one must not clear another panel's pause.
-  const panelPauses = new Set<'feedback'|'worldmap'>();
-  const setPanelPaused = (panel:'feedback'|'worldmap',open:boolean) => {
+  const panelPauses = new Set<'feedback'|'worldmap'|'biblia'>();
+  const setPanelPaused = (panel:'feedback'|'worldmap'|'biblia',open:boolean) => {
     if(open)panelPauses.add(panel);else panelPauses.delete(panel);
     input.setSuspended(panelPauses.size>0);
     syncAudio();
@@ -280,6 +284,22 @@ async function main() {
   const foundPlaces = parseFound((() => { try { return localStorage.getItem(PLACES_KEY); } catch { return null; } })(), regionList);
   const homeName = regionList.find((p) => p.origem === "fonte")?.nome ?? null;
   hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
+  // the Bible (bible.ts, bibleui.ts): the passage verse by verse, in its place in the chronological reading. Opening it
+  // is how the player learns the next step: until then the mission line asks for it and the radar shows no goal.
+  const bibleSteps = episodeSteps(ep, goals, epilogue && homeName ? `Volte a ${homeName}` : null);
+  const bibleOrder = readingOrder(bibleData as BibleData, ep);
+  const stepNow = () => currentStep(bibleSteps, state.phase, state.mission, roam.phase);
+  let bibleRead = -1;                                   // the furthest step whose verses were opened
+  const sealedStep = () => { const k = stepNow(); return k < bibleSteps.length && bibleRead < k ? bibleSteps[k] : null; };
+  const bible = setupBible({
+    episode: ep, steps: bibleSteps, entries: bibleOrder.entries, after: bibleOrder.after, gospelName: bibleOrder.gospelName,
+    current: stepNow,
+    canOpen: () => !$("hud").hidden && state.phase !== "intro" && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    onOpenChange: (open) => setPanelPaused("biblia", open),
+    onRead: (step) => { bibleRead = Math.max(bibleRead, step); },
+    notice: BLIVRE_NOTICE, orderSource: "Ordem de leitura: roteiro editorial do Bíblia Conectada. Texto de cada passagem: Bíblia Livre, sem alteração.",
+  });
+  $("obj").addEventListener("click", () => bible.open());
   // One graph, created by Go; audio never participates in startup readiness.
   let natureAudio:FaunaAudio|null=null,natureRunning=false;
   let faunaScene:FaunaScene|null=null,faunaPopulation:FaunaPopulation|null=null,faunaAgents:FaunaAgent[]=[];
@@ -813,6 +833,7 @@ async function main() {
       // the audit of R6 found an invisible wall at the region's limit: say where it is before he reaches it
       const edge = distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z);
       const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
+      const closed = sealedStep();                                 // the step still unread in the Bible, if any
       if (roaming) {
         const back = roam.phase === "return";
         // free: the radar points to the nearest place not yet found, so the open region has somewhere to go
@@ -828,8 +849,10 @@ async function main() {
             : next ? `${count} O mais próximo por encontrar fica a ${windName(next.place.x - player.pos.x, next.place.z - player.pos.z)}.`
             : `Todos os ${regionList.length} lugares desta região foram encontrados.`,
           routes: back ? wayBack : [],
-        }, state, player.pos, player.heading, back ? roamGoal.at : next ? { x: next.place.x, z: next.place.z } : null, followers, notice, dt);
-      } else hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice);
+        }, state, player.pos, player.heading, back ? (closed ? null : roamGoal.at) : next ? { x: next.place.x, z: next.place.z } : null, followers, notice, dt,
+          input.touch, closed ? { ref: closed.ref } : null);
+      } else hud.update(state, player.pos, player.heading, closed ? null : g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice,
+        closed ? { ref: closed.ref } : null);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
     if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
@@ -898,6 +921,9 @@ async function main() {
       roam: () => ({ phase: roam.phase, line: roam.line, goal: roamGoal, places: regionList, found: [...foundPlaces],
         edge: distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z) }),
       beginRoam, beginExplore,
+      // the Bible (bible.ts): the step being played, the furthest one read, and the panel
+      bible: () => ({ step: stepNow(), read: bibleRead, sealed: sealedStep() !== null, steps: bibleSteps, open: bible.isOpen() }),
+      openBible: () => bible.open(),
       session: () => ({ status: slog.status, previous: slog.previous, record: slog.snapshot() }),
       cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
         // fraction of the shot's people whose chest projects inside the central 90% of the picture

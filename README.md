@@ -41,6 +41,9 @@ npm run bench:all    # mesma cena medida (6 planos, PC e viewport de celular emu
 node tools/compare_bench.mjs a/bench.json b/bench.json   # compara dois relatórios plano a plano; recusa máquina/tela/commit diferentes
 node tools/check_session.mjs   # prova o diário de sessão: recarga limpa x queda do renderizador (base do teste de 10 min no celular)
 node tools/check_roam.mjs      # depois do episódio: "Continuar explorando", epílogo de Marcos 1:21, lugares e limite da região
+node tools/check_bible.mjs     # a Bíblia do jogo: linha da missão selada até a leitura, versículos literais, ordem da leitura, pausa
+python3 -I tools/build_bible.py ../biblia-conectada           # refaz src/data/biblia-cronologica.json (roteiro + BLIVRE, hash conferido)
+python3 -I tools/build_bible.py ../biblia-conectada --check   # confere se o arquivo versionado ainda bate com as fontes
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
@@ -79,6 +82,9 @@ O texto abre preenchido no GitHub, onde você revisa e confirma a publicação c
 conta. As propostas passam por análise; alterações no jogo dependem de aprovação.
 Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
 
+- **Bíblia:** a cada passo a linha da missão pede "Abra a Bíblia" e mostra a referência. Lendo o versículo, o
+  objetivo, a distância e o marcador do radar aparecem. A Bíblia traz a passagem versículo a versículo (vivido, agora,
+  a seguir) no lugar dela na leitura cronológica do Bíblia Conectada. Abre com **B** ou tocando na linha da missão.
 - PC: WASD ou setas, Shift corre, arrastar o mouse olha (duplo clique trava o cursor), **E** age.
 - Celular: joystick sempre visível no canto inferior esquerdo (tocar longe dele, ainda no lado esquerdo, traz a base
   para baixo do dedo durante o gesto); arraste no lado direito para olhar; o botão redondo com a mão aparece quando

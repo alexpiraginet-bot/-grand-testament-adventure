@@ -11,6 +11,13 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 
 export type RadarMark = { pos: Vec2; kind: "follower" };
 
+/** The next step has not been read in the Bible yet (bible.ts): the mission line asks for it, with the reference. */
+export type Sealed = { ref: string };
+const SEALED_OBJECTIVE = "Abra a Bíblia";
+const sealedGuidance = (touch: boolean) => touch
+  ? "Toque em “Abra a Bíblia” para ler o próximo passo."
+  : "Aperte B, ou clique em “Abra a Bíblia”, para ler o próximo passo.";
+
 /** What the HUD shows while the player explores after the episode (freeroam.ts). */
 export type RoamView = {
   kind: "return" | "line" | "free";
@@ -55,8 +62,8 @@ export class Hud {
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
-      ? "Controle à esquerda para andar · arraste do lado direito para olhar<br>Botão da mão para agir"
-      : "WASD ou setas para andar · Shift corre · arraste o mouse para olhar (duplo clique trava o cursor)<br>E para agir";
+      ? "Controle à esquerda para andar · arraste do lado direito para olhar<br>Botão da mão para agir · toque na linha da missão para abrir a Bíblia"
+      : "WASD ou setas para andar · Shift corre · arraste o mouse para olhar (duplo clique trava o cursor)<br>E para agir · B abre a Bíblia";
     const bar = $("bar");
     bar.innerHTML = ep.missoes.map(() => "<i><b></b></i>").join("");
     this.bars = Array.from(bar.querySelectorAll("b"));
@@ -98,6 +105,14 @@ export class Hud {
   /** The places already found that are not sourced places (those are always on the radar): drawn with another mark. */
   setFoundPlaces(places: readonly Place[]) { this.foundOnRadar = places.filter((p) => p.origem !== "fonte"); }
 
+  /** The mission line's words; `sealed` when they ask for the Bible. Its name for assistive technology says what a
+   * press does. */
+  private setObjective(text: string, sealed: boolean) {
+    const obj = $("obj");
+    if ($("objt").textContent !== text) { $("objt").textContent = text; obj.setAttribute("aria-label", sealed ? "Abrir a Bíblia para ler o próximo passo" : `${text}. Abrir a Bíblia`); }
+    obj.classList.toggle("sealed", sealed);
+  }
+
   /** The counter's label and marks (as many as the passage names), `filled` of them on. */
   private drawCounter(filled: number) {
     const total = counterTotal(this.ep);
@@ -118,18 +133,20 @@ export class Hud {
   }
 
   /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */
-  roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number) {
+  roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number,
+    touch = false, sealed: Sealed | null = null) {
     const mk = v.kind === "free" ? "EXPLORAÇÃO LIVRE" : "EPÍLOGO";
     if ($("mk").textContent !== mk) $("mk").textContent = mk;
-    if ($("objt").textContent !== v.objective) $("objt").textContent = v.objective;
+    const closed = sealed && v.kind === "return";
+    this.setObjective(closed ? SEALED_OBJECTIVE : v.objective, !!closed);
     $("obj").classList.remove("done");
     this.lastMission = -2;                                          // update() rewrites these if it ever runs again
-    $("dist").textContent = v.dist !== null ? `${Math.round(v.dist)} m` : "";
+    $("dist").textContent = closed ? sealed.ref : v.dist !== null ? `${Math.round(v.dist)} m` : "";
     this.drawCounter(s.filled);                                     // built here too: exploring may start without a mission
     if (v.kind !== this.roamKind) { this.roamKind = v.kind; this.narrativeLeft = 7; }
     this.narrativeLeft = Math.max(0, this.narrativeLeft - dt);
     const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line";
-    const text = v.kind === "line" ? "" : notice ?? (narrated ? v.narrative : v.guidance);
+    const text = v.kind === "line" ? "" : notice ?? (narrated ? v.narrative : closed ? sealedGuidance(touch) : v.guidance);
     this.journey.hidden = !text;
     const label = narrated ? "Narrativa do jogo" : "Orientação";
     if (this.journeyLabel.textContent !== label) this.journeyLabel.textContent = label;
@@ -146,7 +163,7 @@ export class Hud {
   }
 
   update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number,
-    notice: string | null = null) {
+    notice: string | null = null, sealed: Sealed | null = null) {
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);
     const m = ep.missoes[k];
@@ -159,10 +176,12 @@ export class Hud {
     if (showing !== this.lastMission || done !== $("obj").classList.contains("done")) {
       this.lastMission = showing;
       $("mk").textContent = `MISSÃO ${showing + 1} DE ${n}`;
-      $("objt").textContent = ep.missoes[showing].objetivo;
       $("obj").classList.toggle("done", done);
     }
-    $("dist").textContent = !done && dist !== null ? `${Math.round(dist)} m` : "";
+    // until the Bible is opened for this step, the line asks for it and carries the verse's reference (bible.ts)
+    const closed = sealed !== null && !done && s.phase === "play";
+    this.setObjective(closed ? SEALED_OBJECTIVE : ep.missoes[showing].objetivo, closed);
+    $("dist").textContent = closed ? sealed.ref : !done && dist !== null ? `${Math.round(dist)} m` : "";
 
     this.drawCounter(s.filled);
 
@@ -172,7 +191,7 @@ export class Hud {
       this.journeyMission=s.mission;this.narrativeLeft=7;
     }
     this.narrativeLeft=Math.max(0,this.narrativeLeft-dt);
-    const guidance=buildJourneyHint(s,dist,touch);
+    const guidance=closed?sealedGuidance(touch):buildJourneyHint(s,dist,touch);
     const narrated=this.narrativeLeft>0&&!s.promptVisible;
     // a notice from the game (the edge of the region) takes the place of the guidance, never of a line or a tick
     const journeyText=s.phase==='play'&&this.doneFlash===0

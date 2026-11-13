@@ -76,6 +76,13 @@ async function run(name, ctxOpts) {
   await press("#roam");
   await page.waitForFunction(() => window.__gta.roam().phase === "return" && document.getElementById("end").hidden, null, LONG);
   await page.waitForFunction(() => document.getElementById("mk").textContent === "EPÍLOGO", null, LONG);
+  // the way back is the next verse: unread, the line asks for the Bible (tools/check_bible.mjs checks the panel)
+  assert.equal(await text("#objt"), "Abra a Bíblia");
+  assert.equal(await text("#dist"), "Marcos 1:21");
+  await g(() => window.__gta.openBible());
+  await page.waitForFunction(() => document.getElementById("biblia")?.open === true, null, LONG);
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.getElementById("biblia")?.open === false && document.getElementById("objt").textContent === "Volte a Cafarnaum", null, LONG);
   assert.equal(await text("#objt"), "Volte a Cafarnaum");
   assert.match(await text("#dist"), /^\d+ m$/);
   assert.equal(await text(".journey-label"), "Narrativa do jogo");

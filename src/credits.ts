@@ -14,6 +14,7 @@ export const SHORT = [
 export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Texto bíblico", quote: BLIVRE_NOTICE, p: [
     "As legendas identificadas como Bíblia Livre são trechos literais dos versículos citados. Os colchetes da BLIVRE (palavras acrescentadas pelos tradutores) não aparecem nas falas usadas aqui.",
+    "Na Bíblia do jogo, a ordem das passagens é o roteiro editorial de leitura do Bíblia Conectada: uma ordem ampla, não uma cronologia histórica harmonizada. Os versículos dos outros momentos dessa leitura aparecem como estão na BLIVRE, sem alteração.",
   ] },
   { h: "Narrativa do jogo", p: [
     "Os textos com a etiqueta Narrativa do jogo são autorais, inspirados em Marcos 1:16–20. Contextualizam a jornada e não são citações bíblicas nem transcrições históricas. Orientação identifica ajuda de controles e navegação.",

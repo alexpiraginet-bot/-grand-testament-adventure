@@ -29,6 +29,15 @@ button { font: inherit; cursor: pointer; }
   border-radius: 6px; border: 2px solid transparent; font-weight: 600; font-size: clamp(16px, 2.3vw, 22px); letter-spacing: 1.2px; text-transform: uppercase;
   box-shadow: 0 3px 10px rgba(0,0,0,.35); }
 .obj::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 4px; background: var(--gold); }
+/* the mission line is the way into the Bible (bibleui.ts): a button that keeps the line's look */
+button.obj { appearance: none; width: 100%; margin: 0; color: inherit; font-family: inherit; text-align: left; cursor: pointer; }
+#hud button.obj { pointer-events: auto; }
+#hud.cine button.obj { pointer-events: none; }             /* faded out with its panel during a two-shot */
+button.obj:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+/* the next step has not been read yet: the line asks for the Bible, with the verse's reference */
+.obj.sealed { border-color: var(--gold); animation: sealedpulse 1.8s ease-in-out infinite; }
+@keyframes sealedpulse { 0%, 100% { box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 0 0 0 rgba(255,207,115,.55); } 50% { box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 0 0 7px rgba(255,207,115,0); } }
+@media (prefers-reduced-motion: reduce) { .obj.sealed { animation: none; } }
 .obj .ic { width: 14px; height: 14px; margin-left: 8px; background: var(--gold); transform: rotate(45deg); flex: none; }
 .obj.done { border-color: var(--gold); color: var(--gold); }
 .obj.done .ic { background: none; transform: none; width: 18px; height: 14px; border: solid var(--gold); border-width: 0 0 4px 4px; transform: rotate(-45deg) translate(2px, -2px); }

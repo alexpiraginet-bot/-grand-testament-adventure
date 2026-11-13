@@ -50,6 +50,27 @@ Os **lugares da região** (`src/places.ts`) declaram de que tipo de fato se trat
 relevo a até 400 m de Cafarnaum; nenhum texto ou fonte fala dele). Nomes são montados
 com os nomes de lugar e de pessoa dos dados, nunca digitados.
 
+## A Bíblia do jogo (pedido de Alex, 13/11/2026)
+
+Alex pediu que, num mundo aberto, o jogador abra a Bíblia para saber o próximo passo, em ordem cronológica, em vez de
+receber só um ponto no mapa. Como funciona nesta revisão:
+
+- **O passo vem do texto.** A cada passo a linha da missão mostra "Abra a Bíblia" com a referência (por exemplo
+  "Marcos 1:16"); o objetivo, a distância e o marcador do radar só aparecem depois que a Bíblia é aberta naquele passo.
+  Quem anda até o lugar certo sem ler ainda consegue agir: a leitura revela a orientação, não tranca o mundo. O mapa
+  do Codex continua listando as missões.
+- **Quais versículos contam cada passo** sai dos dados, não de uma tabela digitada (`src/bible.ts`): um passo começa no
+  primeiro versículo que nomeia as pessoas chamadas ou que traz a fala; vai até o versículo anterior ao próximo passo.
+  Resultado conferido em `test/bible.test.ts`: descer à praia = Mc 1:16; chamar Simão e André = Mc 1:16–18; chamar
+  Tiago e João = Mc 1:19–20; voltar a Cafarnaum = Mc 1:21.
+- **Na Bíblia o versículo aparece inteiro e literal** (BLIVRE). No epílogo o jogo encena só a primeira oração de
+  Mc 1:21, mas a Bíblia mostra o versículo todo, como Escritura; o que o jogo pede vem separado, em "No jogo".
+- **A ordem** é o roteiro de leitura cronológica do Bíblia Conectada (10 momentos, de Belém aos reencontros), que é
+  editorial e não uma cronologia histórica harmonizada; o painel diz isso. A passagem jogada entra depois do batismo,
+  pela ordem do próprio Marcos. Os outros momentos trazem o texto literal e a marca "Ainda não jogável" ou "Antes
+  desta passagem": nada é anunciado como pronto.
+- Enquanto a Bíblia está aberta o jogo fica pausado.
+
 ## Jogabilidade
 
 O radar desenha o trajeto existente por terra, inclusive a curva que evita a enseada.
