@@ -395,3 +395,45 @@ da sessão autorizada. Publicado na branch `metrics/development`, commit
 `d7e4aba7b478364efd4d92163cf1822f240f1d21`. Horas são atividade estimada e
 valores em USD equivalência hipotética de API, não cobrança da assinatura.
 Não foram coletadas conversas alheias nem inventadas horas de Claude.
+
+## 13/11/2026 — R9, humanos provisórios retirados e direção visual aprovada
+
+Alex rejeitou os NPCs feitos de esferas/cilindros e preferiu a ausência temporária
+a modelos inacabados. Trabalho isolado em `codex/visual-quality-r9`, base
+`ea39f630591439516e7314089d0a07d0955e3916`. A R9 retira criação, animação,
+colisão e seguidores no radar desses personagens. Os IDs de participantes
+continuam servindo ao progresso narrativo e aos saves. Perto dos encontros,
+um aviso identifica a cena em desenvolvimento; nenhuma citação foi reescrita.
+Falha do herói abre recuperação, sem boneco substituto. Os seis candidatos
+Tripo sem rig/animação continuam fora da cena.
+
+Ver `DIAGNOSTICO-VISUAL-R9.md`: auditoria de fontes/capturas R8 encontrou três
+casas em 158 construções, proporções esticadas, fundações lisas expostas e um
+material de chão praticamente uniforme. Não há prova de um limite do navegador.
+Alex aprovou priorizar um trecho vila–praia bem acabado e poucos personagens
+completos, preservando o mapa maior e investigando detalhe por região. Perfil
+visual 30 FPS e KTX2 são propostas a testar, não otimizações já entregues.
+
+Coordenação enviada à PR #1 e ao chat `GTA JC` no aplicativo Claude pelo
+Computador, com leitura de retorno da mensagem enviada. Sua branch observada
+era `a66b232`; ela não foi editada. Mantido o alinhamento de Alex: a Bíblia
+orienta, mas não impede explorar/agir antes da leitura. A continuidade sugerida
+para Claude é concluir jornada/analytics e depois tratar casas/solo sem
+reintroduzir humanos provisórios. Envio confirmado não equivale a tarefa
+concluída pelo outro agente.
+
+Build/typecheck e 172 testes passaram. QA `check_npc_visual.mjs`: Chrome desktop
+24/24, Chrome móvel 22/22, WebKit Windows 12/12 e herói 404 com retentativa 14/14.
+As missões usaram E/toque reais após posicionamento explícito de QA; não foi
+uma caminhada contínua do episódio. Um segmento W atravessou a antiga posição
+do NPC, sem colisor invisível. Fauna própria R8 preservada. Vinte e três
+capturas e quatro relatórios têm manifesto com hashes. Bundle funcional:
+`index-7Z8RWWVI.js`, SHA-256
+`57262772fec1784854f16e42b6316a7201d6d5c6bf5af5143c51645fb0d83514`.
+Ver `QA-NPC-QUALIDADE-R9.md`. iPhone físico, desempenho térmico e acabamento de
+casas/solo permanecem pendentes; a remoção de NPCs não é entrega de novas malhas.
+
+Uso agregado da própria sessão atualizado em 13/11 às 17:40:26 UTC, branch
+`metrics/development`, commit `35e441dcead64cab84dbd55377b2d6a512a70bb8`.
+Horas estimadas e equivalência hipotética de API permanecem separadas de
+pagamentos. Nenhuma nova geração ou compra Tripo; teto anterior consumido.

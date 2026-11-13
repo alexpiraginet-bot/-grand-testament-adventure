@@ -5,8 +5,7 @@ import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
 import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
-import { animate, makePerson, PALETTES, type Person } from "./people.ts";
-import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
+import { goals as makeGoals, npcs as makeNpcs, shoreDir } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
@@ -24,7 +23,7 @@ import {FaunaScene} from './fauna-renderer.ts';
 import {faunaAssetsManifest} from './fauna-assets-manifest.ts';
 import {createFaunaPopulation,type FaunaPopulation} from './fauna-population.ts';
 import {stepFauna,type FaunaAgent} from './fauna-simulation.ts';
-import { animatedActor } from './animated-actor.ts';
+import { requireHero, characterDiagnostics } from './character-quality.ts';
 import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
 import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
 import { StartupLifecycle } from './startup-lifecycle.ts';
@@ -120,6 +119,7 @@ async function main() {
     withDeadline(startup.track(loadSkyTextures(),maps=>Object.values(maps).forEach(disposeTexture)),25000,'O céu demorou a responder.').then(value=>{loading.complete('sky','Iluminação preparada');return value;}),
   ]);
   startup.check();
+  const actor=requireHero(assets.heroi);
   if(loading.diagnostics().failed>0)throw new Error('Alguns modelos não chegaram. Confira a conexão e tente novamente.');
   loading.stage('Montando sua jornada');
 
@@ -181,29 +181,20 @@ async function main() {
   theBoat.group.rotation.y = -Math.atan2(alongShore.z,alongShore.x);
   scene.add(theBoat.group);
 
-  // people
+  // Participants remain narrative data. No NPC has an approved animated asset yet.
+  // The unfinished A-pose candidates are neither instantiated nor used as invisible colliders.
   const names = Object.fromEntries(ep.personagens.map((p) => [p.id, p.nome]));
   const specs = makeNpcs(meta, names);
-  type Npc = { spec: NpcSpec; person: Person; pos: Vec2; facing: number; following: number; speed: number; inBoat: boolean; y: number };
-  const npcList: Npc[] = specs.map((s) => {
-    const person = makePerson(PALETTES[s.look]);
-    person.pose = s.pose;
-    scene.add(person.root);
-    return { spec: s, person, pos: { ...s.pos }, facing: s.facing, following: -1, speed: 0, inBoat: s.inBoat, y: 0 };
-  });
   const net = castNet(assets);
   {
-    const s = npcList[0].pos, a = npcList[0].facing;
-    net.position.set(s.x + Math.sin(a) * 3.2 + (npcList[1].pos.x - s.x) / 2, 0.07, s.z - Math.cos(a) * 3.2 + (npcList[1].pos.z - s.z) / 2);
+    const s = specs[0].pos, a = specs[0].facing;
+    net.position.set(s.x + Math.sin(a) * 3.2 + (specs[1].pos.x - s.x) / 2, 0.07, s.z - Math.cos(a) * 3.2 + (specs[1].pos.z - s.z) / 2);
     scene.add(net);
   }
 
   // Preserve the delivered skin, skeleton and shared normalization ancestor.
-  let actor: ReturnType<typeof animatedActor> | undefined;
-  if (assets.heroi) { try { actor = animatedActor(assets.heroi.scene, assets.heroi.animations); } catch(e) { console.warn(e); } }
-  const fallback = actor ? undefined : makePerson(PALETTES.heroi);
-  const hero = actor ?? fallback!;
-  const heroSource = actor ? 'tripo-r1/hero-native-skeleton' : 'formas';
+  const hero = actor;
+  const heroSource = 'tripo-r1/hero-native-skeleton';
   scene.add(hero.root);
   const player = { pos: pt(P.start), heading: Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1])), speed: 0 };
 
@@ -357,25 +348,12 @@ async function main() {
   addEventListener("pagehide", () => { persist(false); pushCloud(true); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(false); });
 
-  /** Those called so far walk with him (Mark 1:18, 1:20); `near` puts them beside him at once (a resumed game). */
-  const follow = (ids: string[], near = false) => {
-    const already = npcList.filter((n) => n.following >= 0).length;
-    ids.forEach((id, i) => {
-      const n = npcList.find((x) => x.spec.id === id)!;
-      n.following = already + i;
-      n.person.pose = n.inBoat && !near ? "sit" : "stand";
-      // Listeners stay where they are during the line, including the boat deck.
-      if (near) n.inBoat = false;
-      if (near) { n.pos.x = player.pos.x + (i % 2 ? 1.6 : -1.6); n.pos.z = player.pos.z + 1.5 + already; n.y = terrain.heightAt(n.pos.x, n.pos.z); }
-    });
-  };
-
   const handle = (evs: Event[]) => {
     for (const e of evs) {
       if (e.type === "mission-start") sfx.thump(e.mission ? 0.28 : 0.55);
       if (e.type === "line") sfx.line();
       if (e.type === "mission-done" && e.mission < ep.missoes.length - 1) sfx.done();
-      if (e.type === "follow") follow(e.npcs);
+      // Follow events already update narrative state in missions.ts. They create no absent visual actors.
       if (e.type === "mission-done") {
         save = recordMission(save, ep.id, e.mission, ep.missoes.length, Date.now());
         persist(true);
@@ -408,7 +386,6 @@ async function main() {
       player.pos.x = ok ? c.pos.x : checkpoint.x; player.pos.z = ok ? c.pos.z : checkpoint.z;
       player.heading = ok ? c.heading : Math.atan2(goals[k].at.x - player.pos.x, -(goals[k].at.z - player.pos.z));
       cam.yaw = player.heading;
-      follow(state.followers, true);
       handle([{ type: "mission-start", mission: k }]);
     } else {
       save = restartEpisode(save, ep.id, Date.now());
@@ -476,7 +453,7 @@ async function main() {
   ($("again") as HTMLButtonElement).addEventListener("click", () => location.reload());
 
   // ---- movement
-  const blocked = (x: number, z: number, includePeople = true) => {
+  const blocked = (x: number, z: number) => {
     if (!terrain.inside(x, z, movementMargin)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
@@ -484,7 +461,6 @@ async function main() {
       const lx = dx * c - dz * s, lz = dx * s + dz * c;
       if (Math.abs(lx) < b.hx + 0.3 && Math.abs(lz) < b.hz + 0.3) return true;
     }
-    if(includePeople) for (const n of npcList) if (n.following < 0 && !n.inBoat && Math.hypot(x - n.pos.x, z - n.pos.z) < 0.6) return true;
     return false;
   };
 
@@ -549,7 +525,7 @@ async function main() {
     const gy = terrain.heightAt(player.pos.x, player.pos.z);
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
-    if (actor) actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17'); else animate(fallback!, mv, dt, t);
+    actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17');
 
     // mission logic
     if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
@@ -560,37 +536,10 @@ async function main() {
       if (sinceSave > 15 && Math.hypot(player.pos.x - savedAt.x, player.pos.z - savedAt.z) > 3) persist(false);
     }
 
-    // people: the boat bobs; followers walk behind him
+    // The boat remains scenery while its human encounter visuals are in development.
     const bob = Math.sin(t * 1.1) * 0.05;
     theBoat.group.position.y = bob;
     theBoat.group.rotation.z = Math.sin(t * 0.9) * 0.015;
-    const fwd = { x: Math.sin(player.heading), z: -Math.cos(player.heading) };
-    for (const n of npcList) {
-      let sp = 0;
-      if (n.following >= 0 && state.phase === 'line') {
-        const want=Math.atan2(player.pos.x-n.pos.x,-(player.pos.z-n.pos.z));
-        const turn=want-n.facing;n.facing+=Math.atan2(Math.sin(turn),Math.cos(turn))*Math.min(1,dt*5);
-      } else if (n.following >= 0) {
-        n.inBoat=false;n.person.pose='stand';
-        const row = Math.floor(n.following / 2), side = n.following % 2 ? 1 : -1;
-        const back = 1.3 + row * 1.6, wide = 1.7 + row * 0.5;      // flanking him, not between him and the camera
-        const tx = player.pos.x - fwd.x * back + fwd.z * side * wide, tz = player.pos.z - fwd.z * back - fwd.x * side * wide;
-        const dx = tx - n.pos.x, dz = tz - n.pos.z, d = Math.hypot(dx, dz);
-        if (d > 0.25) {
-          sp = Math.min(d * 1.6, Math.max(2.4, player.speed * 1.15));
-          const k = Math.min(1, (sp * dt) / d);
-          n.pos.x += dx * k; n.pos.z += dz * k;
-          const want = Math.atan2(dx, -dz); let e = want - n.facing; e = Math.atan2(Math.sin(e), Math.cos(e)); n.facing += e * Math.min(1, dt * 6);
-        }
-      }
-      const ground = terrain.heightAt(n.pos.x, n.pos.z);
-      const y = n.inBoat ? bob + theBoat.deck : Math.max(ground, -0.6);
-      n.y += (y - n.y) * Math.min(1, dt * 8);
-      if (Math.abs(n.y - y) > 2) n.y = y;
-      n.person.root.position.set(n.pos.x, n.y, n.pos.z);
-      n.person.root.rotation.y = -n.facing;
-      animate(n.person, sp, dt, t + n.spec.id.length);
-    }
     lake.update(t);
 
     // camera behind and above his shoulders, kept above the ground
@@ -630,8 +579,8 @@ async function main() {
 
     if (state.phase !== "intro") {
       const g = state.phase === "done" ? null : goals[state.mission].at;
-      const followers = npcList.filter((n) => n.following >= 0).map((n) => ({ pos: n.pos, kind: "follower" as const }));
-      hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt);
+      // The counter records the passage; radar marks require actual approved scene actors.
+      hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), [], input.touch, dt);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
     renderer.info.reset();
@@ -656,7 +605,8 @@ async function main() {
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
-      actor: () => actor?.diagnostics() ?? null,
+      actor: () => actor.diagnostics(),
+      characters:()=>({...characterDiagnostics(scene),npcVisuals:'pending',npcColliders:[],radarFollowers:[]}),
       audio:()=>({...sfx.stats,nature:natureAudio?.stats??null,habitats,visibleAnimalEmitters:faunaScene?.visibleApprovedAgents().filter(a=>a.kind!=='fish').length??0}),
       fauna:()=>({status:faunaStatus,error:faunaError,profile:startupProfile.mobile?'mobile':'desktop',
         renderer:faunaScene?.diagnostics()??null,population:faunaPopulation?.diagnostics()??null,
@@ -673,10 +623,11 @@ async function main() {
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;
         if (heading !== undefined) { player.heading = heading; cam.yaw = heading; }
-        for (const n of npcList) if (n.following >= 0) { n.pos.x = x; n.pos.z = z; }
       },
-      followers: () => npcList.filter((n) => n.following >= 0).map((n) => n.spec.id),
-      npcPositions: () => npcList.map(n=>({id:n.spec.id,pos:{...n.pos},inBoat:n.inBoat,following:n.following})),
+      followers: () => [],
+      npcPositions: () => [],
+      narrativeFollowers: () => [...state.followers],
+      narrativeLocations: () => specs.map(spec=>({id:spec.id,pos:{...spec.pos},inBoat:spec.inBoat})),
       info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }
