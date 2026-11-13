@@ -3,7 +3,7 @@
 // same shots. It becomes a default only after that measurement on the RTX PC and on physical phones
 // (docs/GRAFICO-MASTER.md). Nothing here changes the scene, its meshes or its data.
 import * as THREE from "three/webgpu";
-import { colorToDirection, directionToColor, float, mix, mrt, normalView, output, pass, vec4, velocity } from "three/tsl";
+import { float, mix, mrt, normalView, output, packNormalToRGB, pass, sample, unpackRGBToNormal, vec4, velocity } from "three/tsl";
 import { ao } from "three/addons/tsl/display/GTAONode.js";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
 import { traa } from "three/addons/tsl/display/TRAANode.js";
@@ -35,11 +35,13 @@ export function createPostFx(renderer: THREE.WebGPURenderer, scene: THREE.Scene,
   // One scene pass writes colour, view-space normal and (for TRAA) motion; no second geometry pass.
   const scenePass = pass(scene, camera, { samples: level === "master" ? 0 : 4 });
   scenePass.setMRT(mrt(level === "master"
-    ? { output, normal: directionToColor(normalView), velocity }
-    : { output, normal: directionToColor(normalView) }));
+    ? { output, normal: packNormalToRGB(normalView), velocity }
+    : { output, normal: packNormalToRGB(normalView) }));
   const color = scenePass.getTextureNode("output");
   const depth = scenePass.getTextureNode("depth");
-  const normal = colorToDirection(scenePass.getTextureNode("normal"));
+  // GTAO samples the normal itself (normalNode.sample(uv)), so hand it a sampler that unpacks, not an unpacked value
+  const packedNormal = scenePass.getTextureNode("normal");
+  const normal = sample((uv) => unpackRGBToNormal(packedNormal.sample(uv)));
 
   const occlusion = ao(depth, normal, camera);
   occlusion.resolutionScale = s.aoResolution;
