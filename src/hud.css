@@ -148,6 +148,16 @@ button { font: inherit; cursor: pointer; }
   animation: savedfade 2.2s ease forwards; }
 @keyframes savedfade { 0% { opacity: .2; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .saved { animation: none; } }
+/* a place of the region just found (places.ts): its name, what kind of fact it is, how many so far */
+.placefound { display: block; width: fit-content; max-width: min(100%, 420px); margin: 10px 0 0 2px; padding: 7px 12px 8px; background: rgba(14,16,14,.78);
+  border-left: 4px solid var(--gold); border-radius: 6px; color: var(--cream); animation: placefade 6s ease forwards; }
+@keyframes placefade { 0% { opacity: .2; } 5% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
+.placefound[hidden] { display: none; }
+.placefound .pk { display: block; font: 700 10px "Space Mono", monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); }
+.placefound b { display: block; font: 700 17px "Space Grotesk", sans-serif; letter-spacing: .3px; }
+.placefound #placenote { display: block; font: 400 11px "Space Mono", monospace; opacity: .85; }
+@media (prefers-reduced-motion: reduce) { .placefound { animation: none; } }
+.card.end #again { margin-top: 12px; }
 
 /* the recovery code panel */
 .card button.link { margin-top: 10px; padding: 6px 4px; background: none; border: none; color: var(--gold); font: 700 13px "Space Mono", monospace;

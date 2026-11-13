@@ -8,6 +8,8 @@ import { missionRoutes, settlementLayout, insideObstacle, distanceToSegment, typ
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
 import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
+import { EPILOGUE_RADIUS_M, epilogueLine, initialRoam, roamDistance, startRoam, stepRoam } from "./freeroam.ts";
+import { discover, distanceToEdge, EDGE_NOTICE_M, parseFound, PLACES_KEY, regionPlaces, serializeFound } from "./places.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
@@ -39,7 +41,7 @@ import { installSessionLog } from "./session-log.ts";
 import { memorySummary, renderTargetBytes } from "./bench.ts";
 import { sceneTextures } from "./scene-memory.ts";
 
-const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
+const ep = episode as unknown as EpisodeData & { personagens: { id: string; ref: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has("debug");
 // tests on a software renderer (1-2 fps) let game time follow real time: ?debug&dtmax=0.5
@@ -267,6 +269,16 @@ async function main() {
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;
+  // after the episode (freeroam.ts): keep exploring, the way back to the village and the clause of Mark 1:21
+  const roam = initialRoam();
+  const epilogue = epilogueLine(ep);
+  const roamGoal = { at: pt(P.start), radius: EPILOGUE_RADIUS_M };       // where the walk began, inside the village
+  // the lane and the shore walked the other way, for the radar's dots on the way back
+  const wayBack = keep.slice().reverse().map((r) => ({ ...r, ax: r.bx, az: r.bz, bx: r.ax, bz: r.az }));
+  // the region's places (places.ts) and the ones this browser has already found
+  const regionList = regionPlaces(meta, ep, (x, z) => terrain.heightAt(x, z), movementMargin);
+  const foundPlaces = parseFound((() => { try { return localStorage.getItem(PLACES_KEY); } catch { return null; } })(), regionList);
+  const homeName = regionList.find((p) => p.origem === "fonte")?.nome ?? null;
   // One graph, created by Go; audio never participates in startup readiness.
   let natureAudio:FaunaAudio|null=null,natureRunning=false;
   let faunaScene:FaunaScene|null=null,faunaPopulation:FaunaPopulation|null=null,faunaAgents:FaunaAgent[]=[];
@@ -351,7 +363,7 @@ async function main() {
   };
   setupWorldMap({terrain,image:img,episode:ep,routes:keep,goals,buildings:town.boxes,movementMargin,
     player:()=>player,state:()=>state,
-    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line'||roam.phase!=='off') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
     onOpenChange:open=>setPanelPaused('worldmap',open),button:$("mapbtn") as HTMLButtonElement});
 
   let resizeTimer:ReturnType<typeof setTimeout>;
@@ -529,6 +541,14 @@ async function main() {
     clearTimeout(armed); beginPlay(false);
   });
   ($("again") as HTMLButtonElement).addEventListener("click", () => location.reload());
+  // "Continuar explorando": the card goes, the region stays open with those who were called (freeroam.ts)
+  const beginRoam = () => {
+    if (state.phase !== "done" || roam.phase !== "off") return;
+    $("end").hidden = true;
+    startRoam(roam, epilogue);
+    syncAudio();
+  };
+  ($("roam") as HTMLButtonElement).addEventListener("click", beginRoam);
 
   // ---- movement
   const blocked = (x: number, z: number, includePeople = true) => {
@@ -583,7 +603,8 @@ async function main() {
 
     input.poll();
     const look = input.takeLook();
-    const playing = !paused && (state.phase === "play" || state.phase === "line");
+    const roaming = roam.phase !== "off";
+    const playing = !paused && (state.phase === "play" || state.phase === "line" || roaming);
     if (playing || ended) {
       cam.yaw += look.dx * 0.0042;
       cam.pitch = Math.max(-0.25, Math.min(0.85, cam.pitch + look.dy * 0.003));
@@ -593,7 +614,7 @@ async function main() {
     // walk relative to the camera
     let mv = 0;
     const previousX = player.pos.x, previousZ = player.pos.z;
-    if (playing && !ended) {
+    if (playing && (!ended || roaming)) {
       const fx = Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
       const dx = fx * input.move.y + Math.cos(cam.yaw) * input.move.x, dz = fz * input.move.y + Math.sin(cam.yaw) * input.move.x;
       const l = Math.hypot(dx, dz);
@@ -628,6 +649,18 @@ async function main() {
     // mission logic
     if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
     else input.takeAction();
+    if (!paused && !frozen && roaming) for (const e of stepRoam(roam, roamGoal, epilogue, player.pos, dt)) {
+      if (e.type === "line") sfx.line();
+      if (e.type === "epilogue-done") sfx.done();
+    }
+    // the region's places, found on foot at any time (not while the bench flies its shots)
+    if (!paused && !shot && state.phase !== "intro") {
+      const fresh = discover(regionList, foundPlaces, player.pos);
+      if (fresh.length) {
+        try { localStorage.setItem(PLACES_KEY, serializeFound(foundPlaces, regionList)); } catch { /* found for this visit only */ }
+        hud.placeFound(fresh[fresh.length - 1], foundPlaces.size, regionList.length);
+      }
+    }
     // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)
     if (!paused && (state.phase === "play" || state.phase === "line")) {
       playedSince += real; sinceSave += dt;
@@ -705,10 +738,12 @@ async function main() {
       if (allowed > 1e-6) tmp.sub(head).multiplyScalar(use / allowed).add(head);
     } else { boom.x = head.distanceTo(tmp); boom.v = 0; }
     // a line being read: the composed two-shot (cinematic.ts), unless the player walks out of it or asks for less motion
-    if (state.phase === "line" && !cine.left && !REDUCED_MOTION) {
+    const lineOn = state.phase === "line" || roam.phase === "line";   // a mission's line, or the epilogue's
+    if (lineOn && !cine.left && !REDUCED_MOTION) {
       if (!cine.shot) {
         const g = goals[state.mission];
-        cine.ids = g.kind === "call" ? g.npcs : [];
+        // the people the line is about: those called now, or, back in the village, everyone walking with him
+        cine.ids = roam.phase === "line" ? [...state.followers] : g.kind === "call" ? g.npcs : [];
         const people = cineSubjects().map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
         const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
         cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
@@ -720,8 +755,8 @@ async function main() {
       // as walking does; during a line nothing else turns it
       if ((look.dx || look.dy || cam.yaw !== cine.yaw || cam.pitch !== cine.pitch) && !cine.left && cine.shot) { cine.left = true; cine.why = "looked"; }
     }
-    if (state.phase !== "line") { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
-    const want = state.phase === "line" && !cine.left && cine.shot ? 1 : 0;
+    if (!lineOn) { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
+    const want = lineOn && !cine.left && cine.shot ? 1 : 0;
     cine.k += (want - cine.k) * Math.min(1, dt * 2.6);
     const k = cine.shot ? ease(cine.k) : 0;
     if (k > 0 && cine.shot) {
@@ -755,7 +790,21 @@ async function main() {
     if (state.phase !== "intro") {
       const g = state.phase === "done" ? null : goals[state.mission].at;
       const followers = npcList.filter((n) => n.following >= 0).map((n) => ({ pos: n.pos, kind: "follower" as const }));
-      hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt);
+      // the audit of R6 found an invisible wall at the region's limit: say where it is before he reaches it
+      const edge = distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z);
+      const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
+      if (roaming) {
+        const back = roam.phase === "return";
+        hud.roam({
+          kind: roam.phase === "line" ? "line" : back ? "return" : "free",
+          objective: back || roam.phase === "line" ? `Volte a ${homeName ?? "onde a caminhada começou"}` : "Explore a região",
+          dist: roamDistance(roam, roamGoal, player.pos), line: roam.line,
+          narrative: back ? "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila."
+            : "O episódio termina aqui. A região continua aberta para caminhar.",
+          guidance: back ? "Suba pela trilha até as casas." : `Lugares encontrados: ${foundPlaces.size} de ${regionList.length}.`,
+          routes: wayBack,
+        }, state, player.pos, player.heading, back ? roamGoal.at : null, followers, notice, dt);
+      } else hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
     if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
@@ -820,6 +869,10 @@ async function main() {
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
       freeze: (on: boolean) => { frozen = on; },
+      // exploring after the episode (freeroam.ts) and the region's places (places.ts)
+      roam: () => ({ phase: roam.phase, line: roam.line, goal: roamGoal, places: regionList, found: [...foundPlaces],
+        edge: distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z) }),
+      beginRoam,
       session: () => ({ status: slog.status, previous: slog.previous, record: slog.snapshot() }),
       cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
         // fraction of the shot's people whose chest projects inside the central 90% of the picture

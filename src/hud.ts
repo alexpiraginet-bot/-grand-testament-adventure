@@ -1,14 +1,26 @@
 // The HUD in the DOM: mission line, counter, key prompt, subtitle, radar, progress bar, place plate, cards.
-import type { EpisodeData, State, Vec2 } from "./missions.ts";
+import type { EpisodeData, Fala, State, Vec2 } from "./missions.ts";
 import { counterTotal, readingTime } from "./missions.ts";
 import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
 import { buildJourneyHint, journeyNarrative, journeyRoute } from './journey.ts';
 import type { Segment } from './world-layout.ts';
+import { ORIGIN_LABEL, type Place } from "./places.ts";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export type RadarMark = { pos: Vec2; kind: "follower" };
+
+/** What the HUD shows while the player explores after the episode (freeroam.ts). */
+export type RoamView = {
+  kind: "return" | "line" | "free";
+  objective: string;              // the mission line's text
+  dist: number | null;            // metres to the way back's end, when there is one
+  line: Fala | null;              // the clause on screen
+  narrative: string;              // the game's own words when this stage begins ("Narrativa do jogo")
+  guidance: string;               // after them, plain guidance ("Orientação")
+  routes: readonly Segment[];     // the walkable way to the goal, for the radar's dots
+};
 
 export class Hud {
   private radar: HTMLCanvasElement;
@@ -26,6 +38,8 @@ export class Hud {
   private routes: readonly Segment[];
   private journeyMission = -1;
   private narrativeLeft = 0;
+  private roamKind = "";
+  private placeTimer: ReturnType<typeof setTimeout> | undefined;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
   constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
@@ -80,7 +94,46 @@ export class Hud {
   }
   private savedTimer: ReturnType<typeof setTimeout> | undefined;
 
-  update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number) {
+  /** A place of the region was just found (places.ts): its name, what kind of fact it is, and the count, for a moment. */
+  placeFound(place: Place, found: number, total: number) {
+    const el = $("placefound");
+    $("placename").textContent = place.nome;
+    $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]} · ${found} de ${total}`;
+    el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
+    clearTimeout(this.placeTimer);
+    this.placeTimer = setTimeout(() => { el.hidden = true; }, 6000);
+  }
+
+  /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */
+  roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number) {
+    const mk = v.kind === "free" ? "EXPLORAÇÃO LIVRE" : "EPÍLOGO";
+    if ($("mk").textContent !== mk) $("mk").textContent = mk;
+    if ($("objt").textContent !== v.objective) $("objt").textContent = v.objective;
+    $("obj").classList.remove("done");
+    this.lastMission = -2;                                          // update() rewrites these if it ever runs again
+    $("dist").textContent = v.dist !== null ? `${Math.round(v.dist)} m` : "";
+    $("counter").querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < s.filled));
+    if (v.kind !== this.roamKind) { this.roamKind = v.kind; this.narrativeLeft = 7; }
+    this.narrativeLeft = Math.max(0, this.narrativeLeft - dt);
+    const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line";
+    const text = v.kind === "line" ? "" : notice ?? (narrated ? v.narrative : v.guidance);
+    this.journey.hidden = !text;
+    const label = narrated ? "Narrativa do jogo" : "Orientação";
+    if (this.journeyLabel.textContent !== label) this.journeyLabel.textContent = label;
+    if (this.journeyBody.textContent !== text) this.journeyBody.textContent = text;
+    $("prompt").hidden = true; $("act").hidden = true;
+    const sub = $("sub");
+    sub.hidden = !v.line;
+    if (v.line) {
+      $("subt").textContent = `“${v.line.texto}”`;
+      $("subr").textContent = `BÍBLIA LIVRE · ${v.line.ref.toUpperCase()}`;
+    }
+    this.bars.forEach((b) => { b.style.width = "calc(100% - 2px)"; });
+    this.drawRadar(pos, heading, goal, followers, s.time, v.routes);
+  }
+
+  update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number,
+    notice: string | null = null) {
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);
     const m = ep.missoes[k];
@@ -111,10 +164,11 @@ export class Hud {
     this.narrativeLeft=Math.max(0,this.narrativeLeft-dt);
     const guidance=buildJourneyHint(s,dist,touch);
     const narrated=this.narrativeLeft>0&&!s.promptVisible;
+    // a notice from the game (the edge of the region) takes the place of the guidance, never of a line or a tick
     const journeyText=s.phase==='play'&&this.doneFlash===0
-      ?(narrated?journeyNarrative(s.mission):guidance):'';
+      ?(notice??(narrated?journeyNarrative(s.mission):guidance)):'';
     this.journey.hidden=!journeyText;
-    const journeyLabel=narrated?'Narrativa do jogo':'Orientação';
+    const journeyLabel=narrated&&!notice?'Narrativa do jogo':'Orientação';
     if(this.journeyLabel.textContent!==journeyLabel)this.journeyLabel.textContent=journeyLabel;
     if(this.journeyBody.textContent!==journeyText)this.journeyBody.textContent=journeyText;
 
@@ -142,7 +196,7 @@ export class Hud {
     this.drawRadar(pos, heading, goal, followers, s.time);
   }
 
-  private drawRadar(pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], t: number) {
+  private drawRadar(pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], t: number, routes: readonly Segment[] = this.routes) {
     const ctx = this.ctx, S = this.radar.width, c = S / 2, meta = this.meta;
     const ppm = c / this.radiusM;                                  // canvas px per metre
     ctx.save();
@@ -168,7 +222,7 @@ export class Hud {
 
     // Dots follow the walkable route around bends/inlets; the ring retains the true goal direction.
     if (goal) {
-      const route=journeyRoute(this.routes,pos,goal).map(toR),actual=toR(goal);
+      const route=journeyRoute(routes,pos,goal).map(toR),actual=toR(goal);
       ctx.save();ctx.beginPath();ctx.rect(8,8,S-16,S-16);ctx.clip();
       let nextDot=0;
       for(let i=1;i<route.length;i++){

@@ -40,6 +40,7 @@ npm run bench:all    # mesma cena medida (6 planos, PC e viewport de celular emu
                      # no PC da RTX: PLAYWRIGHT_CHANNEL=chrome. Relatórios trazem commit, GPU, navegador e memória estimada
 node tools/compare_bench.mjs a/bench.json b/bench.json   # compara dois relatórios plano a plano; recusa máquina/tela/commit diferentes
 node tools/check_session.mjs   # prova o diário de sessão: recarga limpa x queda do renderizador (base do teste de 10 min no celular)
+node tools/check_roam.mjs      # depois do episódio: "Continuar explorando", epílogo de Marcos 1:21, lugares e limite da região
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
@@ -108,6 +109,11 @@ Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
 Onde Simão e André estão na praia (260 m a oeste do ponto da praia), quanto é "um pouco mais adiante" (520 m),
 quantos empregados estão no barco (2; Marcos 1:20 não diz), o ponto de partida (300 m terra adentro) e o fundo do lago
 (os dados só têm a superfície). Tudo isso está em `public/world/cafarnaum.json` → `level_design`.
+
+Depois do episódio também são escolhas do jogo, com as constantes no código: a volta à vila termina a 25 m do ponto
+onde a caminhada começou (`src/freeroam.ts`); um lugar conta como encontrado a 60 m (lugar com fonte), 25 m (redes,
+barco, margem) ou 30 m (mirante); o mirante é o ponto mais alto do relevo a até 400 m de Cafarnaum; o aviso do limite
+da região aparece a 40 m dele (`src/places.ts`). Ver [docs/NARRATIVA.md](docs/NARRATIVA.md).
 
 ## Malhas
 

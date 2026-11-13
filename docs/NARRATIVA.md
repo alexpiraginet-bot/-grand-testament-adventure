@@ -22,6 +22,29 @@ Durante uma citação bíblica a narração se oculta, evitando confundir as dua
 `src/hud.ts` exibe as etiquetas; `test/journey.test.ts` percorre o estado real do
 episódio e verifica preservação das falas. `tools/shots.mjs` confere isso na UI.
 
+## Depois do episódio: epílogo e exploração (Claude, 13/11/2026)
+
+Concluída a terceira missão, o cartão final oferece **Continuar explorando**. Os quatro
+chamados seguem com o jogador e a região fica aberta. Um caminho de volta é encenado a
+partir do próprio texto: Marcos 1:21 começa com a entrada deles em Cafarnaum, então, ao
+voltar à vila, o jogo mostra **só a primeira oração do versículo**, literal, com
+"Bíblia Livre · Marcos 1:21". O trecho sai dos dados do episódio por código
+(`src/freeroam.ts`, até o primeiro ponto e vírgula); `test/freeroam.test.ts` confere
+que é o começo literal do versículo. O restante do versículo (o sábado e a sinagoga)
+**não é encenado** e por isso não é mostrado.
+
+Não foi criada missão nova nos dados do episódio: `src/missions.ts` e
+`src/data/mc-pescadores.json` ficam como estavam. As duas frases do narrador nesse
+trecho levam a etiqueta "Narrativa do jogo"; a contagem de lugares e o aviso do limite
+da região levam "Orientação".
+
+Os **lugares da região** (`src/places.ts`) declaram de que tipo de fato se trata:
+"Lugar com fonte" (Cafarnaum, coordenadas do OpenBible), "Posição escolhida pelo jogo"
+(a margem, as redes e o barco que a passagem cita; a posição é nossa, ver
+`level_design`) e "Nome do jogo sobre o relevo real" (o mirante, ponto mais alto do
+relevo a até 400 m de Cafarnaum; nenhum texto ou fonte fala dele). Nomes são montados
+com os nomes de lugar e de pessoa dos dados, nunca digitados.
+
 ## Jogabilidade
 
 O radar desenha o trajeto existente por terra, inclusive a curva que evita a enseada.
