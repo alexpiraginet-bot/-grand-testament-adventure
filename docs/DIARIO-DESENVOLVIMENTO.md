@@ -22,7 +22,7 @@ um teste antigo. Handoffs históricos são relatos daquela entrega.
 | 2026-11-12 21:25:18−03:00 | `6e35ff1` — visual R1 | Herói Tripo com rig nativo, 13 malhas de cenário, vila e caminhos | `docs/TRIPO-RUNTIME-R1.md`; `shots/production-r1-{integration,world,episode}/`. 14 assets e três missões verificados naquela versão; NPCs provisórios. |
 | 2026-11-12 21:41:08−03:00 | `424a096` — visual R2 | Céu fotográfico CC0, água rasa, reflexos e exposição | `docs/CAFARNAUM-CENARIO.md`; `shots/production-r2-integration/`, incluindo `PUBLICACAO-VERIFICADA.json`. 34 testes no build daquela revisão. |
 | 2026-11-13 06:48:33−03:00 | `4d7cf86` — visual e jornada R3 | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `shots/r3-final-*` e `shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`; deploy público conferido READY. Sem NPCs Tripo rigados ou teste em telefone físico. |
-| R4 — sem commit final | Rascunho em `codex/fauna-galileia-r4` | Água, Colabore/Pix, prestação de contas e medição de esforço; fauna própria em preparação | Ensaios locais `shots/r4-*`; build/QA finais e publicação ainda pendentes. Malhas Quaternius rejeitadas, sem fauna ativa entregue. |
+| 2026-11-13 07:35:41−03:00 | `08785fe` — R4 publicada | Água, Colabore/Pix, prestação de contas e medição de esforço; fauna própria em preparação | 81 testes no build, QA público em WebGPU/WebGL2 e apoio nos dois viewports. Malhas Quaternius rejeitadas, sem fauna ativa entregue. |
 
 Os instantes UTC das duas primeiras linhas antecedem a continuidade local
 (18:26 e 18:36 em UTC−3). A diferença de fuso não deve virar uma falsa ordem na edição.
@@ -52,7 +52,7 @@ viewports, com quatro seguidores. Isso preserva a evidência daquela execução,
 não uma nova conferência de produção feita ao escrever este diário. O teste de
 episódio usa teleporte/ações de debug; viewport móvel usa a GPU do PC.
 
-### R4 em preparação — água, colaboração e transparência
+### R4 publicada — água, colaboração e transparência
 
 O problema visual observado motivou ondulações em duas escalas na água, normal
 combinada, rugosidade variável, reflexo do céu e transparência conforme profundidade
@@ -84,17 +84,36 @@ A medição de esforço lê apenas metadados autorizados, com cobertura parcial,
 intervalos estimados sem dupla contagem e tokens observados com origem. Equivalente
 hipotético de API não é despesa paga nem custo da assinatura. Fontes:
 `tools/collect_project_usage.mjs`, `tools/project-usage-core.mjs`,
-`src/effort.ts`/`src/effortui.ts`; snapshot previsto em
-`public/metrics/development.json`. Coleta contínua, endpoint remoto e leitura
-pública permanecem pendentes de conferência final pelo integrador.
+`src/effort.ts`/`src/effortui.ts`; snapshot real em
+`public/metrics/development.json`. A branch pública `metrics/development` foi
+publicada e lida por HTTP 200; o navegador consultou a fonte remota. O serviço
+recebe snapshots e pode ter atraso de cache; não há coleta permanente instalada.
+Sem atualização recente, a UI informa desatualização e não extrapola valores.
 
-Ensaios anteriores estão em `shots/r4-world/` e `shots/r4-integration/`. A evidência
-final planejada é `shots/r4-final-build.log`, `shots/r4-final-support/` e
-`shots/r4-final-feedback/`; após deploy, `shots/production-r4-integration/` e
-`shots/production-r4-support/`. Esses caminhos são destinos de verificação, não
-afirmação de arquivos concluídos ou resultados aprovados. O responsável pela
-integração preencherá SHA, data, resultados e prova de publicação. Ainda não
-atribuir os testes/FPS da R3 à R4 nem anunciar R4 publicada.
+Ensaios anteriores estão em `shots/r4-world/` e `shots/r4-integration/`. Evidência
+final: `shots/r4-final-build.log` (81/81), `shots/r4-final-support/` (abas, Pix,
+contas e telemetria, incluindo refresh/fallback sintético separado dos dados reais).
+Produção: `shots/production-r4-integration/PUBLICACAO-VERIFICADA.json` associa
+`08785fe50b9995b7712a24e2b53bcbbb575d1804` ao deployment
+`dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, READY, HTTP 200 e bundle `index-BKHkIuyv.js`.
+`shots/production-r4-support/report.json` confirma apoio nos dois viewports, fonte
+remota, zero erros e nenhuma escrita de pagamento. Clipboard foi simulado.
+
+Nessa amostra pública: PC WebGPU 89,1–95,5 FPS; viewport móvel no PC 49,6–94,8;
+WebGL2 88,3–96,0. Cada caso carregou 14 assets e 16.739.661 bytes, com zero erros,
+avisos ou falhas HTTP. São amostras curtas do script, não percentis de benchmark
+contínuo ou teste em telefone físico. A PR #1 do Claude permanece separada,
+incluindo seus efeitos opcionais; estes números não medem a PR combinada com R4.
+
+### Série de Reels e expansão do mundo
+
+Alex pediu uma sessão separada para produzir os bastidores desde os primeiros
+vídeos e os conceitos até o jogo real, sempre com link para jogar. Handoff local:
+`D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/HANDOFF-SERIE.md`.
+As quatro referências recebidas em 13/11 incluem uma captura e conceitos de
+deserto, pesca e Caná; não anunciar essas regiões ou “24 capítulos” como entregues.
+A visão de mundo completo foi registrada em `docs/VISAO-MUNDO-ABERTO.md` como
+expansão por etapas. A criação de sessão não equivale a Reel renderizado ou postado.
 
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 

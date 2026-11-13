@@ -16,11 +16,12 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
 - GitHub público: https://github.com/alexpiraginet-bot/-grand-testament-adventure — o hífen inicial faz
   parte do nome.
 - Jogo: https://grand-testament-adventure-lexprojects.vercel.app/
-- Base pública R3 informada nesta transferência: `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
-- **R4 ainda é trabalho em andamento**, em `codex/fauna-galileia-r4`: água, Colabore/Pix, prestação de
-  contas e instrumentação de esforço. Não tratar esses arquivos como publicados nem usar a existência de
-  `shots/r4-*` como prova disso.
-- Codex e agentes estão concluindo essa revisão. Consulte `git status`, responsáveis e SHA remoto antes
+- Base pública R4 desta transferência: `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
+- **R4 publicada**: água, Colabore/Pix, prestação de contas e instrumentação de esforço.
+  Deployment `dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, `READY`, HTTP 200 e bundle
+  `index-BKHkIuyv.js` conferidos no domínio público. Build local: 81 testes passando.
+  A conferência visual e seus limites estão no diário; a existência de uma pasta não é prova.
+- Consulte `git status`, responsáveis e SHA remoto antes
   de trabalhar. Não sobrescreva arquivos ativos, descarte diffs, execute `reset --hard` ou troque a
   branch deste checkout compartilhado.
 - Use um **worktree próprio** e branch `claude/fable52-<incremento>`, a partir da revisão compartilhada
@@ -35,6 +36,10 @@ mais recente de Alex e a evidência atual prevalecem.
 
 Leia também `docs/ESFORCO-E-CUSTOS.md`. O painel e o protocolo distinguem consumo
 registrado, horas estimadas, comparação de API e despesas realmente informadas.
+Alex ampliou a visão para um mundo aberto cobrindo a vida de Jesus: ler
+`docs/VISAO-MUNDO-ABERTO.md` como direção futura, sem confundir com regiões entregues.
+A série de Reels já tem sessão separada e fontes em
+`D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/`.
 
 ### Coordenação verificada com a PR #1
 
@@ -166,17 +171,19 @@ pelo proprietário, sem comprovantes publicados; total calculado R$ 1.798/mês. 
 definida. Não lançar esse total como débito das doações, custo integral do jogo ou pagamento bancário
 verificado.
 
-A instrumentação de esforço está sendo concluída pelo responsável R4. Caminhos do contrato:
+A instrumentação de esforço foi incluída na R4. Caminhos do contrato:
 
 - Coletor local explícito: `tools/collect_project_usage.mjs`; agregação pura:
   `tools/project-usage-core.mjs`. O coletor atual aceita somente a sessão Codex autorizada;
   não aponta automaticamente para logs de uma nova sessão Claude nem busca outras conversas.
 - Validação/resumo e apresentação: `src/effort.ts` e `src/effortui.ts`.
 - Destino do snapshot local: `public/metrics/development.json`, servido como
-  `/metrics/development.json`. Sua geração/disponibilidade ainda precisa ser conferida na entrega R4.
-- Endpoint remoto previsto: branch `metrics/development`, arquivo `development.json`:
+  `/metrics/development.json`. Coleta real executada e cópia incluída no build.
+- Endpoint remoto publicado: branch `metrics/development`, arquivo `development.json`:
   https://raw.githubusercontent.com/alexpiraginet-bot/-grand-testament-adventure/metrics/development/development.json
-  — **publicação, atualização e leitura remota ainda não verificadas neste handoff**.
+  — duas publicações consecutivas verificadas, com leitura HTTP 200 e contrato validado.
+  Publicador: `tools/publish_project_usage.mjs`; união conservadora:
+  `tools/merge_project_usage.mjs`. A branch de métricas não dispara deploy do jogo.
 
 O cliente recebe snapshots e usa fallback local; isso não comprova coleta contínua nem inclui Claude,
 subagentes ou ferramentas externas. Ler o esquema antes de acrescentar um adaptador de metadados da
@@ -267,7 +274,10 @@ Para uma revisão Fable posterior, acrescentar seleção própria antes de usar 
 capturas históricas com um commit novo. Destino de arquivo:
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario`. Referências existentes:
 `shots/r3-final-*`, `shots/production-r3-integration/`, `shots/production-r3-episode/`; R4 possui ensaios
-locais em `shots/r4-*`. Diário e vídeos preservados não autorizam postagem social. Não inventar teste,
+locais em `shots/r4-*` e provas públicas em `shots/production-r4-integration/` e
+`shots/production-r4-support/`. O índice `INDEX-ee298de7eef9.md` preserva 186 arquivos,
+50 da R4, todos com hash; nenhum vídeo novo foi gerado por esse arquivamento.
+Diário e vídeos preservados não autorizam postagem social. Não inventar teste,
 comentário de jogador, recebimento, autoria de agente ou conclusão de outra sessão.
 
 ## 9. Primeira mensagem para colar no Claude Code
