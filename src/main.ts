@@ -31,6 +31,10 @@ import {faunaAssetsManifest} from './fauna-assets-manifest.ts';
 import {createFaunaPopulation,type FaunaPopulation} from './fauna-population.ts';
 import {stepFauna,type FaunaAgent} from './fauna-simulation.ts';
 import { requireHero, characterDiagnostics } from './character-quality.ts';
+import npcCatalog from './data/npc-assets.json';
+import {npcManifest,type NpcCatalog} from './npc-assets.ts';
+import {loadNpcActor,type NpcActor} from './npc-actor.ts';
+import {NpcNavigation,npcSpawn,npcCrossesBox,NPC_MOTION,type NpcGround} from './npc-navigation.ts';
 import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
 import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
 import { StartupLifecycle } from './startup-lifecycle.ts';
@@ -231,8 +235,8 @@ async function main() {
   theBoat.group.rotation.y = -Math.atan2(alongShore.z,alongShore.x);
   scene.add(theBoat.group);
 
-  // Participants remain narrative data. No NPC has an approved animated asset yet.
-  // The unfinished A-pose candidates are neither instantiated nor used as invisible colliders.
+  // Participants remain narrative data; only the separately reviewed Simão may become an actor after Go.
+  // The other unfinished candidates are neither instantiated nor used as invisible colliders.
   const names = Object.fromEntries(ep.personagens.map((p) => [p.id, p.nome]));
   const specs = makeNpcs(meta, names);
   const net = castNet(assets);
@@ -247,6 +251,10 @@ async function main() {
   const heroSource = 'tripo-r1/hero-native-skeleton';
   scene.add(hero.root);
   const player = { pos: pt(P.start), heading: Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1])), speed: 0 };
+  let simao:NpcActor|null=null,simNav:NpcNavigation|null=null,npcStarted=false,optionalActorsStarted=false;
+  let npcStatus='not-started',npcError:string|null=null;
+  const actualNpc=()=>simao?.root.visible&&simao.root.parent&&simNav?simNav:null;
+  const npcFollowers=()=>{const nav=actualNpc();return nav&&state.followers.includes('simao')?[{pos:nav.pos,kind:'follower' as const}]:[];};
 
   const camera = new THREE.PerspectiveCamera(touch && innerHeight > innerWidth ? 62 : 52, innerWidth / innerHeight, 0.1, 60000);
   const cam = { yaw: player.heading, pitch: 0.2, dist: touch && innerHeight > innerWidth ? 5.2 : 4.4, idle: 0 };
@@ -334,6 +342,7 @@ async function main() {
   startup.signal.addEventListener('abort',()=>{
     natureAudio?.dispose();natureRunning=false;sfx.setPaused(true);audioPanels.disconnect();
     faunaScene?.dispose();faunaPopulation?.clear();faunaPopulation=null;faunaAgents=[];faunaBlocked=()=>false;faunaStatus='disposed';
+    simao?.dispose();simao=null;simNav=null;npcStatus='disposed';
   },{once:true});
   const audioCreditHeading=document.createElement('h4');audioCreditHeading.textContent='Gravações de natureza';
   const audioCredit=document.createElement('p');audioCredit.textContent='Gravações modernas usadas na recriação: ';
@@ -460,8 +469,8 @@ async function main() {
     hud.show();
     sfx.setPaused(false);
   };
-  /** A player who already finished the episode walks the region without playing it again; the saved record is left
-   * as it is. The four stay in the story's state (state.followers); none is drawn until an approved actor exists (R9). */
+  /** A player who finished the episode can explore without replaying it. Narrative progress keeps four names;
+   * only the separately reviewed, successfully loaded Simão can become an actual follower. */
   const beginExplore = () => {
     openGame();
     Object.assign(state, finishedState(ep, goals));
@@ -470,7 +479,7 @@ async function main() {
     player.heading = Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1]));
     cam.yaw = player.heading;
     startFree(roam);
-    syncAudio();void startFauna();
+    syncAudio();void startOptionalActors();
   };
   const beginPlay = (resume: boolean) => {
     openGame();
@@ -488,7 +497,7 @@ async function main() {
       save = restartEpisode(save, ep.id, Date.now());
       handle(startEpisode(state));
     }
-    syncAudio();persist(false);void startFauna();
+    syncAudio();persist(false);void startOptionalActors();
   };
   const showStartCard = () => {
     prog = episodeProgress(save, ep.id);
@@ -571,7 +580,7 @@ async function main() {
   ($("roam") as HTMLButtonElement).addEventListener("click", beginRoam);
 
   // ---- movement
-  const blocked = (x: number, z: number) => {
+  const blocked = (x: number, z: number,withNpc=true) => {
     if (!terrain.inside(x, z, movementMargin)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
@@ -579,7 +588,47 @@ async function main() {
       const lx = dx * c - dz * s, lz = dx * s + dz * c;
       if (Math.abs(lx) < b.hx + 0.3 && Math.abs(lz) < b.hz + 0.3) return true;
     }
-    return false;
+    const nav=withNpc?actualNpc():null;
+    return Boolean(nav&&Math.hypot(x-nav.pos.x,z-nav.pos.z)<NPC_MOTION.radius+.3);
+  };
+
+  // Static buckets keep bounded follower searches independent of the full village object count.
+  const npcCells=new Map<string,Obstacle[]>(),npcCellSize=24;
+  for(const box of town.boxes){const radius=Math.hypot(box.hx,box.hz);
+    for(let z=Math.floor((box.z-radius)/npcCellSize);z<=Math.floor((box.z+radius)/npcCellSize);z++)
+      for(let x=Math.floor((box.x-radius)/npcCellSize);x<=Math.floor((box.x+radius)/npcCellSize);x++){
+        const key=`${x}:${z}`,list=npcCells.get(key)??[];list.push(box);npcCells.set(key,list);
+      }
+  }
+  const npcGround:NpcGround={heightAt:(x,z)=>terrain.heightAt(x,z),inside:(x,z)=>terrain.inside(x,z,movementMargin),
+    blocked:(x,z)=>(npcCells.get(`${Math.floor(x/npcCellSize)}:${Math.floor(z/npcCellSize)}`)??[]).some(box=>insideObstacle(x,z,box,0)),
+    segmentBlocked:(a,b,radius)=>{
+      for(let z=Math.floor((Math.min(a.z,b.z)-radius)/npcCellSize);z<=Math.floor((Math.max(a.z,b.z)+radius)/npcCellSize);z++)
+        for(let x=Math.floor((Math.min(a.x,b.x)-radius)/npcCellSize);x<=Math.floor((Math.max(a.x,b.x)+radius)/npcCellSize);x++)
+          if((npcCells.get(`${x}:${z}`)??[]).some(box=>npcCrossesBox(a,b,box,radius)))return true;
+      return false;
+    }};
+  const startNpc=async()=>{
+    if(npcStarted||startup.signal.aborted)return;npcStarted=true;npcStatus='loading';
+    let loaded:NpcActor|null=null;
+    try{
+      const spec=npcManifest(npcCatalog as NpcCatalog,startupProfile.mobile,import.meta.env.BASE_URL);
+      loaded=await loadNpcActor(spec,{signal:startup.signal});
+      if(startup.signal.aborted){loaded.dispose();return;}
+      const following=state.followers.includes('simao'),story=specs.find(s=>s.id==='simao')!;
+      const near=following?{x:player.pos.x-Math.sin(player.heading)*2.7,z:player.pos.z+Math.cos(player.heading)*2.7}:story.pos;
+      // One validated initial placement before visibility; never relocate an existing follower to catch up.
+      const spawn=npcSpawn({...npcGround,blocked:(x,z)=>npcGround.blocked(x,z)||Math.hypot(x-player.pos.x,z-player.pos.z)<1.6},near);
+      if(!spawn)throw Error('Não há um ponto de apoio seguro para Simão nesta posição.');
+      simNav=new NpcNavigation(npcGround,spawn,following?player.heading:story.facing,startupProfile.mobile?800:1600);
+      simao=loaded;simao.place(spawn,terrain.heightAt(spawn.x,spawn.z),simNav.heading);scene.add(simao.root);npcStatus='ready';
+    }catch(error){loaded?.dispose();simao=null;simNav=null;npcError=String(error);npcStatus=startup.signal.aborted?'disposed':'unavailable';
+      if(!startup.signal.aborted)console.warn('Simão visual indisponível; o encontro narrativo continua.',error);
+    }
+  };
+  const startOptionalActors=async()=>{
+    if(optionalActorsStarted)return;optionalActorsStarted=true;
+    await startFauna();await startNpc(); // One optional pipeline even if Go is tapped twice.
   };
 
   const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
@@ -587,10 +636,10 @@ async function main() {
   // obstruction test the follow camera already uses for houses and walls
   const cine: { shot: CineShot | null; k: number; left: boolean; why: string; ids: string[]; aim: THREE.Vector3; yaw: number; pitch: number } =
     { shot: null, k: 0, left: false, why: "", ids: [], aim: new THREE.Vector3(), yaw: 0, pitch: 0 };
-  // what the shot frames: the hero and where the line's encounter takes place (the nets, the boat: episode.ts). No
-  // participant is drawn until an approved actor exists (R9), so these are the story's places, not people.
+  // Frame the actual Simão when visible. For absent participants, retain encounter locations (nets/boat),
+  // not invented actors; the narrative remains usable if the optional GLB fails.
   const cinePlace = new Map(specs.map((s) => [s.id, s.pos]));
-  const cineSubjects = () => [player.pos, ...cine.ids.flatMap((id) => { const p = cinePlace.get(id); return p ? [p] : []; })];
+  const cineSubjects = () => [player.pos, ...cine.ids.flatMap((id) => { const p=id==='simao'&&actualNpc()?actualNpc()!.pos:cinePlace.get(id);return p?[p]:[]; })];
   const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const hudEl = $("hud");
   const cameraSolid = (x: number, y: number, z: number) =>
@@ -666,6 +715,15 @@ async function main() {
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
     actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17');
+
+    if(simao&&simNav){
+      const allowed=audioAllowed()&&!frozen&&!shot;
+      simNav.update(dt,player.pos,state.followers.includes('simao'),!allowed||state.phase==='line'||roam.phase==='line');
+      if(allowed&&state.phase==='line'&&state.mission===1){const desired=Math.atan2(player.pos.x-simNav.pos.x,-(player.pos.z-simNav.pos.z)),delta=desired-simNav.heading;simNav.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*4);}
+      simao.place(simNav.pos,terrain.heightAt(simNav.pos.x,simNav.pos.z),simNav.heading);
+      const visible=Math.hypot(player.pos.x-simNav.pos.x,player.pos.z-simNav.pos.z)<=100;
+      simao.update(dt,simNav.speed,visible,!allowed);
+    }
 
     // mission logic
     if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
@@ -785,7 +843,7 @@ async function main() {
     if (state.phase !== "intro") {
       const g = state.phase === "done" ? null : goals[state.mission].at;
       // The counter records the passage; radar marks require actual approved scene actors (R9).
-      const followers: { pos: Vec2; kind: "follower" }[] = [];
+      const followers = npcFollowers();
       // the audit of R6 found an invisible wall at the region's limit: say where it is before he reaches it
       const edge = distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z);
       const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
@@ -861,7 +919,9 @@ async function main() {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
       actor: () => actor.diagnostics(),
-      characters:()=>({...characterDiagnostics(scene),npcVisuals:'pending',npcColliders:[],radarFollowers:[]}),
+      characters:()=>({...characterDiagnostics(scene),npcVisuals:npcStatus,npcColliders:actualNpc()?[{id:'simao',pos:{...actualNpc()!.pos},radius:NPC_MOTION.radius}]:[],radarFollowers:npcFollowers().map(f=>({id:'simao',pos:{...f.pos}}))}),
+      npc:()=>({status:npcStatus,error:npcError,profile:startupProfile.mobile?'mobile':'desktop',actor:simao?.diagnostics()??null,navigation:simNav?.diagnostics()??null,
+        y:simao?.root.position.y??null,groundHeight:simNav?terrain.heightAt(simNav.pos.x,simNav.pos.z):null,constants:NPC_MOTION}),
       audio:()=>({...sfx.stats,nature:natureAudio?.stats??null,habitats,visibleAnimalEmitters:faunaScene?.visibleApprovedAgents().filter(a=>a.kind!=='fish').length??0}),
       fauna:()=>({status:faunaStatus,error:faunaError,profile:startupProfile.mobile?'mobile':'desktop',
         renderer:faunaScene?.diagnostics()??null,population:faunaPopulation?.diagnostics()??null,
@@ -894,8 +954,8 @@ async function main() {
         player.pos.x = x; player.pos.z = z;
         if (heading !== undefined) { player.heading = heading; cam.yaw = heading; }
       },
-      followers: () => [],
-      npcPositions: () => [],
+      followers: () => npcFollowers(),
+      npcPositions: () => actualNpc()?[{id:'simao',...simNav!.diagnostics(),y:simao!.root.position.y,groundHeight:terrain.heightAt(simNav!.pos.x,simNav!.pos.z),inBoat:false}]:[],
       narrativeFollowers: () => [...state.followers],
       narrativeLocations: () => specs.map(spec=>({id:spec.id,pos:{...spec.pos},inBoat:spec.inBoat})),
       // the camera this frame and whether it is inside a building's footprint (no margin), for tools/check_camera.mjs

@@ -16,6 +16,7 @@ const CACHE_KEY = "gta:painel:v1";
 const CACHE_MS = 5 * 60_000;          // GitHub allows 60 unauthenticated requests an hour per address
 const TIMEOUT_MS = 15_000;
 const MAX_COMMIT_PAGES = 10;          // 1,000 commits; beyond that the panel says the count is partial
+const TICKET_PAGE_LIMIT = 100;       // Issues and PRs share this one page; a full page is not a proved total.
 
 type Raw = { at: number; repo: unknown; commits: unknown[]; commitsPartial: boolean; tickets: unknown };
 
@@ -48,7 +49,7 @@ async function load(fresh: boolean): Promise<Raw> {
     }
     partial = true;
   })();
-  const [repo, tickets] = await Promise.all([get(""), get("/issues?state=all&per_page=100"), pages]);
+  const [repo, tickets] = await Promise.all([get(""), get(`/issues?state=all&per_page=${TICKET_PAGE_LIMIT}`), pages]);
   const raw: Raw = { at: Date.now(), repo, commits, commitsPartial: partial, tickets };
   try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(raw)); } catch { /* shown, not kept */ }
   return raw;
@@ -86,7 +87,7 @@ function barTable(title: string, head: [string, string], rows: Tally, unit: [str
   return box;
 }
 
-function draw(repo: RepoFacts, commits: readonly Commit[], c: CommitStats, t: TicketStats, partial: boolean, at: number) {
+function draw(repo: RepoFacts, commits: readonly Commit[], c: CommitStats, t: TicketStats, partial: boolean, at: number, ticketCount: number) {
   const more = partial ? "+" : "";
   $("kpis").replaceChildren(
     tile(`${c.total.toLocaleString("pt-BR")}${more}`, "commits na branch principal", c.first && c.last ? `${day(c.first)} a ${day(c.last)}` : undefined),
@@ -112,15 +113,16 @@ function draw(repo: RepoFacts, commits: readonly Commit[], c: CommitStats, t: Ti
     "Ninguém de fora abriu issue ou pull request ainda."));
   const stamp = $("stamp"); stamp.classList.remove("is-error");
   stamp.textContent = `Dados do GitHub lidos em ${moment.format(new Date(at))} (horário de São Paulo). Último envio ao repositório: ${moment.format(new Date(repo.pushed))}.`
-    + (partial ? ` Contagem de commits parcial: só os ${commits.length.toLocaleString("pt-BR")} mais recentes.` : "");
+    + (partial ? ` Contagem de commits parcial: só os ${commits.length.toLocaleString("pt-BR")} mais recentes.` : "")
+    + (ticketCount >= TICKET_PAGE_LIMIT ? ` Totais de issues, pull requests e participantes parciais: consulta limitada a ${TICKET_PAGE_LIMIT} itens, contando issues e PRs juntos. Pode haver registros anteriores não incluídos.` : "");
 }
 
 async function refresh(fresh = false) {
   const stamp = $("stamp");
   try {
     const raw = await load(fresh);
-    const commits = parseCommits(raw.commits);
-    draw(parseRepo(raw.repo), commits, commitStats(commits), ticketStats(parseTickets(raw.tickets)), raw.commitsPartial, raw.at);
+    const commits = parseCommits(raw.commits), tickets = parseTickets(raw.tickets);
+    draw(parseRepo(raw.repo), commits, commitStats(commits), ticketStats(tickets), raw.commitsPartial, raw.at, tickets.length);
   } catch (e) {
     stamp.classList.add("is-error");
     stamp.textContent = `Não deu para ler os dados agora. ${e instanceof Error ? e.message : ""}`.trim();
