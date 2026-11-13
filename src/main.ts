@@ -18,6 +18,8 @@ import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
 import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets } from './tripo-assets.ts';
+import { BenchRun, benchShots } from "./bench.ts";
+import { createPostFx, parseFx } from "./postfx.ts";
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -44,6 +46,8 @@ async function main() {
   const hash = location.hash.slice(1);
   const quality = params.get("q") ?? (hash === "baixa" ? "low" : "high");
   const q = quality === "low" ? 0.55 : 1;
+  // ?fx=alto|master: post-processing under measurement (postfx.ts); without it the game renders exactly as before
+  const fxLevel = parseFx(params.get("fx"));
 
   // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
   // later (it happened with the software adapter of the test browser), the page reloads on WebGL 2.
@@ -53,7 +57,7 @@ async function main() {
     const ad = gpu ? await gpu.requestAdapter().catch(() => null) : null;
     forceWebGL = !ad || !!ad.isFallbackAdapter || !!ad.info?.isFallbackAdapter;
   }
-  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low", forceWebGL, logarithmicDepthBuffer: true });
+  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -253,6 +257,12 @@ async function main() {
     else hud.startCard({ primary: "Começar", note });
   };
   showStartCard();
+  // ---- same-scene benchmark (bench.ts, tools/bench.mjs): ?bench flies the fixed shots, no HUD, and times every frame
+  const num = (k: string, d: number) => { const v = Number(params.get(k)); return Number.isInteger(v) && v > 0 ? v : d; };
+  const bench = params.has("bench") ? new BenchRun(benchShots(P, (x, z) => terrain.heightAt(x, z)), num("warmup", 30), num("frames", 180)) : null;
+  let benchLoadMs = NaN, benchHold = -1;             // after the timed route, hold(i) re-shows a shot for its picture
+  if (bench) $("start").hidden = true;
+  const fx = createPostFx(renderer, scene, camera, fxLevel);
   if (cloud.enabled) setupCloudPanel({
     ensureCode: async () => {
       let code = readCode();
@@ -324,6 +334,13 @@ async function main() {
     const real = (now - last) / 1000; last = now;
     const paused = feedback.isOpen();
     const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // feedback pauses mission time as well as controls
+    const shot = bench ? bench.shot ?? bench.shots[benchHold] ?? null : null;
+    if (shot) {
+      // stand him 4.5 m ahead of the shot's eye, facing its way, so shadows and vegetation detail follow as in play
+      const dx = shot.target[0] - shot.eye[0], dz = shot.target[2] - shot.eye[2], l = Math.hypot(dx, dz) || 1;
+      player.pos.x = shot.eye[0] + (dx / l) * 4.5; player.pos.z = shot.eye[2] + (dz / l) * 4.5;
+      player.heading = Math.atan2(dx, -dz);
+    }
     fpsFrames++; fpsT += real;                           // the FPS counter uses real time
     if (fpsT >= 1) { fpsLog.push(fpsFrames / fpsT); if (fpsLog.length > 120) fpsLog.shift(); fpsEl.textContent = `${backend}\n${(fpsFrames / fpsT).toFixed(0)} fps`; fpsFrames = 0; fpsT = 0; }
 
@@ -434,10 +451,21 @@ async function main() {
       hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
+    if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
     renderer.info.reset();
-    renderer.render(scene, camera);
+    if (fx) fx.render(); else renderer.render(scene, camera);
+    if (shot && bench && !bench.done) {
+      if (Number.isNaN(benchLoadMs)) benchLoadMs = now;      // first measured frame, ms since navigation start
+      bench.record(real * 1000, renderer.info.render.drawCalls, renderer.info.render.triangles);
+    }
   };
   renderer.setAnimationLoop(frame);
+  if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
+    get done() { return bench.done; },
+    hold: (i: number) => { benchHold = i; },
+    results: () => ({ ...bench.results(), fx: fxLevel, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+      viewport: [innerWidth, innerHeight], pixelRatio: renderer.getPixelRatio(), textureBytes: renderer.info.memory.texturesSize }),
+  };
 
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
