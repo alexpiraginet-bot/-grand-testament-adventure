@@ -167,8 +167,8 @@ button { font: inherit; cursor: pointer; }
 #hud::before, #hud::after { content: ""; position: absolute; left: 0; right: 0; height: 0; background: #050605; transition: height .45s ease; z-index: 0; }
 #hud::before { top: 0; } #hud::after { bottom: 0; }
 #hud.cine::before, #hud.cine::after { height: 9vh; }
-#hud .mission, #hud .radarbox, #hud .hud-links, #hud .joy, #hud .top { transition: opacity .35s ease; }
-#hud.cine .mission, #hud.cine .radarbox, #hud.cine .hud-links, #hud.cine .joy, #hud.cine .top { opacity: 0; pointer-events: none; }
-#hud.cine .hud-links { visibility: hidden; }            /* its buttons opt back into pointer events: take them out entirely */
-#hud .sub { z-index: 1; }
-@media (prefers-reduced-motion: reduce) { #hud::before, #hud::after, #hud .mission, #hud .radarbox, #hud .hud-links, #hud .joy, #hud .top { transition: none; } }
+#hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: opacity .35s ease; }
+#hud.cine .mission, #hud.cine .radarbox, #hud.cine .joy, #hud.cine .top { opacity: 0; pointer-events: none; }
+/* Map, Colabore and Credits stay in reach during a line (they pause the game), above the cinema bars */
+#hud .sub, #hud .hud-links { z-index: 1; }
+@media (prefers-reduced-motion: reduce) { #hud::before, #hud::after, #hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: none; } }

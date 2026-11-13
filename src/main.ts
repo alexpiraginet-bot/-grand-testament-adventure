@@ -591,6 +591,8 @@ async function main() {
         else { cine.why = "shot"; cine.aim.set(cine.shot.look.x, cine.shot.look.y, cine.shot.look.z); }
       }
       if (Math.hypot(input.move.x, input.move.y) > 0.3 && !cine.left) { cine.left = true; cine.why = "moved"; }
+      // dragging the view means the player wants the camera back, as walking does
+      if ((look.dx || look.dy) && !cine.left) { cine.left = true; cine.why = "looked"; }
     }
     if (state.phase !== "line") { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
     const want = state.phase === "line" && !cine.left && cine.shot ? 1 : 0;

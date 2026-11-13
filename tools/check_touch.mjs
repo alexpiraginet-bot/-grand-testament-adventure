@@ -164,13 +164,17 @@ async function run(name, ctxOpts) {
     if (c.k <= 0.95 && !c.left) return false;
     return { ...c, phase: G.state.phase, sub: !document.getElementById("sub").hidden,
       missionOpacity: Number(getComputedStyle(document.querySelector(".mission")).opacity),
-      links: getComputedStyle(document.querySelector(".hud-links")).visibility };
+      links: getComputedStyle(document.querySelector(".hud-links")).visibility,
+      // the button the player taps to pause (Colabore): on top at its own centre, not under a cinema bar
+      pauseReachable: (() => { const b = document.querySelector("#hud [data-feedback-open]"), r = b.getBoundingClientRect();
+        return r.width > 0 && document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) === b; })() };
   }, null, { timeout: 240000, polling: 100 })).jsonValue();
   r.cinematic = { k: cine.k, why: cine.why, shot: cine.shot, camera: cine.camera };
   assert.equal(cine.phase, "line", "the story is held on the line");
   assert.ok(cine.shot && cine.on && cine.sub && !cine.left, `two-shot in, cinema class on, subtitle shown: ${JSON.stringify({ k: cine.k, why: cine.why, on: cine.on })}`);
   assert.ok(Math.hypot(cine.camera[0] - cine.shot.eye.x, cine.camera[2] - cine.shot.eye.z) < 0.05, "camera at the shot's eye");
-  assert.equal(cine.links, "hidden", "community links out of the way (and out of the tab order)");
+  assert.equal(cine.links, "visible", "Map, Colabore and Credits stay in reach during the line (they pause the game)");
+  assert.ok(cine.pauseReachable, "the Colabore button is on top of the cinema bars, so a tap pauses the line");
   // let the aim settle on the group (eased), then everyone called must be in the picture
   await page.waitForTimeout(1500);
   const framed = await g(() => window.__gta.cine().framed);
