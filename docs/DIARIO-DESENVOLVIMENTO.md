@@ -80,7 +80,7 @@ Nada desta sessão está em produção até a PR ser revisada e integrada.
 | `87ef481` | Registro da repetição 1280×800 no diário | relatório `shots/touch-r1/report.json` (local) | — |
 | `dab8a9f` | Correção: o GTAO precisa de um amostrador de normal; nomes `packNormalToRGB`/`unpackRGBToNormal` da r186 | antes: `fx=alto` com 2 erros de console (`normalNode.sample is not a function`); depois: `alto` e `master` percorrem a rota com 0 erros | a oclusão não funcionava no primeiro commit |
 | `d0eeb85` | Plano cinematográfico nas falas (`src/cinematic.ts`): dois planos escolhidos ao começar a fala, faixas de cinema, HUD recolhido, sai ao andar, respeita movimento reduzido | 48/48 testes (4 novos); conferência de navegador registrada na PR | conferido só em viewport emulado |
-| `fbaeb0b` | "Nível GTA6" como barra de qualidade, pilar por pilar, sem copiar nada da Rockstar | — | plano, não entrega |
+| `fbaeb0b` | Barra de qualidade AAA de mundo aberto, pilar por pilar, sem copiar nada da Rockstar (título retitulado depois, ver `docs/PLANO-AAA.md`) | — | plano, não entrega |
 | `2a8a8e1` | Conferências determinísticas em renderizador lento: captura atômica do plano, `__gta.freeze()` (só `?debug`, segura o relógio da história), gesto reto no joystick, bench espera 24 quadros por foto | 48/48 testes; repetição da conferência registrada na PR | ver "Tentativas" abaixo |
 | (este registro) | `tools/session_usage.py`: soma do consumo de tokens pelo transcrito e valor equivalente em preço de API | executado nesta sessão | ver nota de valor |
 | `906ff83` | Correção do diagnóstico do `fx=master`: o TRAA derruba a água transparente na maioria dos quadros; `master` bloqueado | curva de cor quadro a quadro; duas hipóteses refutadas e uma isolada (ver "Tentativas") | causa exata em aberto |
@@ -106,6 +106,11 @@ A PR #1 foi aberta como rascunho. Nenhuma issue, cobrança, migração de banco 
    Isolado: sem TRAA (com velocidade no MRT e sem MSAA) a água aparece. **Bloqueio aberto:** o `master` (TRAA) não
    desenha direito superfícies transparentes como a água; `fx=master` não deve virar padrão até resolver.
 
+**Bench neste contêiner (sem GPU, Chromium com WebGL 2 por software, 640×400, `tools/bench.mjs` às 10:26 UTC):**
+draw calls por plano (vila, viela, margem, pescadores, barco, panorama) — `fx=off` 174/78/174/203/123/41,
+`fx=alto` 187/91/187/216/136/54, `fx=master` 189/93/189/218/138/56; memória de textura informada pelo renderer
+1.206 / 1.210 / 1.218 MB; zero erros. Tempos de quadro dessa execução não valem para o jogo (software, ~0,5 fps).
+
 **Consumo de tokens desta sessão (retrato no momento deste registro, 8 arquivos; respostas de 2026-11-13T09:39:24.792Z a 2026-11-13T11:02:47.196Z):**
 
 | grupo | modelo | velocidade | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | cache_write_sem_ttl | usd_equivalente_api |
@@ -117,7 +122,7 @@ Total equivalente em preço de API: US$ 48.28. O valor é **equivalente em preç
 leitura de cache US$ 0,20 por milhão; escrita de cache 1,25× a entrada com TTL de 5 min e 2× com TTL de 1 h), não
 fatura: a sessão roda no plano da conta claude.ai, cobrado pelo plano. Conversão para reais não feita (precisa de
 uma cotação com fonte). Reproduzir: `python3 -I tools/session_usage.py <pasta-do-transcrito-da-sessão>`.
-O workflow do plano "nível GTA6" ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
+O workflow do plano de qualidade AAA ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
 
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
