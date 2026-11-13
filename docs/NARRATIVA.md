@@ -71,6 +71,14 @@ receber só um ponto no mapa. Como funciona nesta revisão:
   desta passagem": nada é anunciado como pronto.
 - Enquanto a Bíblia está aberta o jogo fica pausado.
 
+Decisões registradas em 13/11/2026: Alex confirmou que **a Bíblia não tranca o mundo** (ela revela a orientação; quem
+chega ao lugar certo sem ler ainda age) e deixou as demais escolhas com quem implementa, pelo que for melhor para a
+evolução do jogo. Ficaram assim: (1) no epílogo o jogo encena só a primeira oração de Mc 1:21 e a Bíblia mostra o
+versículo inteiro; (2) o mapa da região (módulo do Codex, com suíte própria) continua listando as três missões nesta
+revisão. Alinhar o mapa à Bíblia, mostrando o objetivo só dos passos já lidos, é o próximo ajuste a combinar com o
+Codex, porque muda a lista e as conferências dele; (3) a leitura não é guardada entre visitas: quem retoma um jogo
+salvo abre a Bíblia de novo para ver o passo.
+
 ## Jogabilidade
 
 O radar desenha o trajeto existente por terra, inclusive a curva que evita a enseada.
