@@ -1,7 +1,7 @@
 // Look options under measurement, each behind its own flag, so tools/bench.mjs can compare them with the shipped render
 // on the same shots. Without the flags the game renders exactly as before: ACES at exposure 1.08, the linear
 // THREE.Fog (400 m to 16 km) and one 56 m shadow box that follows the hero.
-//   ?tm=aces|agx|neutral|off   tone curve           ?exp=0.25..4   exposure
+//   ?tm=aces|agx|neutral|off   tone curve           ?exp=0.25..4   exposure (three ignores it with tm=off)
 //   ?atmo=1                    height + distance haze, warmer toward the sun (one fog node, no extra draw call)
 //   ?shadow=csm                three cascaded sun shadows out to CSM_SPLITS.far, instead of the single box
 // Defaults change only after the measurement on the RTX PC and on physical phones, with Alex's OK (docs/PLANO-AAA.md).
@@ -76,11 +76,23 @@ export function atmosphereFog(sunDir: THREE.Vector3) {
  * close to the hero so its texels are not much coarser than the shipped 56 m box. */
 export const CSM_SPLITS = { far: 600, breaks: [0.04, 0.2, 1] } as const;
 
-/** ?shadow=csm: three cascades from the sun replace the single box. Each cascade clones sun.shadow (map size, bias),
- * so the caller sets a map size that fits three of them. */
+/** Light-space depth of every cascade camera. CSMShadowNode puts each cascade's light lightMargin metres sunward of its
+ * slice and only fits left/right/top/bottom, never near/far, so each clone keeps the box's own far (220 m) unless it
+ * is set here: then everything past the first 20 m of a slice falls outside the shadow camera and is drawn lit. The
+ * deepest slice spans up to 2 x CSM_SPLITS.far in light space (a sideways view), hence margin + 2 x far. */
+export const CSM_LIGHT = { margin: 200, near: 1, far: 200 + 2 * CSM_SPLITS.far } as const;
+
+/** ?shadow=csm: three cascades from the sun replace the single box. Each cascade clones sun.shadow (map size, bias,
+ * camera), so the caller sets a map size that fits three of them; this sets the camera's depth range (CSM_LIGHT) and
+ * rescales the bias, which is in normalised depth, so it stays the same distance in metres. The caller keeps the node
+ * and calls updateFrustums() after the view camera's fov or aspect change. */
 export function cascadedShadows(sun: THREE.DirectionalLight): CSMShadowNode {
+  const cam = sun.shadow.camera;
+  const metres = sun.shadow.bias * (cam.far - cam.near);
+  cam.near = CSM_LIGHT.near; cam.far = CSM_LIGHT.far; cam.updateProjectionMatrix();
+  sun.shadow.bias = metres / (CSM_LIGHT.far - CSM_LIGHT.near);
   const csm = new CSMShadowNode(sun, {
-    cascades: CSM_SPLITS.breaks.length, maxFar: CSM_SPLITS.far, mode: "custom", lightMargin: 200,
+    cascades: CSM_SPLITS.breaks.length, maxFar: CSM_SPLITS.far, mode: "custom", lightMargin: CSM_LIGHT.margin,
     customSplitsCallback: (_n, _near, _far, breaks) => { breaks.push(...CSM_SPLITS.breaks); },
   });
   csm.fade = true;

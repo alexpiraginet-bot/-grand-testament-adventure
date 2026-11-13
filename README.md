@@ -86,7 +86,8 @@ Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
 ## Como é feito
 
 - **three.js 0.186.1** com o `WebGPURenderer`: WebGPU quando o navegador tem um adaptador de verdade, WebGL 2 nos
-  outros (e se o dispositivo WebGPU cair, a página recarrega em WebGL 2). **Vite 8.3.5**, **TypeScript 7.0.2**.
+  outros. Se o dispositivo WebGPU ou o contexto WebGL cair, o jogo mostra um erro com "Tentar novamente" e
+  "Abrir modo compatível", sem recarregar sozinho. **Vite 8.3.5**, **TypeScript 7.0.2**.
   Versões travadas no `package-lock.json`.
 - **Sem Rapier por enquanto.** `@dimforge/rapier3d-compat@0.21.0` pesa 1,66 MB com gzip (medido no `dist/rapier.mjs`),
   é uma dependência adicional ainda desnecessária. A fatia só precisa de chão por altura e colisão com casas e pessoas, feitos em

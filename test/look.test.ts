@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import * as THREE from "three/webgpu";
-import { ATMO, CSM_SPLITS, DEFAULT_EXPOSURE, hazeAmount, opticalDepth, parseAtmo, parseExposure, parseShadow, parseTone,
+import { ATMO, cascadedShadows, CSM_LIGHT, CSM_SPLITS, DEFAULT_EXPOSURE, hazeAmount, opticalDepth, parseAtmo, parseExposure, parseShadow, parseTone,
   TONE_MAPPING } from "../src/look.ts";
 
 test("look flags: anything unknown keeps the shipped render", () => {
@@ -60,4 +60,19 @@ test("cascades: increasing breaks that end at the far limit", () => {
   assert.equal(CSM_SPLITS.breaks.at(-1), 1);
   for (let i = 1; i < CSM_SPLITS.breaks.length; i++) assert.ok(CSM_SPLITS.breaks[i] > CSM_SPLITS.breaks[i - 1]);
   assert.ok(CSM_SPLITS.breaks[0] * CSM_SPLITS.far <= 28, "the first cascade is no deeper than the shipped 56 m box's half-width");
+});
+
+test("cascades: the shadow camera holds the margin and the deepest slice; the bias keeps its length in metres", () => {
+  const sun = new THREE.DirectionalLight(0xffffff, 1);
+  const c = sun.shadow.camera; c.near = 1; c.far = 220; c.updateProjectionMatrix();
+  sun.shadow.bias = -0.0004;
+  const metres = -0.0004 * 219;
+  const csm = cascadedShadows(sun);
+  assert.equal(c.near, CSM_LIGHT.near); assert.equal(c.far, CSM_LIGHT.far);
+  assert.equal(CSM_LIGHT.far, CSM_LIGHT.margin + 2 * CSM_SPLITS.far, "margin plus the deepest slice seen sideways");
+  assert.ok(CSM_LIGHT.far > 220 + 1000, "far beyond the 220 m that left the cascades unshadowed");
+  assert.ok(Math.abs(sun.shadow.bias * (c.far - c.near) - metres) < 1e-12, "same bias in metres");
+  assert.equal(c.projectionMatrix.elements[10], -2 / (c.far - c.near), "projection rebuilt with the new range");
+  assert.equal(sun.shadow.shadowNode, csm); assert.equal(csm.cascades, 3); assert.equal(csm.lightMargin, CSM_LIGHT.margin);
+  assert.equal(csm.fade, true);
 });

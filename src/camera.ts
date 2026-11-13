@@ -3,8 +3,10 @@
 //   - the point the camera looks at (his head) trails him a little, critically damped, so starts and stops have weight;
 //   - when a wall comes between camera and hero the camera jumps in at once (never a frame inside the wall), and when
 //     the wall is gone it eases back out in about a third of a second instead of popping.
-// A critically damped spring has a closed-form step, so one step of 0.5 s lands exactly where two of 0.25 s do: the
-// feel does not change between a 30 fps phone and a 144 Hz monitor. Defaults change only with Alex's OK (PLANO-AAA R7/R8).
+// A critically damped spring has a closed-form step, so one step of 0.5 s lands exactly where two of 0.25 s do. The head
+// moves during a frame, so the camera steps toward a target moving in a straight line from where it was to where it is
+// (stepSpringMoving), which is also exact: at a steady run the trail is 2·v/omega on a 30 fps phone and on a 144 Hz
+// monitor alike. Defaults change only with Alex's OK (PLANO-AAA R7/R8).
 
 export type CamMode = "fixa" | "mola";
 export const parseCam = (value: string | null | undefined): CamMode => (value === "mola" ? "mola" : "fixa");
@@ -29,11 +31,30 @@ export function stepSpring(s: Spring1, target: number, omega: number, dt: number
   return s;
 }
 
+/** One exact step toward a target that moves at constant speed from t0 to t1 during dt. With u = (t1 - t0)/dt and
+ * e = x - target, z = e + 2u/omega obeys the same spring toward 0, so the closed form above applies to z. Mutates s. */
+export function stepSpringMoving(s: Spring1, t0: number, t1: number, omega: number, dt: number): Spring1 {
+  if (!(dt > 0)) return s;
+  const u = (t1 - t0) / dt, k = (2 * u) / omega;
+  const z = { x: s.x - t0 + k, v: s.v - u };
+  stepSpring(z, 0, omega, dt);
+  s.x = t1 + z.x - k;
+  s.v = z.v + u;
+  return s;
+}
+
 export type Spring3 = { x: Spring1; y: Spring1; z: Spring1 };
 export const spring3 = (x: number, y: number, z: number): Spring3 => ({ x: { x, v: 0 }, y: { x: y, v: 0 }, z: { x: z, v: 0 } });
 
 export function stepSpring3(s: Spring3, tx: number, ty: number, tz: number, omega: number, dt: number): Spring3 {
   stepSpring(s.x, tx, omega, dt); stepSpring(s.y, ty, omega, dt); stepSpring(s.z, tz, omega, dt);
+  return s;
+}
+
+export function stepSpring3Moving(s: Spring3, from: readonly [number, number, number], to: readonly [number, number, number],
+  omega: number, dt: number): Spring3 {
+  stepSpringMoving(s.x, from[0], to[0], omega, dt); stepSpringMoving(s.y, from[1], to[1], omega, dt);
+  stepSpringMoving(s.z, from[2], to[2], omega, dt);
   return s;
 }
 

@@ -25,7 +25,7 @@ import { StartupLifecycle } from './startup-lifecycle.ts';
 import { abortable } from './asset-loading.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseAo, parseFx } from "./postfx.ts";
-import { CAM_SPRING, parseCam, snap3, spring3, stepBoom, stepSpring3 } from "./camera.ts";
+import { CAM_SPRING, parseCam, snap3, spring3, stepBoom, stepSpring3Moving } from "./camera.ts";
 import { atmosphereFog, cascadedShadows, parseAtmo, parseExposure, parseShadow, parseTone, TONE_MAPPING } from "./look.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
 import { BUILD_SHA, describeGpu } from "./build-info.ts";
@@ -80,7 +80,6 @@ async function main() {
   const slog = installSessionLog(window);
   if (slog.previous?.uncleanEnd) console.warn("Sessão anterior desta aba terminou sem fechamento limpo (recarga ou queda).");
   const canvas = $("c") as HTMLCanvasElement;
-  canvas.addEventListener("webglcontextlost", () => slog.mark("context-lost", "webglcontextlost"));
   const touch = touchDevice;
   // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
   const hash = location.hash.slice(1);
@@ -122,6 +121,8 @@ async function main() {
   };
   const lost=()=>failStartup(new Error('O navegador interrompeu a imagem. Abra no modo compatível para tentar novamente.'));
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost();});
+  // the session diary records a real loss, not the one stopRenderer causes by disposing after a startup failure
+  canvas.addEventListener("webglcontextlost", () => { if (!rendererDisposed) slog.mark("context-lost", "webglcontextlost"); });
   const initialising=renderer.init().then(()=>{rendererReady=true;if(startup.signal.aborted)stopRenderer();});
   await withDeadline(abortable(initialising,startup.signal),20000,'Não foi possível iniciar a imagem neste navegador.');
   startup.check();
@@ -134,7 +135,8 @@ async function main() {
     webglRenderer: gl && glInfo ? String(gl.getParameter(glInfo.UNMASKED_RENDERER_WEBGL)) : null });
   slog.setBackend(backend);
   be.device?.lost.then((info) => {
-    slog.mark("device-lost", (info as { message?: string } | undefined)?.message ?? "device lost");
+    const why = info as { message?: string; reason?: string } | undefined;
+    if (!rendererDisposed && why?.reason !== "destroyed") slog.mark("device-lost", why?.message ?? "device lost");
     lost();
   });
 
@@ -160,14 +162,15 @@ async function main() {
   scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x7d6c4f, 1.25));
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
-  // three cascades each clone this shadow, so ?shadow=csm keeps their total near the single box's (3 x 2048² vs 4096²)
-  const shadowSize = visual.shadow === "csm" ? (startupProfile.mobile || quality === "low" ? 1024 : 2048)
+  // three cascades each clone this shadow, so ?shadow=csm keeps their total under the single map's:
+  // 3 x 2048² against 4096² on PC, 3 x 512² against 1024² on phones and at q=low
+  const shadowSize = visual.shadow === "csm" ? (startupProfile.mobile || quality === "low" ? 512 : 2048)
     : startupProfile.mobile || quality === "low" ? 1024 : 4096;
   sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera; sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28; sc.near = 1; sc.far = 220;
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
-  if (visual.shadow === "csm") cascadedShadows(sun);
+  const csm = visual.shadow === "csm" ? cascadedShadows(sun) : null;
 
   const P = meta.points;
   const movementMargin = 60;
@@ -220,6 +223,7 @@ async function main() {
   // ?cam=mola: the head the camera looks at trails him on a spring, and the camera eases back out after a wall (camera.ts)
   const camMode = parseCam(params.get("cam"));
   const pivot = spring3(player.pos.x, 0, player.pos.z), boom = { x: cam.dist, v: 0 };
+  const headWas: [number, number, number] = [player.pos.x, 0, player.pos.z];   // the head one frame ago (moving target)
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   // Each modal owns its pause reason; closing one must not clear another panel's pause.
@@ -245,6 +249,7 @@ async function main() {
     camera.aspect = innerWidth / innerHeight;
     camera.fov = touch && innerHeight > innerWidth ? 62 : 52;
     camera.updateProjectionMatrix();
+    if (csm?.camera) csm.updateFrustums();          // cascades follow the new fov/aspect (no-op before their first build)
   },150); });
 
   // ---- saved progress (save.ts): this browser's copy, autosaved
@@ -428,8 +433,8 @@ async function main() {
   const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
   // the story's two-shots (cinematic.ts): chosen when a line starts, blended in and out; cameraSolid matches the
   // obstruction test the follow camera already uses for houses and walls
-  const cine: { shot: CineShot | null; k: number; left: boolean; why: string; ids: string[]; aim: THREE.Vector3 } =
-    { shot: null, k: 0, left: false, why: "", ids: [], aim: new THREE.Vector3() };
+  const cine: { shot: CineShot | null; k: number; left: boolean; why: string; ids: string[]; aim: THREE.Vector3; yaw: number; pitch: number } =
+    { shot: null, k: 0, left: false, why: "", ids: [], aim: new THREE.Vector3(), yaw: 0, pitch: 0 };
   // the people in the shot right now: the hero and those called in this line (they start walking to him at once)
   const cineSubjects = () => [player.pos, ...npcList.filter((n) => cine.ids.includes(n.spec.id)).map((n) => n.pos)];
   const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -443,7 +448,8 @@ async function main() {
   let t = 0;
   let frozen = false;                                    // ?debug only (__gta.freeze): the story's clock held; camera and controls run
 
-  const waitingToStart=()=>state.phase==='intro';
+  // the bench flies its shots without the start card, so it is never held here
+  const waitingToStart=()=>state.phase==='intro' && !bench;
   const frame = () => {
     if(startup.signal.aborted)return;
     if(document.hidden || waitingToStart()){last=performance.now();return;}
@@ -553,10 +559,15 @@ async function main() {
     const springy = camMode === "mola" && state.phase !== "intro" && !shot;
     if (springy) {
       // a teleport or a cut (more than 6 m away) snaps; otherwise the head trails him, critically damped
-      if (Math.hypot(pivot.x.x - head.x, pivot.y.x - head.y, pivot.z.x - head.z) > 6) snap3(pivot, head.x, head.y, head.z);
-      stepSpring3(pivot, head.x, head.y, head.z, REDUCED_MOTION ? CAM_SPRING.pivotReduced : CAM_SPRING.pivot, dt);
+      // the head moved from headWas to here during the frame: step toward it moving, so the trail is the same at any fps
+      if (Math.hypot(pivot.x.x - head.x, pivot.y.x - head.y, pivot.z.x - head.z) > 6) {
+        snap3(pivot, head.x, head.y, head.z); headWas[0] = head.x; headWas[1] = head.y; headWas[2] = head.z;
+      }
+      const now3: [number, number, number] = [head.x, head.y, head.z];
+      stepSpring3Moving(pivot, headWas, now3, REDUCED_MOTION ? CAM_SPRING.pivotReduced : CAM_SPRING.pivot, dt);
+      if (dt > 0) { headWas[0] = now3[0]; headWas[1] = now3[1]; headWas[2] = now3[2]; }
       head.set(pivot.x.x, pivot.y.x, pivot.z.x);
-    } else snap3(pivot, head.x, head.y, head.z);
+    } else { snap3(pivot, head.x, head.y, head.z); headWas[0] = head.x; headWas[1] = head.y; headWas[2] = head.z; }
     tmp.set(head.x - Math.sin(cam.yaw) * Math.cos(cp) * cd, head.y + Math.sin(cp) * cd, head.z + Math.cos(cam.yaw) * Math.cos(cp) * cd);
     const floor = Math.max(terrain.heightAt(tmp.x, tmp.z), 0) + 0.4;
     if (tmp.y < floor) tmp.y = floor;
@@ -588,11 +599,12 @@ async function main() {
         const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
         cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
         if (!cine.shot) { cine.left = true; cine.why = "no-clear-shot"; }   // nowhere clear to stand: stay with the game camera
-        else { cine.why = "shot"; cine.aim.set(cine.shot.look.x, cine.shot.look.y, cine.shot.look.z); }
+        else { cine.why = "shot"; cine.aim.set(cine.shot.look.x, cine.shot.look.y, cine.shot.look.z); cine.yaw = cam.yaw; cine.pitch = cam.pitch; }
       }
       if (Math.hypot(input.move.x, input.move.y) > 0.3 && !cine.left) { cine.left = true; cine.why = "moved"; }
-      // dragging the view means the player wants the camera back, as walking does
-      if ((look.dx || look.dy) && !cine.left) { cine.left = true; cine.why = "looked"; }
+      // turning the view (a drag, or anything else that sets the yaw or pitch) means the player wants the camera back,
+      // as walking does; during a line nothing else turns it
+      if ((look.dx || look.dy || cam.yaw !== cine.yaw || cam.pitch !== cine.pitch) && !cine.left && cine.shot) { cine.left = true; cine.why = "looked"; }
     }
     if (state.phase !== "line") { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
     const want = state.phase === "line" && !cine.left && cine.shot ? 1 : 0;
@@ -646,6 +658,7 @@ async function main() {
   startup.check();
   await withDeadline(abortable(renderer.renderAsync(scene,camera),startup.signal),20000,'O primeiro quadro não ficou pronto. Experimente o modo compatível.');
   startup.check();
+  if (fx) fx.render();                              // ?fx: its passes and post shaders compile behind the loading screen too
   loading.complete('frame','Imagem pronta');
   if(!loading.ready())throw new Error('A inicialização foi interrompida.');
   showStartCard();
@@ -654,7 +667,7 @@ async function main() {
   if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
-    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null, look: visual, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null, look: { ...visual, exposure: visual.tone === "off" ? null : visual.exposure }, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
       build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
       models: { loaded: Object.keys(assets).length },
       // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)
