@@ -1,5 +1,20 @@
 # Malhas recebidas e divisão do trabalho
 
+## Estado vigente — integração R1, 12/11/2026
+
+Por novo pedido de Alex, o Codex assumiu a integração na branch `codex/tripo-runtime-r1`.
+O herói de produção usa agora seu rig nativo (65 ossos) e `AnimationMixer`; não passa por `rig.ts`.
+Treze malhas de cenário foram incorporadas: casas A/B/C, oliveiras A/B, árvore espinhosa, arbusto,
+junco, pedras, muro, barco e duas redes. Os seis humanos estáticos continuam reservados até receber rig.
+
+Fontes preservadas em `assets-src/tripo-r1/`; os derivados do jogo ficam em `public/models/tripo-r1/`,
+fora do Git. O catálogo versionado `src/data/tripo-assets.json` fixa origem, hash, bytes, dimensões e estado.
+O host estático `grand-testament-assets.vercel.app` mantém somente os 14 derivados usados no jogo.
+`tools/fetch_assets.mjs` confere bytes/SHA-256 antes de cada build. Detalhes, licença e limites em
+[docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md).
+
+As seções seguintes preservam o histórico da malha de teste; não descrevem o carregador atual.
+
 As malhas 3D são geradas no Tripo pela conta do Alex e têm licença própria, separada da do código: **não entram neste
 repositório público** (`.gitignore`: `public/models/*.glb`). Cada uma é registrada aqui com hash, métricas e origem;
 o arquivo circula entre quem trabalha nele. Sem o arquivo, o jogo usa as formas simples.

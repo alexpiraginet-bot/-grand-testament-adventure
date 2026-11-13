@@ -9,11 +9,13 @@ regras do projeto não se negociam sem o Alex.
 git clone https://github.com/alexpiraginet-bot/-grand-testament-adventure.git grand-testament-adventure
 cd grand-testament-adventure
 npm ci
+npm run assets     # recursos separados do Git; SHA-256 conferido
 npm run dev        # http://localhost:5173
 npm run build      # typecheck + testes + build: tem de passar antes de abrir PR
 ```
 
-O jogo roda sem as malhas 3D (formas simples no lugar). Detalhes e parâmetros de teste no [README](README.md).
+Os binários têm licença separada: não os inclua em commits nem os trate como MIT. O build exige os 14 recursos
+revisados; o navegador mantém formas simples como recuperação de falha. Detalhes no [README](README.md).
 
 ## Fluxo
 

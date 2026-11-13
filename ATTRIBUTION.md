@@ -25,6 +25,14 @@ suavização da faixa da margem são nossos.
 - three.js (MIT).
 - Space Grotesk e Space Mono (SIL Open Font License 1.1, licenças em `public/fonts/`), em subconjunto WOFF2.
 
+## Superfícies e referência do cenário
+
+- Rocky Gravel, Dimitrios Savva e Dario Barresi / Poly Haven, CC0. Mapas em
+  `public/textures/ground/`, origem, modificações e hashes no `LICENSE.json` dessa pasta.
+  https://polyhaven.com/a/rocky_gravel · https://polyhaven.com/license
+- Arqueologia: Christian Media Center / Studium Biblicum Franciscanum e Israel Nature
+  and Parks Authority. Fontes, escolhas de composição e limites em `docs/CAFARNAUM-CENARIO.md`.
+
 ## Malhas 3D
 
 Geradas no Tripo pela conta do Alex, com licença própria. **Não estão neste repositório público**, não ficam sob a MIT

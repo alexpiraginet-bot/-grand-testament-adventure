@@ -3,9 +3,10 @@
 import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
-import { boat as makeBoat, castNet, farMesh, groundMesh, houses, props, sky, water, type Segment } from "./world.ts";
+import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, houses, props, sky, water } from "./world.ts";
+import { missionRoutes, insideObstacle } from './world-layout.ts';
 import { animate, makePerson, PALETTES, type Person } from "./people.ts";
-import { goals as makeGoals, npcs as makeNpcs, type NpcSpec } from "./episode.ts";
+import { goals as makeGoals, npcs as makeNpcs, shoreDir, type NpcSpec } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
@@ -15,9 +16,8 @@ import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { bakedGeometry, rigPerson, type ModelSpec } from "./rig.ts";
-import modelos from "./data/modelos.json";
+import { animatedActor } from './animated-actor.ts';
+import { loadTripoAssets } from './tripo-assets.ts';
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -25,20 +25,6 @@ const DEBUG = params.has("debug");
 // tests on a software renderer (1-2 fps) let game time follow real time: ?debug&dtmax=0.5
 const DT_MAX = DEBUG && params.has("dtmax") ? Number(params.get("dtmax")) : 0.05;
 const $ = (id: string) => document.getElementById(id)!;
-
-/** The bytes of a GLB. Hosts that do not serve .glb (the claude.ai page) get <name>.glb.json = { b64 } instead. */
-async function fetchModel(url: string): Promise<ArrayBuffer> {
-  const isGlb = (b: ArrayBuffer) => b.byteLength > 12 && new TextDecoder().decode(new Uint8Array(b, 0, 4)) === "glTF";
-  const r = await fetch(url).catch(() => null);
-  if (r?.ok) { const b = await r.arrayBuffer(); if (isGlb(b)) return b; }
-  const j = await fetch(`${url}.json`);
-  if (!j.ok) throw new Error(`${url}: not found (${j.status})`);
-  const bin = atob(((await j.json()) as { b64: string }).b64);
-  const out = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  if (!isGlb(out.buffer)) throw new Error(`${url}.json: not a GLB`);
-  return out.buffer;
-}
 
 async function load() {
   const base = import.meta.env.BASE_URL;
@@ -56,7 +42,7 @@ async function main() {
   const touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
   // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
   const hash = location.hash.slice(1);
-  const quality = params.get("q") ?? (hash === "alta" ? "high" : hash === "baixa" ? "low" : touch ? "low" : "high");
+  const quality = params.get("q") ?? (hash === "baixa" ? "low" : "high");
   const q = quality === "low" ? 0.55 : 1;
 
   // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
@@ -79,7 +65,7 @@ async function main() {
   const backend = be.isWebGPUBackend ? "WebGPU" : "WebGL2";
   be.device?.lost.then(() => { const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u); });
 
-  const { meta, terrain, far, img } = await load();
+  const [{ meta, terrain, far, img }, assets, groundTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures()]);
 
   const scene = new THREE.Scene();
   const sunDir = new THREE.Vector3(0.45, 0.55, 0.7).normalize();
@@ -98,31 +84,28 @@ async function main() {
   scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x7d6c4f, 1.25));
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(quality === "low" ? 1024 : 2048, quality === "low" ? 1024 : 2048);
+  sun.shadow.mapSize.set(quality === "low" ? 1024 : touch ? 2048 : 4096, quality === "low" ? 1024 : touch ? 2048 : 4096);
   const sc = sun.shadow.camera; sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28; sc.near = 1; sc.far = 220;
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
 
   const P = meta.points;
   const pt = (p: [number, number]): Vec2 => ({ x: p[0], z: p[1] });
-  const keep: Segment[] = [
-    { ax: P.start[0], az: P.start[1], bx: P.beach[0], bz: P.beach[1], r: 5 },
-    { ax: P.beach[0], az: P.beach[1], bx: P.simao[0], bz: P.simao[1], r: 6 },
-    { ax: P.simao[0], az: P.simao[1], bx: P.barco_margem[0], bz: P.barco_margem[1], r: 6 },
-  ];
-  scene.add(groundMesh(terrain, quality === "low" ? 192 : 256));
+  const keep=missionRoutes(terrain);
+  scene.add(groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures));
   const fm = farMesh(far, meta.far.size, meta.far.n); fm.position.y = -0.3; scene.add(fm);
   const lake = water(meta.far.size); scene.add(lake.mesh);
-  scene.add(props(terrain, keep, q));
   const cap = meta.places.find((p) => p.id === "Capernaum") ?? { x: 0, z: 0 };
-  const town = houses(terrain, cap.x, cap.z, keep);
+  const town = houses(terrain, cap.x, cap.z, keep, assets);
   scene.add(town.group);
+  const vegetation=props(terrain,keep,q,assets,town.boxes); scene.add(vegetation);
 
   // the boat of Zebedeu, along the shore, and the net of Simão and André in the water
-  const theBoat = makeBoat();
+  const theBoat = makeBoat(assets);
   const boatPos = pt(P.barco), shoreB = pt(P.barco_margem);
   theBoat.group.position.set(boatPos.x, 0, boatPos.z);
-  theBoat.group.rotation.y = -Math.atan2(boatPos.x - shoreB.x, -(boatPos.z - shoreB.z)) + Math.PI / 2;
+  const alongShore=shoreDir(meta,boatPos);
+  theBoat.group.rotation.y = -Math.atan2(alongShore.z,alongShore.x);
   scene.add(theBoat.group);
 
   // people
@@ -135,26 +118,19 @@ async function main() {
     scene.add(person.root);
     return { spec: s, person, pos: { ...s.pos }, facing: s.facing, following: -1, speed: 0, inBoat: s.inBoat, y: 0 };
   });
-  const net = castNet();
+  const net = castNet(assets);
   {
     const s = npcList[0].pos, a = npcList[0].facing;
     net.position.set(s.x + Math.sin(a) * 3.2 + (npcList[1].pos.x - s.x) / 2, 0.07, s.z - Math.cos(a) * 3.2 + (npcList[1].pos.z - s.z) / 2);
     scene.add(net);
   }
 
-  // the player: the Tripo mesh when it loads (with the provisional rig of rig.ts), the simple shapes otherwise
-  let hero: Person = makePerson(PALETTES.heroi);
-  let heroSource = "formas";
-  try {
-    const spec = (modelos as Record<string, ModelSpec & { arquivo: string }>).heroi;
-    const gltf = await new GLTFLoader().parseAsync(await fetchModel(`${import.meta.env.BASE_URL}${spec.arquivo}`), "");
-    if (gltf.animations.length) throw new Error("heroi.glb tem animações próprias: falta ligar o AnimationMixer (rig.ts é só para malha sem rig)");
-    const { geometry, material } = bakedGeometry(gltf.scene, spec);
-    hero = rigPerson(geometry, material, spec.altura);
-    heroSource = spec.arquivo;
-  } catch (e) {
-    console.warn("heroi.glb não carregou; o jogador fica com as formas simples", e);
-  }
+  // Preserve the delivered skin, skeleton and shared normalization ancestor.
+  let actor: ReturnType<typeof animatedActor> | undefined;
+  if (assets.heroi) { try { actor = animatedActor(assets.heroi.scene, assets.heroi.animations); } catch(e) { console.warn(e); } }
+  const fallback = actor ? undefined : makePerson(PALETTES.heroi);
+  const hero = actor ?? fallback!;
+  const heroSource = actor ? 'tripo-r1/hero-native-skeleton' : 'formas';
   scene.add(hero.root);
   const player = { pos: pt(P.start), heading: Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1])), speed: 0 };
 
@@ -330,7 +306,7 @@ async function main() {
   ($("again") as HTMLButtonElement).addEventListener("click", () => location.reload());
 
   // ---- movement
-  const blocked = (x: number, z: number) => {
+  const blocked = (x: number, z: number, includePeople = true) => {
     if (!terrain.inside(x, z, 60)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
@@ -338,7 +314,7 @@ async function main() {
       const lx = dx * c - dz * s, lz = dx * s + dz * c;
       if (Math.abs(lx) < b.hx + 0.3 && Math.abs(lz) < b.hz + 0.3) return true;
     }
-    for (const n of npcList) if (n.following < 0 && !n.inBoat && Math.hypot(x - n.pos.x, z - n.pos.z) < 0.6) return true;
+    if(includePeople) for (const n of npcList) if (n.following < 0 && !n.inBoat && Math.hypot(x - n.pos.x, z - n.pos.z) < 0.6) return true;
     return false;
   };
 
@@ -368,6 +344,7 @@ async function main() {
 
     // walk relative to the camera
     let mv = 0;
+    const previousX = player.pos.x, previousZ = player.pos.z;
     if (playing && !ended) {
       const fx = Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
       const dx = fx * input.move.y + Math.cos(cam.yaw) * input.move.x, dz = fz * input.move.y + Math.sin(cam.yaw) * input.move.x;
@@ -387,11 +364,13 @@ async function main() {
         if (cam.idle > 1.2) { let e = player.heading - cam.yaw; e = Math.atan2(Math.sin(e), Math.cos(e)); cam.yaw += e * Math.min(1, dt * 1.6); }
       }
     }
+    // Colliding with a wall must stop the walk cycle instead of walking in place.
+    mv = dt>0 ? Math.hypot(player.pos.x-previousX,player.pos.z-previousZ)/dt : 0;
     player.speed = mv;
     const gy = terrain.heightAt(player.pos.x, player.pos.z);
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
-    animate(hero, mv, dt, t);
+    if (actor) actor.update(mv,dt); else animate(fallback!, mv, dt, t);
 
     // mission logic
     if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
@@ -442,6 +421,14 @@ async function main() {
       const a = t * 0.12 + player.heading + Math.PI * 0.85;
       tmp.set(player.pos.x - Math.sin(a) * 7, head.y + 1.6, player.pos.z + Math.cos(a) * 7);
     }
+    // Narrow lanes need camera obstruction, otherwise orbiting places the viewer inside a wall.
+    const cameraDistance=head.distanceTo(tmp);
+    for(let d=.25;d<cameraDistance;d+=.18){
+      const f=d/cameraDistance,x=head.x+(tmp.x-head.x)*f,y=head.y+(tmp.y-head.y)*f,z=head.z+(tmp.z-head.z)*f;
+      if(town.boxes.some(b=>y>(b.bottom??-Infinity)&&y<(b.top??Infinity)+.15&&insideObstacle(x,z,b,.18))){
+        tmp.lerpVectors(head,tmp,Math.max(.12,d-.23)/cameraDistance);break;
+      }
+    }
     camera.position.copy(tmp);
     camera.lookAt(head.x, head.y + 0.15, head.z);
     sun.position.set(player.pos.x + sunDir.x * 120, hero.root.position.y + sunDir.y * 120, player.pos.z + sunDir.z * 120);
@@ -452,6 +439,8 @@ async function main() {
       const followers = npcList.filter((n) => n.following >= 0).map((n) => ({ pos: n.pos, kind: "follower" as const }));
       hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt);
     }
+    vegetation.userData.update(player.pos.x,player.pos.z);
+    renderer.info.reset();
     renderer.render(scene, camera);
   };
   renderer.setAnimationLoop(frame);
@@ -459,6 +448,12 @@ async function main() {
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
+      actor: () => actor?.diagnostics() ?? null,
+      assets: Object.keys(assets),
+      world: {...town.group.userData.counts,...vegetation.userData.counts},
+      routes:keep,
+      blocked,
+      quality,
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
       teleport: (x: number, z: number, heading?: number) => {
@@ -467,7 +462,7 @@ async function main() {
         for (const n of npcList) if (n.following >= 0) { n.pos.x = x; n.pos.z = z; }
       },
       followers: () => npcList.filter((n) => n.following >= 0).map((n) => n.spec.id),
-      info: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
+      info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }
 }

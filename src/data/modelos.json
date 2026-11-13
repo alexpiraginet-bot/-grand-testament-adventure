@@ -1,13 +1,13 @@
 {
- "heroi": {
-  "arquivo": "models/heroi.glb",
-  "altura": 1.76,
-  "frente": "+x",
-  "origem": "Tripo (conta Pro do Alex). Este primeiro arquivo, de 12/11/2026, foi teste; a versão de produção, rigada, vem do Codex (ASSETS.md)",
-  "conferido": "tools/check_model.mjs: de frente em yaw 270 no visualizador, ou seja, o arquivo olha para +x; manto no ombro esquerdo",
-  "triangulos_max": 18000,
-  "textura_max": 2048,
-  "rig": "provisório (src/rig.ts): o arquivo veio sem esqueleto",
-  "no_git": false
- }
+  "heroi": {
+    "arquivo": "models/tripo-r1/heroi-2fe504810710.glb",
+    "altura": 1.76,
+    "frente": "+z",
+    "origem": "Tripo Studio, Alex Pro, 2026-11-12",
+    "conferido": "Native skeleton and AnimationMixer; see docs/TRIPO-RUNTIME-R1.md",
+    "triangulos_max": 18000,
+    "textura_max": 2048,
+    "rig": "65 bones; walk; derived standing pose",
+    "no_git": true
+  }
 }

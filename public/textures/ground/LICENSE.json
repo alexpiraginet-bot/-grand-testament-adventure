@@ -1,0 +1,43 @@
+{
+  "asset": "Rocky Gravel",
+  "source": "https://polyhaven.com/a/rocky_gravel",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "authors": [
+    "Dimitrios Savva",
+    "Dario Barresi"
+  ],
+  "note": "Photographed material reference; not a scan of Capernaum.",
+  "maps": {
+    "albedo": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocky_gravel/rocky_gravel_diff_2k.jpg",
+      "md5": "b78a49ef675dff9dcc62f4668854db23",
+      "sourceSha256": "641b0a87d3c793c1670f6e6c68f4799e8c5045268b5c42632b8a4b6dddef4697",
+      "path": "public/textures/ground/rocky-gravel-albedo.webp",
+      "bytes": 1950150,
+      "sha256": "aa4c975210229d1d0874750af7904c35197cc912f0b604955e5bc14f2343d212",
+      "width": 2048,
+      "height": 2048
+    },
+    "normal": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocky_gravel/rocky_gravel_nor_gl_2k.jpg",
+      "md5": "11de3f8b3a18e4211a46b55ef341bf82",
+      "sourceSha256": "12769e23229fa996ac5b8173410304cbe6f536baf69969def7c2d0ee1d8fc2a3",
+      "path": "public/textures/ground/rocky-gravel-normal.webp",
+      "bytes": 2957440,
+      "sha256": "a27cbe3ab88659cab6a98e60b0d34c4bf4705f5a58ebc15e95c6b21919c3bc46",
+      "width": 2048,
+      "height": 2048
+    },
+    "roughness": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/2k/rocky_gravel/rocky_gravel_rough_2k.jpg",
+      "md5": "bd3d01e357a4d2c0ad0d7e3481505bdd",
+      "sourceSha256": "47d06ece401731cf1cf7b72f636bc3ffc6d36b5728841cc22c04e876e236617d",
+      "path": "public/textures/ground/rocky-gravel-roughness.webp",
+      "bytes": 480340,
+      "sha256": "104bcb21a577cf3999d51c87e2a1dc850f3dcbc05ade13a1df1bc33c130b128a",
+      "width": 2048,
+      "height": 2048
+    }
+  }
+}

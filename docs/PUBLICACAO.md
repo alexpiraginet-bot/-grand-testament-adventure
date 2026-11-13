@@ -1,5 +1,9 @@
 # Publicação — 12/11/2026
 
+Atualização visual autorizada depois desta primeira publicação: integração R1 documentada em
+[TRIPO-RUNTIME-R1.md](TRIPO-RUNTIME-R1.md). O herói e treze malhas de cenário substituem os respectivos
+provisórios. O relato abaixo preserva as evidências da primeira publicação, que ainda usava formas simples.
+
 - Jogo público: https://grand-testament-adventure-lexprojects.vercel.app/
 - Código: https://github.com/alexpiraginet-bot/-grand-testament-adventure
 - Equipe Vercel: `lexprojects`; projeto `-grand-testament-adventure`.

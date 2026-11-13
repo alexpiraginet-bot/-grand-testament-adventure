@@ -1,5 +1,12 @@
 # Transferência Codex → Claude Code local — 12/11/2026
 
+## Continuação autorizada por Alex — integração visual
+
+Alex pediu ao Codex seguir para a integração, mantendo qualidade gráfica máxima que o navegador sustente.
+Trabalho em `codex/tripo-runtime-r1`: rig nativo do herói, treze malhas de cenário, texturas 2K, instancing,
+LOD por distância e catálogo de assets com hash. Detalhes e testes em `docs/TRIPO-RUNTIME-R1.md`.
+Não há sessão Claude Code autenticada editando esses arquivos em paralelo. As seções abaixo preservam o estado anterior.
+
 ## Repositório criado por Alex
 
 Endereço real: https://github.com/alexpiraginet-bot/-grand-testament-adventure

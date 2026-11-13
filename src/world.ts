@@ -1,18 +1,11 @@
 // The 3D world: ground from the real relief, the lake, the far hills, sky, plants, Capernaum's houses, the boat.
-// Houses, plants, rocks and the boat are simple shapes in place of the Tripo meshes (TRIPO.md).
+// Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
+import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float } from 'three/tsl';
 import { Terrain } from "./terrain.ts";
-
-export function rng(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
+import { rng, distanceToSegment, insideObstacle, settlementLayout, type Segment, type Obstacle } from './world-layout.ts';
+export { rng, type Segment } from './world-layout.ts';
 
 function hash2(x: number, z: number) {
   const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
@@ -81,7 +74,19 @@ function waveNormals(size = 256): THREE.CanvasTexture {
 const SAND = new THREE.Color(0xcdb68c), WET = new THREE.Color(0x8d7b5e), GRASS = new THREE.Color(0x8b8a52),
   DRY = new THREE.Color(0xb3a06c), ROCK = new THREE.Color(0x5a5048), BED = new THREE.Color(0x6f6550);
 
-export function groundMesh(t: Terrain, segments: number): THREE.Mesh {
+type GroundTextures = { albedo: THREE.Texture; normal: THREE.Texture; roughness: THREE.Texture };
+export async function loadGroundTextures(): Promise<GroundTextures> {
+  const loader=new THREE.TextureLoader(), result={} as GroundTextures;
+  await Promise.all((['albedo','normal','roughness'] as const).map(async role=>{
+    const tex=await loader.loadAsync(`${import.meta.env.BASE_URL}textures/ground/rocky-gravel-${role}.webp`);
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
+    if(role==='albedo') tex.colorSpace=THREE.SRGBColorSpace;
+    result[role]=tex;
+  }));
+  return result;
+}
+
+export function groundMesh(t: Terrain, segments: number, routes: Segment[], maps: GroundTextures): THREE.Mesh {
   const geo = new THREE.PlaneGeometry(t.size, t.size, segments, segments);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position as THREE.BufferAttribute;
@@ -105,11 +110,25 @@ export function groundMesh(t: Terrain, segments: number): THREE.Mesh {
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  const grain = grainTexture();
-  // uv repeats every 6 m
+  // One measured surface. Paths are a fragment mask, not floating decal planes or altered elevation.
   const uv = geo.attributes.uv as THREE.BufferAttribute;
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * t.size / 6, uv.getY(i) * t.size / 6);
-  const m = new THREE.MeshStandardMaterial({ vertexColors: true, map: grain, roughness: 0.96, metalness: 0 });
+  for (let i = 0; i < uv.count; i++) uv.setXY(i,pos.getX(i)/3.6,-pos.getZ(i)/3.6);
+  const m = new THREE.MeshStandardNodeMaterial({vertexColors:true,normalMap:maps.normal,normalScale:new THREE.Vector2(.72,.72),roughness:.96,metalness:0});
+  const xz=positionWorld.xz, detailUV=vec2(positionWorld.x,positionWorld.z.negate()).div(3.6);
+  let pathDistance=min(float(10000),float(10000));
+  for(const s of routes) {
+    const a=vec2(s.ax,s.az),d=vec2(s.bx-s.ax,s.bz-s.az),p=xz.sub(a);
+    const u=clamp(p.dot(d).div(d.dot(d)),0,1);
+    pathDistance=min(pathDistance,p.sub(d.mul(u)).length());
+  }
+  const macro=texture(grainTexture(),xz.div(27)).r;
+  const path=smoothstep(.65,1.5,pathDistance.add(macro.sub(.5).mul(.6))).oneMinus();
+  const photographed=texture(maps.albedo,detailUV).rgb;
+  const gravel=mix(vec3(photographed.dot(vec3(.2126,.7152,.0722))),photographed,.38);
+  const undisturbed=gravel.mul(vec3(1.45,1.42,1.37));
+  const worn=gravel.mul(.72).add(vec3(.26,.23,.18));
+  m.colorNode=mix(undisturbed,worn,path).mul(macro.mul(.3).add(.9));
+  m.roughnessNode=texture(maps.roughness,detailUV).r.mul(.2).add(.8);
   const mesh = new THREE.Mesh(geo, m);
   mesh.receiveShadow = true;
   return mesh;
@@ -135,9 +154,9 @@ export function farMesh(far: Int16Array, size: number, n: number): THREE.Mesh {
 
 export function water(size: number): { mesh: THREE.Mesh; update: (t: number) => void } {
   const nrm = waveNormals();
-  nrm.repeat.set(size / 9, size / 9);
+  nrm.repeat.set(size / 3.5, size / 3.5);
   const m = new THREE.MeshStandardMaterial({
-    color: 0x3f6d72, roughness: 0.12, metalness: 0.0, normalMap: nrm, normalScale: new THREE.Vector2(0.35, 0.35),
+    color: 0x3f747c, roughness: 0.18, metalness: 0.0, normalMap: nrm, normalScale: new THREE.Vector2(0.12, 0.12),
     transparent: true, opacity: 0.86,
   });
   const geo = new THREE.PlaneGeometry(size, size, 1, 1);
@@ -199,6 +218,31 @@ function instanced(geo: THREE.BufferGeometry, m: THREE.Material, spots: Spot[], 
   return im;
 }
 
+/** Two instanced pools per asset: retain detail nearby without hundreds of cell draw calls. */
+function sceneryInstances(asset: THREE.Mesh, fallback: THREE.BufferGeometry, material: THREE.Material,
+  spots: Spot[], seed: number, scale: (r: () => number) => [number, number, number], near = 140) {
+  const group = new THREE.Group();
+  const detailed=instanced(asset.geometry,asset.material as THREE.Material,spots,seed,scale);
+  const distant=instanced(fallback,material,spots,seed,scale,false);
+  const matrices=spots.map((_,i)=>{const m=new THREE.Matrix4();detailed.getMatrixAt(i,m);return m;});
+  detailed.instanceMatrix.setUsage(THREE.DynamicDrawUsage); distant.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  group.add(detailed,distant);
+  let lastX=Infinity,lastZ=Infinity;
+  group.userData.update=(x:number,z:number)=>{
+    if(Math.hypot(x-lastX,z-lastZ)<8)return;
+    lastX=x;lastZ=z;
+    let high=0,low=0;
+    spots.forEach((s,i)=>{
+      const distance=Math.hypot(x-s.x,z-s.z);
+      if(distance<near) detailed.setMatrixAt(high++,matrices[i]);
+      else if(distance<650) distant.setMatrixAt(low++,matrices[i]);
+    });
+    detailed.count=high;distant.count=low;
+    for(const m of [detailed,distant]){m.visible=m.count>0;m.instanceMatrix.needsUpdate=true;m.computeBoundingSphere();}
+  };
+  return group;
+}
+
 function mergeGeos(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   // a minimal merge (position, normal, color) for small static props
   let n = 0;
@@ -230,17 +274,23 @@ function tinted(g: THREE.BufferGeometry, color: number, ty = 0, sx = 1, sy = 1, 
 }
 
 export type Avoid = { x: number; z: number; r: number }[];
-export type Segment = { ax: number; az: number; bx: number; bz: number; r: number };
-
 function nearSeg(x: number, z: number, s: Segment) {
-  const dx = s.bx - s.ax, dz = s.bz - s.az, l2 = dx * dx + dz * dz;
-  const u = Math.max(0, Math.min(1, ((x - s.ax) * dx + (z - s.az) * dz) / l2));
-  return Math.hypot(x - (s.ax + u * dx), z - (s.az + u * dz)) < s.r;
+  return distanceToSegment(x,z,s)<s.r;
 }
 
-export function props(t: Terrain, keepClear: Segment[], q: number) {
+function alongRoutes(t:Terrain, routes:Segment[], count:number, seed:number, band:number, ok:(x:number,z:number,y:number)=>boolean):Spot[] {
+  const r=rng(seed),out:Spot[]=[];
+  for(let tries=0;out.length<count&&tries<count*20;tries++) {
+    const s=routes[Math.floor(r()*routes.length)],u=r(),dx=s.bx-s.ax,dz=s.bz-s.az,l=Math.hypot(dx,dz),off=(r()*2-1)*band;
+    const x=s.ax+dx*u+dz/l*off,z=s.az+dz*u-dx/l*off,y=t.heightAt(x,z);
+    if(ok(x,z,y))out.push({x,z,y});
+  }
+  return out;
+}
+
+export function props(t: Terrain, keepClear: Segment[], q: number, assets: AssetLibrary = {}, buildings:Obstacle[] = []) {
   const g = new THREE.Group();
-  const clear = (x: number, z: number) => keepClear.every((s) => !nearSeg(x, z, s));
+  const clear = (x: number, z: number) => keepClear.every((s) => !nearSeg(x, z, s)) && !buildings.some(b=>insideObstacle(x,z,b,2));
   const vc = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0 });
 
   // olive trees: a twisted trunk and three grey-green crowns
@@ -253,61 +303,120 @@ export function props(t: Terrain, keepClear: Segment[], q: number) {
   const trees = [
     ...scatter(t, Math.round(700 * q), 21, (x, z, y, s) => y > 3 && s < 0.32 && clear(x, z) && noise2(x * 0.006, z * 0.006) > 0.42),
     ...scatter(t, Math.round(260 * q), 23, (x, z, y, s) => y > 2 && s < 0.3 && clear(x, z) && Math.hypot(x, z) > 40, 420),   // groves near the town
+    ...alongRoutes(t,keepClear,Math.round(125*q),24,95,(x,z,y)=>y>1.5&&clear(x,z)&&keepClear.every(s=>distanceToSegment(x,z,s)>11)),
   ];
-  g.add(instanced(tree, vc, trees, 22, (r) => { const k = 0.75 + r() * 0.6; return [k, k * (0.85 + r() * 0.3), k]; }));
+  const treeScale = (r: () => number): [number,number,number] => { const k = 0.75+r()*0.6; return [k,k*(0.85+r()*0.3),k]; };
+  const treeIds: AssetId[] = ['oliveira-a','oliveira-b','arvore-espinhosa'];
+  treeIds.forEach((id,i) => {
+    const real = sceneryMesh(assets[id]), spots = trees.filter((_,n) => n%3===i);
+    g.add(real ? sceneryInstances(real,tree,vc,spots,22+i,treeScale,180) : instanced(tree,vc,spots,22+i,treeScale));
+  });
 
   // shrubs and dry grass tufts
   const bush = mergeGeos([tinted(new THREE.IcosahedronGeometry(0.5, 0), 0x7f7b4a, 0.25, 1, 0.6, 1)]);
-  const bushes = scatter(t, Math.round(1600 * q), 31, (x, z, y, s) => y > 0.9 && s < 0.5 && clear(x, z), t.size * 0.3);
-  g.add(instanced(bush, vc, bushes, 32, (r) => { const k = 0.5 + r() * 1.1; return [k, k * (0.6 + r() * 0.6), k]; }, q > 0.6));
+  const bushes = [...scatter(t, Math.round(1600 * q), 31, (x, z, y, s) => y > 0.9 && s < 0.5 && clear(x, z), t.size * 0.3),
+    ...alongRoutes(t,keepClear,Math.round(550*q),33,65,(x,z,y)=>y>.5&&clear(x,z)&&noise2(x*.12,z*.12)>.42)];
+  const bushScale = (r: () => number): [number,number,number] => { const k=0.5+r()*1.1; return [k,k*(0.6+r()*0.6),k]; };
+  const realBush = sceneryMesh(assets['arbusto-seco']);
+  g.add(realBush ? sceneryInstances(realBush,bush,vc,bushes,32,bushScale,95) : instanced(bush,vc,bushes,32,bushScale,q>0.6));
 
   // basalt rocks (the local stone)
   const rock = mergeGeos([tinted(new THREE.DodecahedronGeometry(0.5, 0), 0x3d3a37, 0.1, 1, 0.6, 1)]);
-  const rocks = scatter(t, Math.round(900 * q), 41, (x, z, y) => y > 0.3 && clear(x, z), t.size * 0.3);
-  g.add(instanced(rock, vc, rocks, 42, (r) => { const k = 0.25 + r() * r() * 1.6; return [k, k * (0.5 + r() * 0.7), k * (0.7 + r() * 0.5)]; }));
+  const rocks = [...scatter(t, Math.round(900 * q), 41, (x, z, y) => y > 0.3 && clear(x, z), t.size * 0.3),
+    ...alongRoutes(t,keepClear,Math.round(420*q),43,55,(x,z,y)=>y>-.15&&clear(x,z))];
+  const rockScale = (r: () => number): [number,number,number] => { const k=0.22+r()*r()*1.05; return [k,k*.85,k]; };
+  const realRock = sceneryMesh(assets['pedras-basalto']);
+  g.add(realRock ? sceneryInstances(realRock,rock,vc,rocks,42,rockScale,110) : instanced(rock,vc,rocks,42,rockScale));
 
   // reeds at the water's edge
   const reed = mergeGeos([tinted(new THREE.ConeGeometry(0.25, 1.4, 5), 0x8d8c55, 0.7, 1, 1, 1)]);
-  const reeds = scatter(t, Math.round(700 * q), 51, (x, z, y) => y > -0.25 && y < 0.35 && clear(x, z) && noise2(x * 0.03, z * 0.03) > 0.55, t.size * 0.35);
-  g.add(instanced(reed, vc, reeds, 52, (r) => { const k = 0.6 + r() * 0.8; return [k, k, k]; }, false));
+  const reeds = [...scatter(t, Math.round(700 * q), 51, (x, z, y) => y > -0.25 && y < 0.35 && clear(x, z) && noise2(x * 0.03, z * 0.03) > 0.55, t.size * 0.35),
+    ...alongRoutes(t,keepClear.slice(1),Math.round(230*q),53,22,(x,z,y)=>y>-.2&&y<.7&&clear(x,z))];
+  const reedScale = (r: () => number): [number,number,number] => { const k=0.6+r()*0.8; return [k,k,k]; };
+  const realReed = sceneryMesh(assets.junco);
+  g.add(realReed ? sceneryInstances(realReed,reed,vc,reeds,52,reedScale,100) : instanced(reed,vc,reeds,52,reedScale,false));
+  // Small dry blades break the ground silhouette without alpha cards or a draw per tuft.
+  const bladeParts:THREE.BufferGeometry[]=[];
+  for(let i=0;i<5;i++) {
+    const blade=new THREE.ConeGeometry(.025,.25+(i%3)*.09,3,1);
+    blade.rotateZ((i-2)*.22);blade.rotateY(i*2.4);
+    bladeParts.push(tinted(blade,[0x7d8050,0x999468,0x6d7850][i%3],.15,1,1,1,(i%2-.5)*.08,0));
+  }
+  const grasses=alongRoutes(t,keepClear,Math.round(8500*q),35,90,(x,z,y)=>y>.55&&clear(x,z)&&noise2(x*.18,z*.18)>.43);
+  g.add(instanced(mergeGeos(bladeParts),vc,grasses,36,r=>{const s=.55+r()*.85;return[s,s,s];},false));
+  g.userData.counts={trees:trees.length,bushes:bushes.length,rocks:rocks.length,reeds:reeds.length,grassTufts:grasses.length};
+  g.userData.update=(x:number,z:number)=>{for(const child of g.children) child.userData.update?.(x,z);};
   return g;
 }
 
-/** A cluster of basalt houses with flat roofs where the OpenBible point of Capernaum is. */
-export function houses(t: Terrain, cx: number, cz: number, keepClear: Segment[]): { group: THREE.Group; boxes: { x: number; z: number; hx: number; hz: number; rot: number }[] } {
-  const group = new THREE.Group();
-  const wall = new THREE.MeshStandardMaterial({ color: 0x6a645c, roughness: 0.97 });
-  const roof = new THREE.MeshStandardMaterial({ color: 0x9c8762, roughness: 1 });
-  const r = rng(61), boxes: { x: number; z: number; hx: number; hz: number; rot: number }[] = [];
-  for (let tries = 0; boxes.length < 22 && tries < 600; tries++) {
-    const a = r() * Math.PI * 2, d = 14 + r() * 110;
-    const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d * 0.8;
-    const y = t.heightAt(x, z);
-    if (y < 1.2 || t.slopeAt(x, z) > 0.2) continue;
-    if (keepClear.some((s) => nearSeg(x, z, { ...s, r: s.r + 8 }))) continue;
-    const w = 5 + r() * 5, dz = 4 + r() * 4, rot = Math.round(r() * 4) * Math.PI / 2 + (r() - 0.5) * 0.15;
-    if (boxes.some((b) => Math.hypot(b.x - x, b.z - z) < (Math.max(b.hx, b.hz) + Math.max(w, dz) / 2 + 2.5))) continue;
-    const h = 2.4 + r() * 0.8;
-    const house = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(w, h + 1.2, dz), wall);
-    body.position.y = (h + 1.2) / 2 - 1.2;
-    const top = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.25, dz + 0.4), roof);
-    top.position.y = h + 0.1;
-    const door = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.8, 0.1), new THREE.MeshStandardMaterial({ color: 0x1d1a17, roughness: 1 }));
-    door.position.set(0, 0.9, dz / 2 + 0.03);
-    for (const m of [body, top]) { m.castShadow = true; m.receiveShadow = true; house.add(m); }
-    house.add(door);
-    house.position.set(x, y, z);
-    house.rotation.y = rot;
-    group.add(house);
-    boxes.push({ x, z, hx: w / 2 + 0.4, hz: dz / 2 + 0.4, rot });
+/** Basalt blocks, shared courtyards and an inhabited lane; see docs/CAFARNAUM-CENARIO.md. */
+export function houses(t: Terrain, cx: number, cz: number, keepClear: Segment[], assets: AssetLibrary = {}): { group: THREE.Group; boxes: Obstacle[] } {
+  const group=new THREE.Group(), plans=settlementLayout(t,keepClear,cx,cz);
+  const boxes:Obstacle[]=plans.map(p=>({x:p.x,z:p.z,hx:p.w/2+.35,hz:p.d/2+.35,rot:p.rot,bottom:p.y-p.foundation,top:p.y+p.h}));
+  const wall=new THREE.MeshStandardMaterial({color:0x49473f,roughness:.98});
+  const o=new THREE.Object3D(), foundation=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),wall,plans.length);
+  const models=['casa-basalto-a','casa-basalto-b','casa-basalto-c'].map(id=>sceneryMesh(assets[id as AssetId]));
+  models.forEach((model,variant)=>{
+    const list=plans.filter(p=>p.variant===variant);
+    const geo=model?.geometry ?? new THREE.BoxGeometry(1,1,1).translate(0,.5,0);
+    geo.computeBoundingBox();const size=geo.boundingBox!.getSize(new THREE.Vector3());
+    const batch=new THREE.InstancedMesh(geo,model?.material??wall,list.length);
+    list.forEach((p,i)=>{
+      o.position.set(p.x,p.y,p.z);o.rotation.set(0,p.rot,0);o.scale.set(p.w/size.x,p.h/size.y,p.d/size.z);o.updateMatrix();batch.setMatrixAt(i,o.matrix);
+    });
+    batch.castShadow=true;batch.receiveShadow=true;group.add(batch);
+  });
+  plans.forEach((p,i)=>{
+    o.position.set(p.x,p.y-p.foundation/2,p.z);o.rotation.set(0,p.rot,0);o.scale.set(p.w,p.foundation,p.d);o.updateMatrix();foundation.setMatrixAt(i,o.matrix);
+  });
+  foundation.receiveShadow=true;group.add(foundation);
+
+  // Local household details are our meshes: clay vessels and simple wooden shade frames.
+  const pottery=new THREE.MeshStandardMaterial({color:0x9b6e4a,roughness:.92});
+  const jarGeo=new THREE.LatheGeometry([new THREE.Vector2(.10,0),new THREE.Vector2(.19,.1),new THREE.Vector2(.25,.35),new THREE.Vector2(.18,.57),new THREE.Vector2(.08,.65),new THREE.Vector2(.1,.70),new THREE.Vector2(.072,.70),new THREE.Vector2(.06,.58)],14);
+  const jarSpots:Spot[]=[];
+  for(const p of plans.filter((_,i)=>i%2===0)) {
+    const x=p.x,z=p.z+p.d/2+.9;
+    if(keepClear.every(s=>distanceToSegment(x,z,s)>s.r)&&!boxes.some(b=>insideObstacle(x,z,b,.2)))jarSpots.push({x,z,y:t.heightAt(x,z)});
   }
-  return { group, boxes };
+  group.add(instanced(jarGeo,pottery,jarSpots,731,r=>{const k=.8+r()*.5;return[k,k,k];}));
+
+  const timber=new THREE.MeshStandardMaterial({color:0x63503a,roughness:.95});
+  const beamGeo=new THREE.BoxGeometry(1,1,1),beams:{x:number;y:number;z:number;sx:number;sy:number;sz:number}[]=[];
+  const wallModel=sceneryMesh(assets['muro-pedra']);
+  const yardWalls:{x:number;y:number;z:number;rot:number}[]=[];
+  for(const p of plans.filter((_,i)=>i%4===0)) {
+    const z=p.z+p.d/2+1.4;
+    if(keepClear.some(s=>distanceToSegment(p.x,z,s)<s.r+2.8)||boxes.some(b=>insideObstacle(p.x,z+1,b,1)))continue;
+    const y=t.heightAt(p.x,z);
+    for(const side of [-1,1])beams.push({x:p.x+side*1.6,y:y+1.1,z:z+1.2,sx:.12,sy:2.2,sz:.12});
+    for(let i=0;i<7;i++)beams.push({x:p.x-1.7+i*.56,y:y+2.25,z,sx:.09,sy:.09,sz:2.8});
+    beams.push({x:p.x,y:y+2.2,z:z+1.2,sx:3.5,sy:.15,sz:.15});
+    yardWalls.push({x:p.x+2.4,y:t.heightAt(p.x+2.4,z),z,rot:Math.PI/2});
+    boxes.push({x:p.x+2.4,z,hx:2,hz:.4,rot:Math.PI/2,bottom:y-.2,top:y+1});
+  }
+  const beamBatch=new THREE.InstancedMesh(beamGeo,timber,beams.length);
+  beams.forEach((b,i)=>{o.position.set(b.x,b.y,b.z);o.rotation.set(0,0,0);o.scale.set(b.sx,b.sy,b.sz);o.updateMatrix();beamBatch.setMatrixAt(i,o.matrix);});
+  beamBatch.castShadow=true;beamBatch.receiveShadow=true;group.add(beamBatch);
+  if(wallModel&&yardWalls.length) {
+    const batch=new THREE.InstancedMesh(wallModel.geometry,wallModel.material,yardWalls.length);
+    yardWalls.forEach((w,i)=>{o.position.set(w.x,w.y,w.z);o.rotation.set(0,w.rot,0);o.scale.set(1,.7,1);o.updateMatrix();batch.setMatrixAt(i,o.matrix);});
+    batch.castShadow=true;batch.receiveShadow=true;group.add(batch);
+  }
+  group.userData.counts={houses:plans.length,courtyards:yardWalls.length,jars:jarSpots.length};
+  return {group,boxes};
 }
 
 /** A wooden fishing boat, open, about 8 m long, with nets heaped at the stern. Its deck height is returned. */
-export function boat(): { group: THREE.Group; deck: number } {
+export function boat(assets: AssetLibrary = {}): { group: THREE.Group; deck: number } {
   const group = new THREE.Group();
+  const real = sceneryMesh(assets['barco-galileia']);
+  if (real) {
+    real.position.y = -0.35; group.add(real);
+    const pile = sceneryMesh(assets['rede-amontoada']);
+    if (pile) { pile.position.set(-2.5,0.24,0.1); group.add(pile); }
+    return {group,deck:0.24};
+  }
   const L = 8, B = 2.3, D = 1.0;
   const geo = new THREE.BoxGeometry(L, D, B, 16, 3, 6);
   const p = geo.attributes.position as THREE.BufferAttribute;
@@ -341,7 +450,9 @@ export function boat(): { group: THREE.Group; deck: number } {
 }
 
 /** The cast net in the water in front of Simão and André (Mark 1:16): a disc of netting. */
-export function castNet(): THREE.Mesh {
+export function castNet(assets: AssetLibrary = {}): THREE.Mesh {
+  const real = sceneryMesh(assets['rede-lancada']);
+  if (real) return real;
   const c = document.createElement("canvas"); c.width = c.height = 128;
   const g = c.getContext("2d")!;
   g.strokeStyle = "rgba(225,215,190,0.95)"; g.lineWidth = 1.4;

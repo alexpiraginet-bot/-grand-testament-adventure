@@ -15,25 +15,36 @@ repositório (seção Licenças).
 Publicação conectada à branch `main` deste repositório. Estado e limitações em
 [docs/PUBLICACAO.md](docs/PUBLICACAO.md).
 
+Integração atual: herói com esqueleto nativo, 13 modelos de cenário, vila mais densa e
+caminhos estreitos sobre o relevo. Referências históricas e limites em
+[docs/CAFARNAUM-CENARIO.md](docs/CAFARNAUM-CENARIO.md); evidência técnica em
+[docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md). A imagem-alvo ainda não é o visual entregue.
+
 ## Rodar
 
-Precisa de Node 22 (e Python 3 com numpy, scipy, opencv, scikit-image e Pillow só para refazer o mundo).
+Precisa de Node 24 (e Python 3 com numpy, scipy, opencv, scikit-image e Pillow só para refazer o mundo).
 
 ```bash
 npm ci
+npm run assets       # baixa 14 malhas revisadas e confere SHA-256; licença separada
 npm run dev          # http://localhost:5173
 npm test             # lógica das missões + dados (node --test)
 npm run typecheck
-npm run build        # typecheck + testes + vite build -> dist/
+npm run build        # confere/baixa assets + typecheck + testes + vite build -> dist/
 npm run world        # refaz public/world/ e src/data/ a partir das fontes (precisa do biblia-conectada ao lado, em ../gta-src, ou o caminho como argumento)
 ```
 
-`?q=low|high` muda a qualidade (padrão: low no celular, high no PC); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
+`?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
 `?debug` liga os ganchos de teste (`window.__gta`; `&dtmax=0.25` deixa o tempo do jogo andar no renderizador por software). 
 `tools/shots.mjs` joga o episódio com o Playwright e tira os prints em 1280×800 e 390×844 (precisa do `vite preview`
 rodando e do Playwright instalado à parte: `npm i -g playwright && npx playwright install chromium`).
 
-Sem as malhas (elas não vêm no git), o jogo roda com as formas simples. Quem tiver o `heroi.glb` põe em `public/models/`.
+O herói usa seu esqueleto nativo de 65 ossos e a caminhada exportada no Tripo. Treze malhas de cenário substituem
+as formas simples. Texturas mantidas em 2K, instâncias próximas detalhadas e versões simples ao longe. Os seis NPCs
+ainda aguardam rig. Veja [docs/TRIPO-RUNTIME-R1.md](docs/TRIPO-RUNTIME-R1.md).
+
+Os binários não vêm no Git. `npm run assets` baixa somente arquivos com hashes fixados no catálogo; o build faz a
+mesma conferência antes de publicar. Se um recurso falhar no navegador, a forma simples preserva a partida.
 
 ## Progresso salvo
 
@@ -66,7 +77,7 @@ Detalhes em [docs/CONSTRUA-CONOSCO.md](docs/CONSTRUA-CONOSCO.md).
   outros (e se o dispositivo WebGPU cair, a página recarrega em WebGL 2). **Vite 8.3.5**, **TypeScript 7.0.2**.
   Versões travadas no `package-lock.json`.
 - **Sem Rapier por enquanto.** `@dimforge/rapier3d-compat@0.21.0` pesa 1,66 MB com gzip (medido no `dist/rapier.mjs`),
-  sete vezes o jogo inteiro (230 KB). A fatia só precisa de chão por altura e colisão com casas e pessoas, feitos em
+  é uma dependência adicional ainda desnecessária. A fatia só precisa de chão por altura e colisão com casas e pessoas, feitos em
   `src/main.ts`. Rapier volta quando houver física de verdade (barco na água, rede, empurrar coisas).
 - `tools/build_world.py` gera tudo o que o jogo trata como fato:
   - relevo de 3 km × 3 km em volta do ponto de Cafarnaum (AWS Terrain Tiles z14, ~8 m por pixel; a fonte é o SRTM

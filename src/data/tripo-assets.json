@@ -1,0 +1,488 @@
+{
+  "revision": "tripo-runtime-r1",
+  "license": "Alex / Tripo paid-plan output; separate from MIT code",
+  "assets": {
+    "arbusto-seco": {
+      "file": "models/tripo-r1/arbusto-seco-b23e7cbbdcb6.glb",
+      "sha256": "b23e7cbbdcb661233b1d41c6560b466930c26c788049231d28dc0d6352961498",
+      "sourceSha256": "750d16aea1b11f63963cb06d00a46add3747f68bc1eaf0f3f9e16019e911a856",
+      "bytes": 434812,
+      "triangles": 574,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.41833412736223596,
+          0,
+          -0.28835159599809435
+        ],
+        "max": [
+          0.41833412736223596,
+          1,
+          0.28835159599809435
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "arvore-espinhosa": {
+      "file": "models/tripo-r1/arvore-espinhosa-45d8cfce9762.glb",
+      "sha256": "45d8cfce97626526d7af21d2215323484e785c1f9595a8c16f4c8c8c043d8e6b",
+      "sourceSha256": "ce68d4c47bc3f0b85e02a41161f2dd2c99968fa6e6802696ad180b76fff38b19",
+      "bytes": 641680,
+      "triangles": 1786,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -1.5469263903204646,
+          0,
+          -1.881559220389805
+        ],
+        "max": [
+          1.5469263903204646,
+          3.9999999999999996,
+          1.881559220389805
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "barco-galileia": {
+      "file": "models/tripo-r1/barco-galileia-54a0fd83b903.glb",
+      "sha256": "54a0fd83b903ae3b77b80d2ec71240f843bb7a6dde3624a7da56d249df9b59d3",
+      "sourceSha256": "a81fb9a34558e0a0200db29d16d842f593fcfa3cd7d8a7fd59ba9d2406790838",
+      "bytes": 1119572,
+      "triangles": 7453,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -3.9999999999999996,
+          0,
+          -1.15
+        ],
+        "max": [
+          3.9999999999999996,
+          1.2,
+          1.15
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "casa-basalto-a": {
+      "file": "models/tripo-r1/casa-basalto-a-e968faf3d6a6.glb",
+      "sha256": "e968faf3d6a6ad0707e4faf461cc6be7144acb23636b0aca90e92467a72b34ad",
+      "sourceSha256": "f8957037769bfb73c69aba8bb39e4a5794b45fa4565a11e78efc51ced4f8f28b",
+      "bytes": 675572,
+      "triangles": 3824,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -3.0000000000000004,
+          0,
+          -2.5
+        ],
+        "max": [
+          3.000000000000001,
+          3,
+          2.5
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "casa-basalto-b": {
+      "file": "models/tripo-r1/casa-basalto-b-010bb6bf8cef.glb",
+      "sha256": "010bb6bf8cefbf0bc2354aff0c16a99dc2ffee8a6f71236c2d55dcadf164d8fd",
+      "sourceSha256": "74906e7dd27afc827fe147e7f636aba6075ff8265fb68a0ee9677cce80f2a399",
+      "bytes": 881860,
+      "triangles": 4910,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -4,
+          0,
+          -2.5
+        ],
+        "max": [
+          4,
+          3,
+          2.5
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "casa-basalto-c": {
+      "file": "models/tripo-r1/casa-basalto-c-455ad99941b9.glb",
+      "sha256": "455ad99941b989bdf26c8998adb8b13b3cb83f03e1c4eff3110728a15590542d",
+      "sourceSha256": "626a5760a3f4ac52be39005a7219f202f55659ad34e327e2562a9a2e7dcf6623",
+      "bytes": 733116,
+      "triangles": 3262,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -2.5,
+          0,
+          -2.0000000000000004
+        ],
+        "max": [
+          2.5,
+          3,
+          2
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "empregado": {
+      "file": "models/tripo-r1/empregado-14a340c88dca.glb",
+      "sha256": "14a340c88dca6ef7cd3bcfb81f322cb2c0fbd3c56ef4691433d2b9835c9aa5b6",
+      "sourceSha256": "5d9d8943a9657b10a5ccbacfeef6b69a27832129ede3f7c0b42b4270bd44a6cc",
+      "bytes": 751948,
+      "triangles": 7688,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.8275906316182883,
+          0,
+          -0.17474943939205184
+        ],
+        "max": [
+          0.8275906316182883,
+          1.72,
+          0.17474943939205184
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "heroi": {
+      "file": "models/tripo-r1/heroi-2fe504810710.glb",
+      "sha256": "2fe50481071021e76f282425ef063082608cc2ee085cfd29403d4bfe15a0d0b5",
+      "sourceSha256": "9e4bf02069342b2668703dd92398db69f006b8aef446702235fc3f7d69b46898",
+      "bytes": 1397424,
+      "triangles": 17481,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.49619541850541565,
+          0,
+          -0.19950448886435124
+        ],
+        "max": [
+          0.49619520445097776,
+          1.7600000000000002,
+          0.19950529156849348
+        ]
+      },
+      "skins": 1,
+      "clips": [
+        "walk"
+      ],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "junco": {
+      "file": "models/tripo-r1/junco-7e26c43e735a.glb",
+      "sha256": "7e26c43e735abb1a3b1e04ba33a43d3d5c24bddd24fb568aabff5166d085ebff",
+      "sourceSha256": "8a10617a54b501fd0aa93999a8453bc305376562bdec29fa9000785277af9958",
+      "bytes": 378684,
+      "triangles": 561,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.5343965229020394,
+          0,
+          -0.41405549983283185
+        ],
+        "max": [
+          0.5343965229020394,
+          1.4,
+          0.41405549983283185
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "muro-pedra": {
+      "file": "models/tripo-r1/muro-pedra-f5544718da73.glb",
+      "sha256": "f5544718da731010add5117ab7241691016061344bd996e075207c3a5631cdc8",
+      "sourceSha256": "eef5702659ddbb4adfb9102abedd0b9f707caab6c41d69139b33a6f7e8d1f2f3",
+      "bytes": 724620,
+      "triangles": 1192,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -2,
+          0,
+          -0.25
+        ],
+        "max": [
+          2,
+          1.2,
+          0.25
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "oliveira-a": {
+      "file": "models/tripo-r1/oliveira-a-a15d5933db09.glb",
+      "sha256": "a15d5933db09b0405686c245f2552c68ff9a8e2692fb73c0047af1da04f4a128",
+      "sourceSha256": "4dc4cf2c99636a25883d8bcc34e2f6bc97907be9bbdf1332562b95b1b3bf1938",
+      "bytes": 918560,
+      "triangles": 2037,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -2.7181094171015383,
+          0,
+          -2.4461952999761247
+        ],
+        "max": [
+          2.7181094171015383,
+          5.5,
+          2.4461952999761247
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "oliveira-b": {
+      "file": "models/tripo-r1/oliveira-b-70f59b6724fe.glb",
+      "sha256": "70f59b6724fe2e84273fd3add1c6fab07ef929f218afecd27ff1c420cd974cd8",
+      "sourceSha256": "57a5158e358b6c7eaee3f4baca7d0b730e49dc9708f4d96c3043aa70a1573a9e",
+      "bytes": 651700,
+      "triangles": 1139,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -1.4528071400079778,
+          0,
+          -1.120246642733679
+        ],
+        "max": [
+          1.4528071400079778,
+          3.5,
+          1.120246642733679
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "pedras-basalto": {
+      "file": "models/tripo-r1/pedras-basalto-bfb426c7e2b2.glb",
+      "sha256": "bfb426c7e2b23a8df950bc0e1acb125d68e951020974068ac16cbd41db25b666",
+      "sourceSha256": "df14782f7564e9a9f755a7d9b828c08660a3fba764b6e3679cdd32870c65e3e5",
+      "bytes": 840188,
+      "triangles": 3402,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -1.5,
+          0,
+          -1
+        ],
+        "max": [
+          1.4999999999999998,
+          1.2,
+          0.9999999999999999
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "pescador-andre": {
+      "file": "models/tripo-r1/pescador-andre-c1c40eb58456.glb",
+      "sha256": "c1c40eb584566bd18e0d559ec0bf3e2c89de3ec40842940a72518fab2650e490",
+      "sourceSha256": "8b5670860be7a174348ce568a30323749840bfd6ef59622f15c71a46ad284051",
+      "bytes": 897304,
+      "triangles": 11476,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.848039727688147,
+          0,
+          -0.1766895924647953
+        ],
+        "max": [
+          0.848039727688147,
+          1.74,
+          0.1766895924647953
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "pescador-joao": {
+      "file": "models/tripo-r1/pescador-joao-0c83cad2fde6.glb",
+      "sha256": "0c83cad2fde6ca83ed0faf6cf967d1cd84d8fe3b20f63d2d30fee054f0aedc4c",
+      "sourceSha256": "dd9de782ab02e275cc1d2e7b85ec9536cbb2062be696324a3cee67478ca3c6ae",
+      "bytes": 985100,
+      "triangles": 11856,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.8088815523094652,
+          0,
+          -0.17151418156902604
+        ],
+        "max": [
+          0.8088815523094652,
+          1.73,
+          0.17151418156902604
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "pescador-simao": {
+      "file": "models/tripo-r1/pescador-simao-1eee99aac692.glb",
+      "sha256": "1eee99aac692a0c868d96d92d4e00f609bcaeedc33e7ff75d995a97735490128",
+      "sourceSha256": "9634330882c91e871ccd38344c8f33ea4f79823434e731071b3b1078f38d64fc",
+      "bytes": 792408,
+      "triangles": 11460,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.8559173697811264,
+          0,
+          -0.18056172562750047
+        ],
+        "max": [
+          0.8559173697811264,
+          1.78,
+          0.18056172562750047
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "pescador-tiago": {
+      "file": "models/tripo-r1/pescador-tiago-5c2caa6e1e3e.glb",
+      "sha256": "5c2caa6e1e3e8d63423fe4459b3218f5070970c04f0cd9566c7a32657becc2db",
+      "sourceSha256": "9702ed6fffa676b889d524d46705ba6e5cde6f9c477232f6d6067742250dba3a",
+      "bytes": 864956,
+      "triangles": 11446,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.8579171595791047,
+          0,
+          -0.18627373762530353
+        ],
+        "max": [
+          0.8579171595791047,
+          1.77,
+          0.18627373762530353
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "rede-amontoada": {
+      "file": "models/tripo-r1/rede-amontoada-5416014f55e2.glb",
+      "sha256": "5416014f55e2870f6274d76b7071b4062ceba850a67c1c9b946f52535d7c0bf9",
+      "sourceSha256": "d545823408b7b3c11b2a7f77b3ade73e3e7d99f719bf0ddec4c83a9d989c3405",
+      "bytes": 814860,
+      "triangles": 1207,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.75,
+          0,
+          -0.5000000000000001
+        ],
+        "max": [
+          0.75,
+          0.29999999999999993,
+          0.5
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "rede-lancada": {
+      "file": "models/tripo-r1/rede-lancada-233b768b70c4.glb",
+      "sha256": "233b768b70c4ec77d25da7bf971ea22b9a5303208b8b58c99717b4e3e04bde22",
+      "sourceSha256": "c3fa42a7f7805e86b42b1e580b4c48325e5fc9c4de135e33636b7ae463c7cbaa",
+      "bytes": 1363608,
+      "triangles": 1349,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.9220059886539627,
+          0,
+          -1.75
+        ],
+        "max": [
+          0.9220059886539627,
+          0.26665443963422075,
+          1.75
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "runtime",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    },
+    "zebedeu": {
+      "file": "models/tripo-r1/zebedeu-1a2035745bd3.glb",
+      "sha256": "1a2035745bd32f2662de15a25cb416144aa192088ec38026e2dec9191356d792",
+      "sourceSha256": "a7810b90c54dea262374984b14a46bc2c030f6b683fc99d8f4b59ae2c8606daf",
+      "bytes": 840608,
+      "triangles": 9866,
+      "textureSize": 2048,
+      "bounds": {
+        "min": [
+          -0.8121933734376461,
+          0,
+          -0.18603273790101066
+        ],
+        "max": [
+          0.8121933734376461,
+          1.7,
+          0.18603273790101066
+        ]
+      },
+      "skins": 0,
+      "clips": [],
+      "status": "awaiting-rig-not-used-in-game",
+      "source": "Tripo Studio, Alex Pro, 2026-11-12"
+    }
+  }
+}
