@@ -1,14 +1,33 @@
 // The HUD in the DOM: mission line, counter, key prompt, subtitle, radar, progress bar, place plate, cards.
-import type { EpisodeData, State, Vec2 } from "./missions.ts";
+import type { EpisodeData, Fala, State, Vec2 } from "./missions.ts";
 import { counterTotal, readingTime } from "./missions.ts";
 import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
-import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice } from './journey.ts';
+import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice, SCENE_DEVELOPMENT_NOTICE } from './journey.ts';
 import type { Segment } from './world-layout.ts';
+import { ORIGIN_LABEL, type Place } from "./places.ts";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 export type RadarMark = { pos: Vec2; kind: "follower" };
+
+/** The next step has not been read in the Bible yet (bible.ts): the mission line asks for it, with the reference. */
+export type Sealed = { ref: string };
+const SEALED_OBJECTIVE = "Abra a Bíblia";
+const sealedGuidance = (touch: boolean) => touch
+  ? "Toque em “Abra a Bíblia” para ler o próximo passo."
+  : "Aperte B, ou clique em “Abra a Bíblia”, para ler o próximo passo.";
+
+/** What the HUD shows while the player explores after the episode (freeroam.ts). */
+export type RoamView = {
+  kind: "return" | "line" | "free";
+  objective: string;              // the mission line's text
+  dist: number | null;            // metres to the way back's end, when there is one
+  line: Fala | null;              // the clause on screen
+  narrative: string;              // the game's own words when this stage begins ("Narrativa do jogo")
+  guidance: string;               // after them, plain guidance ("Orientação")
+  routes: readonly Segment[];     // the walkable way to the goal, for the radar's dots
+};
 
 export class Hud {
   private radar: HTMLCanvasElement;
@@ -27,6 +46,9 @@ export class Hud {
   private routes: readonly Segment[];
   private journeyMission = -1;
   private narrativeLeft = 0;
+  private roamKind = "";
+  private foundOnRadar: readonly Place[] = [];
+  private placeTimer: ReturnType<typeof setTimeout> | undefined;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
   constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
@@ -43,8 +65,8 @@ export class Hud {
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
-      ? "Arraste do lado esquerdo para andar · do lado direito para olhar<br>Botão redondo para agir"
-      : "WASD ou setas para andar · Shift corre · arraste o mouse para olhar (duplo clique trava o cursor)<br>E para agir";
+      ? "Controle à esquerda para andar · arraste do lado direito para olhar<br>Botão da mão para agir · toque na linha da missão para abrir a Bíblia"
+      : "WASD ou setas para andar · Shift corre · arraste o mouse para olhar (duplo clique trava o cursor)<br>E para agir · B abre a Bíblia";
     const bar = $("bar");
     bar.innerHTML = ep.missoes.map(() => "<i><b></b></i>").join("");
     this.bars = Array.from(bar.querySelectorAll("b"));
@@ -83,7 +105,72 @@ export class Hud {
   }
   private savedTimer: ReturnType<typeof setTimeout> | undefined;
 
-  update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number) {
+  /** The places already found that are not sourced places (those are always on the radar): drawn with another mark. */
+  setFoundPlaces(places: readonly Place[]) { this.foundOnRadar = places.filter((p) => p.origem !== "fonte"); }
+
+  /** The mission line's words; `sealed` when they ask for the Bible. Its name for assistive technology says what a
+   * press does. */
+  private setObjective(text: string, sealed: boolean) {
+    const obj = $("obj");
+    if ($("objt").textContent !== text) { $("objt").textContent = text; obj.setAttribute("aria-label", sealed ? "Abrir a Bíblia para ler o próximo passo" : `${text}. Abrir a Bíblia`); }
+    obj.classList.toggle("sealed", sealed);
+  }
+
+  /** The counter's label and marks (as many as the passage names), `filled` of them on. */
+  private drawCounter(filled: number) {
+    const total = counterTotal(this.ep);
+    const c = $("counter");
+    if (c.childElementCount !== total + 1) c.innerHTML = `<span>${this.ep.contador.rotulo.toUpperCase()}</span>` + "<i></i>".repeat(total);
+    c.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < filled));
+  }
+
+  /** A place of the region was just found (places.ts): its name, what kind of fact it is, and the count, for a moment. */
+  placeFound(place: Place, found: number, total: number) {
+    const el = $("placefound");
+    $("placecount").textContent = `Lugar encontrado · ${found} de ${total}`;
+    $("placename").textContent = place.nome;
+    $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]}`;
+    el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
+    clearTimeout(this.placeTimer);
+    this.placeTimer = setTimeout(() => { el.hidden = true; }, 6000);
+  }
+
+  /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */
+  roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number,
+    touch = false, sealed: Sealed | null = null) {
+    const mk = v.kind === "free" ? "EXPLORAÇÃO LIVRE" : "EPÍLOGO";
+    if ($("mk").textContent !== mk) $("mk").textContent = mk;
+    const closed = sealed && v.kind === "return";
+    this.setObjective(closed ? SEALED_OBJECTIVE : v.objective, !!closed);
+    $("obj").classList.remove("done");
+    this.lastMission = -2;                                          // update() rewrites these if it ever runs again
+    $("dist").textContent = closed ? sealed.ref : v.dist !== null ? `${Math.round(v.dist)} m` : "";
+    this.drawCounter(s.filled);                                     // built here too: exploring may start without a mission
+    if (v.kind !== this.roamKind) { this.roamKind = v.kind; this.narrativeLeft = 7; }
+    this.narrativeLeft = Math.max(0, this.narrativeLeft - dt);
+    const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line";
+    const text = v.kind === "line" ? "" : notice ?? (narrated ? v.narrative : closed ? sealedGuidance(touch) : v.guidance);
+    this.journey.hidden = !text;
+    const label = narrated ? "Narrativa do jogo" : "Orientação";
+    if (this.journeyLabel.textContent !== label) this.journeyLabel.textContent = label;
+    if (this.journeyBody.textContent !== text) this.journeyBody.textContent = text;
+    // the way back and its verse tell of those who followed him; none is drawn yet, and the HUD says so (R9)
+    const scene = v.kind === "free" ? "" : SCENE_DEVELOPMENT_NOTICE;
+    this.sceneNotice.hidden = !scene;
+    if (this.sceneNotice.textContent !== scene) this.sceneNotice.textContent = scene;
+    $("prompt").hidden = true; $("act").hidden = true;
+    const sub = $("sub");
+    sub.hidden = !v.line;
+    if (v.line) {
+      $("subt").textContent = `“${v.line.texto}”`;
+      $("subr").textContent = `BÍBLIA LIVRE · ${v.line.ref.toUpperCase()}`;
+    }
+    this.bars.forEach((b) => { b.style.width = "calc(100% - 2px)"; });
+    this.drawRadar(pos, heading, goal, followers, s.time, v.routes);
+  }
+
+  update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number,
+    notice: string | null = null, sealed: Sealed | null = null) {
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);
     const m = ep.missoes[k];
@@ -96,15 +183,14 @@ export class Hud {
     if (showing !== this.lastMission || done !== $("obj").classList.contains("done")) {
       this.lastMission = showing;
       $("mk").textContent = `MISSÃO ${showing + 1} DE ${n}`;
-      $("objt").textContent = ep.missoes[showing].objetivo;
       $("obj").classList.toggle("done", done);
     }
-    $("dist").textContent = !done && dist !== null ? `${Math.round(dist)} m` : "";
+    // until the Bible is opened for this step, the line asks for it and carries the verse's reference (bible.ts)
+    const closed = sealed !== null && !done && s.phase === "play";
+    this.setObjective(closed ? SEALED_OBJECTIVE : ep.missoes[showing].objetivo, closed);
+    $("dist").textContent = closed ? sealed.ref : !done && dist !== null ? `${Math.round(dist)} m` : "";
 
-    const total = counterTotal(ep);
-    const c = $("counter");
-    if (c.childElementCount !== total + 1) c.innerHTML = `<span>${ep.contador.rotulo.toUpperCase()}</span>` + "<i></i>".repeat(total);
-    c.querySelectorAll("i").forEach((el, i) => el.classList.toggle("on", i < s.filled));
+    this.drawCounter(s.filled);
 
     // Give each encounter a short editorial introduction, then switch to contextual help.
     // Do not compete with scripture, completion cards or the previous mission's tick animation.
@@ -112,24 +198,25 @@ export class Hud {
       this.journeyMission=s.mission;this.narrativeLeft=7;
     }
     this.narrativeLeft=Math.max(0,this.narrativeLeft-dt);
-    const guidance=buildJourneyHint(s,dist,touch);
+    const guidance=closed?sealedGuidance(touch):buildJourneyHint(s,dist,touch);
     const narrated=this.narrativeLeft>0&&!s.promptVisible;
+    // a notice from the game (the edge of the region) takes the place of the guidance, never of a line or a tick
     const journeyText=s.phase==='play'&&this.doneFlash===0
-      ?(narrated?journeyNarrative(s.mission):guidance):'';
+      ?(notice??(narrated?journeyNarrative(s.mission):guidance)):'';
     this.journey.hidden=!journeyText;
-    const journeyLabel=narrated?'Narrativa do jogo':'Orientação';
+    const journeyLabel=narrated&&!notice?'Narrativa do jogo':'Orientação';
     if(this.journeyLabel.textContent!==journeyLabel)this.journeyLabel.textContent=journeyLabel;
     if(this.journeyBody.textContent!==journeyText)this.journeyBody.textContent=journeyText;
-    const notice=sceneDevelopmentNotice(s,dist);
-    this.sceneNotice.hidden=!notice;
-    if(this.sceneNotice.textContent!==notice)this.sceneNotice.textContent=notice;
+    const scene=sceneDevelopmentNotice(s,dist);                    // `notice` is this branch's edge-of-region notice
+    this.sceneNotice.hidden=!scene;
+    if(this.sceneNotice.textContent!==scene)this.sceneNotice.textContent=scene;
 
     const pr = $("prompt"), act = $("act");
     const label = m.acao ?? "";
     pr.hidden = !(s.promptVisible && s.phase === "play") || touch;     // on a phone the round button is the prompt
     $("promptt").textContent = label;
     act.hidden = !touch || !(s.promptVisible && s.phase === "play");
-    if (!act.hidden) act.textContent = label;
+    if (!act.hidden) $("actt").textContent = label;           // the hand stays; only its word changes
 
     const sub = $("sub");
     sub.hidden = !s.line;
@@ -148,7 +235,7 @@ export class Hud {
     this.drawRadar(pos, heading, goal, followers, s.time);
   }
 
-  private drawRadar(pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], t: number) {
+  private drawRadar(pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], t: number, routes: readonly Segment[] = this.routes) {
     const ctx = this.ctx, S = this.radar.width, c = S / 2, meta = this.meta;
     const ppm = c / this.radiusM;                                  // canvas px per metre
     ctx.save();
@@ -172,9 +259,21 @@ export class Hud {
       ctx.fillStyle = "#3a2818"; ctx.fillText(pl.nome, q.x + 10, q.y + 6);
     }
 
+    // places the player found (places.ts): a hollow diamond and an upright name, so a name the game gave does not
+    // read as a sourced place name
+    ctx.font = "600 15px 'Space Grotesk', sans-serif";
+    for (const pl of this.foundOnRadar) {
+      const q = toR({ x: pl.x, z: pl.z });
+      if (q.x < -40 || q.y < -40 || q.x > S + 40 || q.y > S + 40) continue;
+      ctx.beginPath(); ctx.moveTo(q.x, q.y - 7); ctx.lineTo(q.x + 7, q.y); ctx.lineTo(q.x, q.y + 7); ctx.lineTo(q.x - 7, q.y); ctx.closePath();
+      ctx.lineWidth = 4; ctx.strokeStyle = "#ecdcba"; ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = "#3a2818"; ctx.stroke();
+      ctx.lineWidth = 4; ctx.strokeStyle = "rgba(232,214,176,.9)"; ctx.strokeText(pl.nome, q.x + 11, q.y + 5);
+      ctx.fillStyle = "#3a2818"; ctx.fillText(pl.nome, q.x + 11, q.y + 5);
+    }
+
     // Dots follow the walkable route around bends/inlets; the ring retains the true goal direction.
     if (goal) {
-      const route=journeyRoute(this.routes,pos,goal).map(toR),actual=toR(goal);
+      const route=journeyRoute(routes,pos,goal).map(toR),actual=toR(goal);
       ctx.save();ctx.beginPath();ctx.rect(8,8,S-16,S-16);ctx.clip();
       let nextDot=0;
       for(let i=1;i<route.length;i++){

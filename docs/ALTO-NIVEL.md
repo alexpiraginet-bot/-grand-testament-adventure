@@ -57,7 +57,7 @@ RTX 5060, numa pasta própria, e lê `export/engine/`.
 | Oliveiras, ciprestes, juncos, arbustos | bolinhas e cones | 14–15, 18–20 e cipreste (novo) | Codex |
 | Colinas com vegetação, cidade ao longe, céu com nuvens | horizonte do relevo real, céu em degradê | nuvens, distância com névoa de altura, vilarejos ao longe | Claude (céu), Codex (vilarejo) |
 | Sol forte com sombras recortadas e luz rebatida | sol, uma sombra, céu ambiente | no PC, iluminação global (Lumen) e sombras virtuais; na web, sombras em cascata e oclusão de ambiente | por versão |
-| HUD: linha de missão, distância, discípulos, radar, joystick e botão de mão | igual, menos o joystick fixo e o ícone de mão | joystick sempre visível no celular e botão de ação com ícone de mão (desenho próprio, sem emoji) | Claude |
+| HUD: linha de missão, distância, discípulos, radar, joystick e botão de mão | igual; desde 13/11/2026 (branch `claude/quirky-hamilton-bt0y7w`) joystick sempre visível no celular e botão de ação com mão em SVG próprio, conferidos em viewport emulado | prova em celular físico; revisão artística do desenho da mão | Claude |
 
 Itens novos para a ficha do Tripo: pérgula de varas, píer de madeira com postes, poste de amarra, rede pendurada,
 cipreste.

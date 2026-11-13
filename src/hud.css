@@ -29,6 +29,15 @@ button { font: inherit; cursor: pointer; }
   border-radius: 6px; border: 2px solid transparent; font-weight: 600; font-size: clamp(16px, 2.3vw, 22px); letter-spacing: 1.2px; text-transform: uppercase;
   box-shadow: 0 3px 10px rgba(0,0,0,.35); }
 .obj::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 4px; background: var(--gold); }
+/* the mission line is the way into the Bible (bibleui.ts): a button that keeps the line's look */
+button.obj { appearance: none; width: 100%; margin: 0; color: inherit; font-family: inherit; text-align: left; cursor: pointer; }
+#hud button.obj { pointer-events: auto; }
+#hud.cine button.obj { pointer-events: none; }             /* faded out with its panel during a two-shot */
+button.obj:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+/* the next step has not been read yet: the line asks for the Bible, with the verse's reference */
+.obj.sealed { border-color: var(--gold); animation: sealedpulse 1.8s ease-in-out infinite; }
+@keyframes sealedpulse { 0%, 100% { box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 0 0 0 rgba(255,207,115,.55); } 50% { box-shadow: 0 3px 10px rgba(0,0,0,.35), 0 0 0 7px rgba(255,207,115,0); } }
+@media (prefers-reduced-motion: reduce) { .obj.sealed { animation: none; } }
 .obj .ic { width: 14px; height: 14px; margin-left: 8px; background: var(--gold); transform: rotate(45deg); flex: none; }
 .obj.done { border-color: var(--gold); color: var(--gold); }
 .obj.done .ic { background: none; transform: none; width: 18px; height: 14px; border: solid var(--gold); border-width: 0 0 4px 4px; transform: rotate(-45deg) translate(2px, -2px); }
@@ -66,11 +75,33 @@ button { font: inherit; cursor: pointer; }
 .credbtn { position: absolute; right: var(--pad); bottom: max(16px, env(safe-area-inset-bottom)); background: rgba(14,16,14,.55); color: var(--cream);
   border: 1px solid rgba(255,248,236,.35); border-radius: 6px; padding: 6px 10px; font: 700 11px "Space Mono"; letter-spacing: 1px; text-transform: uppercase; }
 
-.joy { position: absolute; width: 112px; height: 112px; margin: -56px 0 0 -56px; border-radius: 50%; border: 2px solid rgba(255,248,236,.5); background: rgba(14,16,14,.25); opacity: 0; transition: opacity .15s; }
+/* the phone joystick rests at the lower left, level with the action button and above the community links; a thumb
+   that lands away from it carries it along for that gesture (input.ts, joystick.ts) */
+.joy { position: absolute; left: var(--pad); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 50px); width: 112px; height: 112px; border-radius: 50%;
+  border: 2px solid rgba(255,248,236,.55); background: rgba(14,16,14,.3); box-shadow: 0 4px 14px rgba(0,0,0,.3); opacity: 0; transition: opacity .15s; }
+.joy::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(255,248,236,.35); }
+.joy.rest { opacity: .7; }
 .joy.on { opacity: 1; }
-.knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(255,248,236,.85); }
+.knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(255,248,236,.88);
+  border: 2px solid #18120c; }
 .act { position: absolute; right: calc(var(--pad) + 8px); bottom: calc(max(16px, env(safe-area-inset-bottom)) + 64px); width: 84px; height: 84px; border-radius: 50%;
-  border: 3px solid #18120c; background: var(--cream); color: #18120c; font: 700 15px "Space Grotesk"; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+  border: 3px solid #18120c; background: var(--cream); color: #18120c; font: 700 11px "Space Mono", monospace; letter-spacing: .5px; text-transform: uppercase;
+  box-shadow: 0 4px 14px rgba(0,0,0,.45); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 0; }
+.act .hand { width: 40px; height: 40px; margin-top: 2px; }
+.act:active { transform: scale(.95); }
+@media (pointer: coarse) and (orientation: landscape) {
+  /* lying sideways the subtitle would run under both thumbs: keep it between the joystick and the button */
+  .sub { width: min(860px, calc(100vw - 2 * var(--pad) - 2 * 136px)); }
+  /* the community links sit in the middle, so both thumb controls can drop to the corners, clear of the radar plate */
+  .joy, .act { bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+/* the shortest phones on their side: the plate's reference line would sit under the button (it stays in each subtitle),
+   and a smaller stick keeps clear of the mission and its narration line; input.ts reads the drawn radius */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 340px) {
+  .plate .r { display: none; }
+  .joy { width: 96px; height: 96px; }
+  .knob { width: 42px; height: 42px; margin: -21px 0 0 -21px; }
+}
 
 /* phones: the radar goes up to the right, under the header, so the thumbs keep the bottom corners */
 @media (pointer: coarse), (max-width: 700px) {
@@ -126,6 +157,20 @@ button { font: inherit; cursor: pointer; }
   animation: savedfade 2.2s ease forwards; }
 @keyframes savedfade { 0% { opacity: .2; } 10% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .saved { animation: none; } }
+/* a place of the region just found (places.ts): its name, what kind of fact it is, how many so far */
+.placefound { display: block; width: fit-content; max-width: min(100%, 420px); margin: 10px 0 0 2px; padding: 7px 12px 8px; background: rgba(14,16,14,.78);
+  border-left: 4px solid var(--gold); border-radius: 6px; color: var(--cream); animation: placefade 6s ease forwards; }
+@keyframes placefade { 0% { opacity: .2; } 5% { opacity: 1; } 88% { opacity: 1; } 100% { opacity: 0; } }
+.placefound[hidden] { display: none; }
+.placefound .pk { display: block; font: 700 10px "Space Mono", monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); }
+.placefound b { display: inline; font: 700 15px "Space Grotesk", sans-serif; letter-spacing: .3px; }
+.placefound #placenote { display: inline; margin-left: 8px; font: 400 11px "Space Mono", monospace; opacity: .85; }
+/* lying sideways there is little height between the mission and the stick: the name alone, on one line */
+@media (pointer: coarse) and (orientation: landscape) {
+  .placefound { padding: 4px 10px; } .placefound .pk { display: inline; margin-right: 8px; } .placefound #placenote { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .placefound { animation: none; } }
+.card.end #again { margin-top: 12px; }
 
 /* the recovery code panel */
 .card button.link { margin-top: 10px; padding: 6px 4px; background: none; border: none; color: var(--gold); font: 700 13px "Space Mono", monospace;
@@ -140,3 +185,19 @@ button { font: inherit; cursor: pointer; }
 .nuvem input:focus-visible, .card button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .nuvem .nbody button { margin-top: 12px; }
 .nuvem .nmsg { min-height: 1.5em; margin: 10px 0 0; font: 400 13px "Space Mono", monospace; }
+
+/* the story's two-shots (cinematic.ts, main.ts): cinema bars come in, the play panels step aside, the line stays */
+#hud::before, #hud::after { content: ""; position: absolute; left: 0; right: 0; height: 0; background: #050605; transition: height .45s ease; z-index: 0; }
+#hud::before { top: 0; } #hud::after { bottom: 0; }
+#hud.cine::before, #hud.cine::after { height: 9vh; }
+#hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: opacity .35s ease; }
+#hud.cine .mission, #hud.cine .radarbox, #hud.cine .joy, #hud.cine .top { opacity: 0; pointer-events: none; }
+/* Map, Colabore and Credits stay in reach during a line (they pause the game), above the cinema bars. Raised, the
+   bar spans the bottom edge, so only its buttons take touches: the hand button and the stick under it stay reachable */
+#hud .sub, #hud .hud-links { z-index: 1; }
+#hud nav.hud-links { pointer-events: none; }
+/* leaving a two-shot, the panels come back once the bars have mostly gone; entering, they step aside at once */
+/* (not the stick: its own rest/touch opacity must answer the thumb at once) */
+#hud .mission, #hud .radarbox, #hud .top { transition-delay: .3s; }
+#hud.cine .mission, #hud.cine .radarbox, #hud.cine .top { transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) { #hud::before, #hud::after, #hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: none; } }

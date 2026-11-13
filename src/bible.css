@@ -1,0 +1,63 @@
+/* The Bible's panel (bibleui.ts): the non-game palette of ui-theme.css (ivory, burgundy, gold), as the other
+   panels outside the play HUD. */
+.bible-dialog {
+  box-sizing: border-box; width: min(760px, calc(100vw - 24px)); height: min(860px, calc(100dvh - 24px)); max-width: none; max-height: none;
+  margin: auto; padding: 0; border: 1px solid var(--ui-line); border-radius: 18px; color: var(--ui-ink); background: var(--ui-surface);
+  box-shadow: var(--ui-shadow); font: 400 16px/1.55 "Space Grotesk", sans-serif; text-align: left; text-shadow: none; overflow: hidden;
+}
+.bible-dialog[open] { display: flex; flex-direction: column; }
+.bible-dialog::backdrop { background: var(--ui-scrim); backdrop-filter: blur(6px); }
+.bible-dialog * { box-sizing: border-box; }
+.bible-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 24px 14px; border-bottom: 1px solid var(--ui-line); background: var(--ui-ground); flex: none; }
+.bible-eyebrow { margin: 0 0 2px; color: var(--ui-accent); font: 700 11px "Space Mono", monospace; letter-spacing: .12em; text-transform: uppercase; }
+.bible-header h2 { margin: 0; font-size: clamp(26px, 4vw, 36px); font-weight: 600; line-height: 1.05; letter-spacing: -.02em; color: var(--ui-ink); text-shadow: none; }
+.bible-dialog button { appearance: none; min-height: 44px; padding: 9px 16px; border: 1px solid var(--ui-action); border-radius: 10px; background: var(--ui-action);
+  color: var(--ui-on-action); font: 600 14px/1.2 "Space Grotesk", sans-serif; letter-spacing: 0; text-transform: none; cursor: pointer; flex: none; }
+.bible-dialog button:hover { background: var(--ui-action-hover); }
+.bible-dialog :focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
+.bible-body { flex: 1; min-height: 0; overflow: auto; padding: 20px 24px 8px; }
+.bible-dialog h3 { margin: 0 0 8px; font: 700 12px "Space Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--ui-accent-strong); }
+
+/* the next step: the verses first, large, then what the game asks for */
+.bible-next { padding: 18px 20px 16px; border: 1px solid var(--ui-gold); border-left: 6px solid var(--ui-action); border-radius: 12px; background: var(--ui-overlay); }
+.bible-ref { margin: 0 0 6px; font: 700 15px "Space Mono", monospace; color: var(--ui-action); }
+.bible-next blockquote { margin: 0; padding: 0; }
+.bible-next .bible-verse { font-size: clamp(18px, 2.6vw, 22px); line-height: 1.5; color: var(--ui-ink); margin: 0 0 8px; }
+.bible-do { margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--ui-line); font-weight: 600; color: var(--ui-secondary); }
+.bible-do span { display: inline-block; margin-right: 10px; padding: 2px 8px; border-radius: 999px; background: var(--ui-highlight); color: var(--ui-accent-strong);
+  font: 700 10px "Space Mono", monospace; letter-spacing: .1em; text-transform: uppercase; vertical-align: 2px; }
+.bible-lived { margin: 0; color: var(--ui-secondary); }
+
+.bible-order { margin-top: 26px; }
+.bible-note { margin: 0 0 14px; font-size: 13px; color: var(--ui-muted); }
+.bible-list { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 2px solid var(--ui-line); }
+.bible-entry { position: relative; margin: 0 0 14px; padding: 0 0 0 16px; }
+.bible-entry::before { content: ""; position: absolute; left: -25px; top: 7px; width: 12px; height: 12px; border-radius: 50%; background: var(--ui-surface); border: 2px solid var(--ui-line-strong); }
+.bible-entry.is-here::before { background: var(--ui-action); border-color: var(--ui-action); box-shadow: 0 0 0 4px var(--ui-highlight); }
+.bible-entry.is-antes::before { background: var(--ui-line-strong); }
+.bible-entry strong { display: block; font-size: 17px; font-weight: 600; color: var(--ui-ink); }
+.bible-where { display: block; font: 400 12px "Space Mono", monospace; color: var(--ui-muted); }
+.bible-tag { display: inline-block; margin-bottom: 2px; font: 700 10px "Space Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--ui-muted); }
+.bible-entry.is-here .bible-tag { color: var(--ui-action); }
+.bible-entry summary { cursor: pointer; list-style: none; padding: 4px 0; min-height: 44px; }
+.bible-entry summary::-webkit-details-marker { display: none; }
+.bible-entry summary strong::after { content: " +"; color: var(--ui-accent); font-weight: 400; }
+.bible-entry details[open] summary strong::after { content: " −"; }
+.bible-entry.is-depois { opacity: .86; }
+.bible-verse { position: relative; margin: 6px 0; color: var(--ui-secondary); }
+.bible-verse sup { margin-right: 6px; font: 700 11px "Space Mono", monospace; color: var(--ui-accent); }
+.bible-entry.is-here .bible-verse { padding: 6px 10px; border-radius: 8px; }
+.bible-verse.is-agora { background: var(--ui-highlight); color: var(--ui-ink); font-weight: 500; }
+.bible-verse.is-vivido { color: var(--ui-muted); }
+.bible-verse.is-a-seguir { color: var(--ui-secondary); }
+.bible-state { display: inline-block; margin-left: 10px; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--ui-line-strong);
+  font: 700 9px "Space Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--ui-muted); vertical-align: 2px; white-space: nowrap; }
+.bible-verse.is-agora .bible-state { background: var(--ui-action); border-color: var(--ui-action); color: var(--ui-on-action); }
+.bible-verse.is-vivido .bible-state { border-color: var(--ui-success); color: var(--ui-success); }
+.bible-others { margin: 6px 0 0; font: 400 12px "Space Mono", monospace; color: var(--ui-muted); }
+.bible-footer { flex: none; padding: 10px 24px 14px; border-top: 1px solid var(--ui-line); background: var(--ui-ground); }
+.bible-footer p { margin: 0 0 4px; font-size: 11px; line-height: 1.4; color: var(--ui-muted); }
+@media (max-width: 560px) {
+  .bible-header { padding: 14px 16px 10px; } .bible-body { padding: 14px 16px 6px; } .bible-footer { padding: 8px 16px 10px; }
+  .bible-next { padding: 14px 14px 12px; }
+}

@@ -5,6 +5,79 @@ Este diário guarda fatos verificáveis, decisões e limitações. Não é rotei
 nem autorização de publicação social. Código publicado e episódio de Reel publicado
 são etapas diferentes.
 
+## 13/11/2026 — R11, conferência RTX da branch Claude e primeiro rig de NPC
+
+Alex aceitou a recomendação de validar a branch do Claude na RTX e depois
+preparar o primeiro NPC finalizado. Registro de continuidade às 19:13 UTC;
+este horário de registro não mede a duração trabalhada. Worktree isolada
+`codex/claude-rtx-r11`, base Claude `7dc836b`; main observada `cdf7360`.
+Coordenação na PR #1, comentário `6862475124`, preservando a branch do autor.
+
+Build inicial do jogo/painel e 269 testes passaram. Cópia imutável de baseline:
+`index-Bizgc6U3.js`, SHA-256
+`751bc77a56e70acf9d354e742db111ea0643aa57fbefa85dc91bee3fb1d4aecd`.
+NVIDIA observada: RTX5060Ti, driver616.92,16GB; Ollama sem modelo carregado.
+Aplicativos do usuário permanecem abertos; viewport móvel no PC não é iPhone.
+Bench original não carrega fauna nem mede custo CPU completo: essas limitações
+serão registradas e complementadas por percurso jogável separado.
+
+Frentes sem edição concorrente: QA/bench, pós-processamento/testes e autoria
+isolada de um NPC. Hipótese do master: mistura de transparência, profundidade
+e velocidade incompatíveis no TRAA; candidato delimitado SMAA espacial,
+sem temporal/DLSS, mantendo efeitos desligados por padrão. O candidato só
+será aceito após comparação visual e funcional, sem inferir êxito do build.
+Também será conferido o descarte dos recursos de pós-processamento.
+
+Simão é o primeiro candidato de malha existente para rig local. Nenhuma nova
+geração/compra Tripo; autoria e fontes ficam fora do Git, preservadas. Processos
+Blender pesados e geração local aguardam janela livre dos benchmarks. Rig,
+animação e aprovação visual são etapas separadas; não colocar A-pose ou humano
+geométrico no jogo. Os parágrafos anteriores registram o início; resultados abaixo.
+
+### Resultado e tentativa rejeitada
+
+A baseline revelou erro real WGSL no `fx=alto`: GTAO recebia profundidade MSAA.
+O pré-passe opaco sem MSAA corrigiu o shader, mantendo MSAA4 na cor. O custo
+extra foi medido; não comparar com a versão quebrada como se fosse ganho ou
+perda do mesmo efeito. Off preservou a imagem da vila byte a byte.
+
+As duas matrizes somaram 43.200 quadros medidos, em seis poses, dois viewports
+e três presets por build. A tentativa de SMAA passou tecnicamente, mas tornou
+visíveis pontos escuros na água e mais ruído no horizonte. Duas revisões
+rejeitaram a troca; o código final conserva TRAA no Master. O teste curto com
+AO indireta reduziu esse ruído, uma pista para investigação separada, não
+aprovação geral. As versões, limites e evidências estão em
+[QA-RTX-R11.md](QA-RTX-R11.md) e [GRAFICO-MASTER.md](GRAFICO-MASTER.md).
+
+Build final do jogo/painel e 279 testes passaram. Fonte funcional `69d0840`,
+bundle local `index-ClM63sgn.js`, SHA-256
+`b996e4bfd93af8b6cd3b8fb3c7f6c85e8c76f4d0dfabf5a78fee4a50601b4b7a`.
+O carimbo local inclui `+alterado` por documentos/métricas ainda em trabalho.
+Smoke final: Alto em seis poses e dois viewports, 100 quadros por pose;
+32 verificações jogáveis do Master, além de um smoke Master/AO indireta.
+Zero erros capturados. Não equivale a teste em Safari físico; FPS perto de
+100 no PC não prova capacidade de celular ou margem livre da GPU.
+
+Código entregue na [PR #7](https://github.com/alexpiraginet-bot/-grand-testament-adventure/pull/7),
+direcionada à branch Claude da PR #1. Não sobrescreve a branch do autor nem
+afirma merge/deploy da produção. Efeitos continuam opcionais.
+
+### Simão com rig local
+
+A malha existente recebeu 22 joints deformantes e dois clipes próprios,
+espera e caminhada. Foram conferidos skin/pesos, loop e contato dos pés no
+GLB reimportado, materiais preservados por hash e 40,24 s de gravação no
+Three/Chromium. Duas revisões de sequências consideraram o candidato apto
+à integração controlada; rig e textura reais, sem humano geométrico.
+Detalhes, hashes, vídeo e limitações em [NPC-SIMAO-R11.md](NPC-SIMAO-R11.md).
+O jogo ainda não carrega esse ator: falta perfil móvel e validação no terreno,
+colisão, seguidores e cinemática. Nenhum crédito Tripo novo foi consumido.
+
+O agregado autorizado desta sessão foi publicado em `metrics/development`,
+commit `7e29ff1292291ef1357039b6cb40e09a696ee42b`, às 19:35:24 UTC. Só metadados
+da própria sessão; não são tokens observados dos agentes/Claude nem cobrança
+de API. Não houve publicação social ou coleta de outras conversas.
+
 ## Linha do tempo comprovável
 
 ### 13/11/2026 — abertura e urgência Safari
@@ -52,6 +125,258 @@ amostra de FPS: desktop WebGPU 87,3–94,7, viewport móvel emulado 47,7–93,9 
 O cenário contém 158 casas, 20 pátios, 89 jarros, 69 toldos e oito segmentos de
 caminho; são contagens do cenário artístico, não demografia histórica.
 Esses dados não substituem a conferência pública posterior nem um telefone físico.
+
+### Incremento Claude — HUD móvel (13/11/2026, sobre `4d7cf86`)
+
+Autoria: sessão Claude Code na nuvem, branch `claude/quirky-hamilton-bt0y7w`, PR em rascunho.
+Commit e deployment de produção: **pendentes** até revisão/merge; não presumir publicação.
+
+- **Problema observado:** no celular o joystick só aparecia onde o dedo tocava e o botão de ação
+  era um círculo com texto; `docs/ALTO-NIVEL.md` pedia joystick sempre visível e ícone de mão.
+  Na paisagem 844×390, o botão de ação (posição anterior) cobria a linha "MARCOS 1:16-20" da placa.
+- **Mudança:** joystick em repouso fixo no canto inferior esquerdo. Toque perto dele o conduz
+  a partir do centro fixo; toque longe, ainda no lado esquerdo, traz a base para baixo do dedo
+  durante o gesto e ela volta ao soltar. Raio do controle lido do layout. Botão com mão em SVG
+  desenhado no código (sem emoji, `aria-hidden`), nome acessível = verbo da ação ("Chamar").
+  Na paisagem, joystick e botão descem às bordas; em telas deitadas de até 340 px de altura
+  o joystick fica com 96 px e a linha de referência da placa é omitida (a referência segue na legenda).
+- **Arquivos:** `src/joystick.ts` (novo), `src/input.ts`, `src/hud.ts`, `src/hud.css`, `index.html`,
+  `test/joystick.test.ts` (novo), `tools/check_touch.mjs` (novo), README e este diário.
+- **Fontes/licenças:** nenhuma fonte externa nova; o desenho da mão é código deste repositório (MIT).
+- **Evidência:** build completo com assets verificados por SHA-256 e 41/41 testes. `tools/check_touch.mjs`
+  em 390×844, 844×390 (toque) e 1280×800, todos sobre `4d7cf86`: controle fixo e recentrado andam, soltar para o herói,
+  `AnimationMixer` real com `walk` ≥ 0,9 de peso e ossos mudando, toque real no botão da mão
+  dispara a fala, sem sobreposição com missão, radar, links e legenda, zero erros de página/HTTP.
+  Varredura de layout de 320×568 a 932×430 em retrato e paisagem. Capturas e relatório em
+  `shots/touch-r1/` (fora do Git).
+- **Limites:** Chromium sem GPU (WebGL2 por software, cerca de 0,5–1 fps); FPS dessa máquina
+  não representa jogo nem telefone. Viewport emulado não é celular físico. Em 568×320 o botão
+  encosta (0 px) na última linha da placa do radar, sem cobri-la.
+- **Possível Reel:** antes/depois do HUD de celular. Ainda sem gravação de vídeo nem aprovação.
+
+### Sessão Claude na nuvem de 13/11/2026 — todas as mudanças e o consumo
+
+Branch `claude/quirky-hamilton-bt0y7w`, PR em rascunho
+[#1](https://github.com/alexpiraginet-bot/-grand-testament-adventure/pull/1), base `4d7cf86`.
+Nada desta sessão está em produção até a PR ser revisada e integrada.
+
+**Mudanças, na ordem dos commits:**
+
+| Commit | O que mudou | Evidência | Limite |
+|---|---|---|---|
+| `a21d215` | Joystick sempre visível no celular (`src/joystick.ts`), botão de ação com mão em SVG provisório, paisagem sem cobrir a placa do radar, `tools/check_touch.mjs` | 41/41 testes no build com assets; `check_touch` em 390×844, 844×390 e 1280×800 sobre `4d7cf86`; varredura de layout 320×568 a 932×430 | viewport emulado; ícone provisório |
+| `feb946b` | Diário do HUD, README, tabela de referência; pedido de arte do ícone ao Codex/Higgsfield em `ASSETS.md` | — | — |
+| `4a61f47` | Mesma cena medida (`src/bench.ts`, `?bench`, `tools/bench.mjs`) e pós-processamento sob medição (`src/postfx.ts`, `?fx=alto/master`, desligado por padrão); `docs/GRAFICO-MASTER.md` | 44/44 testes; bench roda as variantes e grava imagens | sem GPU aqui: nenhum FPS vale para o jogo |
+| `87ef481` | Registro da repetição 1280×800 no diário | relatório `shots/touch-r1/report.json` (local) | — |
+| `dab8a9f` | Correção: o GTAO precisa de um amostrador de normal; nomes `packNormalToRGB`/`unpackRGBToNormal` da r186 | antes: `fx=alto` com 2 erros de console (`normalNode.sample is not a function`); depois: `alto` e `master` percorrem a rota com 0 erros | a oclusão não funcionava no primeiro commit |
+| `d0eeb85` | Plano cinematográfico nas falas (`src/cinematic.ts`): dois planos escolhidos ao começar a fala, faixas de cinema, HUD recolhido, sai ao andar, respeita movimento reduzido | 48/48 testes (4 novos); conferência de navegador registrada na PR | conferido só em viewport emulado |
+| `fbaeb0b` | Barra de qualidade AAA de mundo aberto, pilar por pilar, sem copiar nada da Rockstar (título retitulado depois, ver `docs/PLANO-AAA.md`) | — | plano, não entrega |
+| `2a8a8e1` | Conferências determinísticas em renderizador lento: captura atômica do plano, `__gta.freeze()` (só `?debug`, segura o relógio da história), gesto reto no joystick, bench espera 24 quadros por foto | 48/48 testes; repetição da conferência registrada na PR | ver "Tentativas" abaixo |
+| (este registro) | `tools/session_usage.py`: soma do consumo de tokens pelo transcrito e valor equivalente em preço de API | executado nesta sessão | ver nota de valor |
+| `906ff83` | Correção do diagnóstico do `fx=master`: o TRAA derruba a água transparente na maioria dos quadros; `master` bloqueado | curva de cor quadro a quadro; duas hipóteses refutadas e uma isolada (ver "Tentativas") | causa exata em aberto |
+| `072ca70` | A mira do plano cinematográfico acompanha o grupo enquanto os chamados andam até Jesus; `framed` exige os três no quadro; caminhadas do teste partem do corredor da missão | `check_touch` verde em 390×844, 844×390 e 1280×800: plano entra, 3/3 no quadro, sai ao andar (PC), 0 erros, 17.897.302 bytes servidos localmente | viewport emulado; NPCs ainda são formas provisórias |
+| `bbefb20` | Registro da conferência verde do plano cinematográfico | ver linha acima | — |
+| `2e3211c` | Plano AAA verificado (R4–R17, `docs/PLANO-AAA.md`) e correções de registros apontadas por ele | revisão adversarial do plano | plano, não entrega |
+| `7cecdfc` | Build carimbado com o commit (`src/build-info.ts`, créditos) e `tools/bench.mjs` com máquina, teto de quadros, cache quente e rede (`BENCH_NET=4g`) | relatório de `2e3211c` (árvore alterada): 2ª visita com cache quente 11.931 bytes contra 17.901.187 na 1ª | perfil de rede é deste repositório, não medição de operadora |
+| `68c4939` | `tools/compare_bench.mjs`: compara dois relatórios plano a plano e recusa máquina, tela ou commit diferentes | testes de carimbo estrito | — |
+| `09963bd` | Testes-guarda: orçamento das malhas, rig provisório fora do herói, nenhum binário rastreado | 83/83 testes em `b471dfb` | — |
+| `40b9f83` | Diário de sessão local (`src/session-log.ts`): recargas, quedas, erros, só nesta aba | testes com valores literais | base do teste de 10 min no celular, ainda não feito |
+| `e703d01` | Tempo de GPU/CPU por quadro e estimativa de memória de textura no bench | relatório: GPU "n/d" com motivo (SwiftShader sem `EXT_disjoint_timer_query_webgl2`), CPU p95 0,8 ms, textura 1.204 MB pelo renderer contra 1.010,8 MB estimados (49 RGBA8) | software; nenhum tempo vale para o jogo |
+| `af77202` | Correções das revisões adversariais das peças do R4 | revisão + testes | — |
+| `b471dfb` `5bca3b3` `cd06f51` | Diário de sessão, tempos e memória ligados ao jogo; etapas da prova de sessão registradas; resumo do bench corrigido | 83/83 testes | — |
+| `a47dbb5` | Prova do diário de sessão no navegador terminada | `{"ok":true,"loads":3,"uncleanEnds":1}`: recarga limpa não acusa nada; queda do renderizador (CDP `Page.crash`) é achada na recarga | Chromium emulado, não celular |
+| `02781cd` | Variantes de visual sob medição (`src/look.ts`): `?tm=`, `?exp=`, `?atmo=1`, `?shadow=csm` | 88/88 testes; imagens A/B na base antiga (ver abaixo) | desligadas por padrão |
+| `08d51c1` | `?ao=indireta`: GTAO só na luz ambiente/indireta (pré-passe de profundidade/normal, `builtinAOContext` da r186) | 89/89 testes | custa um segundo passe de geometria |
+| `c1cb55a` `8b9f00d` | `?cam=mola` (`src/camera.ts`) e `tools/check_camera.mjs` | 95/95 testes | — |
+| `af033e9` | Merge da `main` (`c664f9f`, inicialização segura no iOS e R4–R6 do Codex) | 165/165 testes, `tsc` limpo, build com assets; prévia Vercel pronta | ver "Integração com a main" |
+| `fd65c11` | Mapa/Colabore/Créditos clicáveis durante a fala; arrastar o olhar sai do plano cinematográfico | achado pelo `check_hero_gesture` do Codex no build integrado | — |
+| `9c05537` | Correções da revisão adversarial (10 achados confirmados, ver abaixo) | 167/167 testes; simulação do `CSMShadowNode` real | — |
+| `cecfa1e` | Atividade estimada no `tools/session_usage.py`; resultados das variantes no roteiro gráfico | conferência da união de intervalos | — |
+| `b7f62b8` | A barra de links elevada deixa o toque passar para a mão e o joystick; painéis voltam depois das faixas de cinema | achado pelo `check_touch` deitado (844×390) no build integrado | reconferência no navegador em andamento |
+| `caf7244` | Merge da `main` (`ea39f63`, fauna própria R8 e áudio de natureza do Codex) | testes e build com assets; suítes de carga, toque e fauna rodadas no build integrado (ver "Fim da tarde") | fauna opcional expira aos 30 s reais no renderizador por software daqui |
+| `14ce1b1` `6b339be` `740c25a` `1e4779b` `d0c055d` `cf7c4a7` `8b8af85` | Mundo aberto depois do episódio: "Continuar explorando", volta a Cafarnaum com a oração literal de Marcos 1:21 ("Eles entraram em Cafarnaum"), cinco lugares para encontrar (posições dos dados do mundo), aviso a 40 m do limite da região, "Explorar a região" no cartão inicial, radar aponta o lugar mais próximo por encontrar | testes de `freeroam.ts` e `places.ts`; `tools/check_roam.mjs` | conferência de navegador final na árvore conciliada com a R9 |
+| `0f5e9fe` | Medidas das variantes de visual na base integrada, em `docs/GRAFICO-MASTER.md` | `shots/merge-r3/bench-*` (local) | sem GPU: imagens e draw calls, nenhum FPS |
+| `b0dd3d3` `fe8d67b` `c39170f` `a66b232` | Bíblia do jogo (ideia de Alex): leitura em ordem do Bíblia Conectada (10 momentos, 26 versículos literais da BLIVRE, SHA-256 da fonte conferido), a passagem jogada no seu lugar da ordem, e a linha da missão selada até a leitura. A Bíblia orienta, não tranca o mundo (confirmado por Alex) | `test/bible.test.ts`; `tools/build_bible.py --check`; `tools/check_bible.mjs` passou em 390×844 e 1280×800 sobre `a66b232` (17:54 UTC) | viewport emulado, renderizador por software; repetição na árvore conciliada com a R9 em andamento |
+| `30e8820` | Painel de devs (`painel.html`, link no rodapé do Colabore): commits por autoria, coautoria e conta, por dia, PRs, issues e contas de fora, lidos da API pública do GitHub; acessos declarados como não medidos | 6 testes sobre respostas gravadas deste repositório; `tools/check_painel.mjs` em 1280×800 e 390×844, recusa do GitHub e nova tentativa | sem fonte de medição de acessos: decisão de Alex |
+| `6878694` | Merge da R9 do Codex (`4438ba7`, PR #5): sem NPCs provisórios. O plano cinematográfico passa a enquadrar o herói e o lugar do encontro; ninguém é desenhado na volta à vila; o aviso de cena em desenvolvimento aparece também no epílogo | 252/252 testes, `tsc` limpo, build | conferência de navegador em andamento neste registro |
+
+Fora do Git: ambiente de nuvem pessoal "Grand Testament + Bíblia Conectada" criado com aprovação do Alex,
+liberando só `grand-testament-assets.vercel.app` e `grand-testament-adventure-lexprojects.vercel.app`.
+A PR #1 foi aberta como rascunho. Nenhuma issue, cobrança, migração de banco ou deploy de produção foi feito.
+
+**Tentativas que falharam, com causa raiz (material honesto para os Reels):**
+
+1. `fx=alto` e `fx=master` no primeiro commit (`4a61f47`) davam 2 erros de console e rodavam **sem oclusão**: o GTAO
+   amostra a normal com `.sample(uv)` e recebeu um valor já desempacotado. Corrigido em `dab8a9f`.
+2. A conferência do plano cinematográfico falhou três vezes. Hipóteses testadas uma de cada vez: obstáculos sem
+   altura (falsa: todos têm `top`), qualidade alta (falsa: o plano entra também), corrida no teste (verdadeira: o
+   estado era lido numa segunda chamada, depois de a fala de ~7 quadros acabar). Corrigido em `2a8a8e1`.
+3. Uma repetição falhou antes, na caminhada: o herói parou num jarro da viela porque o gesto empurrava levemente para
+   a direita. Colisão parar a animação é o jogo funcionando; o teste passou a empurrar reto.
+4. As fotos do bench em `fx=master` saíram sem a água do raso. **Primeiro diagnóstico (errado, registrado no commit
+   `2a8a8e1`):** histórico do TRAA atravessando o corte de câmera. A curva de cor quadro a quadro (água G>R, chão R>G)
+   desmentiu: a água fica ausente na maioria dos quadros e aparece em quadros isolados, mesmo 24 quadros depois.
+   Testado e refutado: reiniciar o histórico do TRAA no corte (`setSize`, duas variações) e entregar cor com alfa 1.
+   Isolado: sem TRAA (com velocidade no MRT e sem MSAA) a água aparece. **Bloqueio aberto:** o `master` (TRAA) não
+   desenha direito superfícies transparentes como a água; `fx=master` não deve virar padrão até resolver.
+
+**Bench neste contêiner (sem GPU, Chromium com WebGL 2 por software, 640×400, `tools/bench.mjs` às 10:26 UTC):**
+draw calls por plano (vila, viela, margem, pescadores, barco, panorama) — `fx=off` 174/78/174/203/123/41,
+`fx=alto` 187/91/187/216/136/54, `fx=master` 189/93/189/218/138/56; memória de textura informada pelo renderer
+1.206 / 1.210 / 1.218 MB; zero erros. Tempos de quadro dessa execução não valem para o jogo (software, ~0,5 fps).
+
+**Consumo de tokens desta sessão (retrato no momento deste registro, 8 arquivos; respostas de 2026-11-13T09:39:24.792Z a 2026-11-13T11:02:47.196Z):**
+
+| grupo | modelo | velocidade | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | cache_write_sem_ttl | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|---|---|
+| principal | claude-opus-5-5 | standard | 197 | 413 | 214.524 | 74.495.859 | 0 | 560.883 | 0 | 23.68 |
+| workflow | claude-opus-5-5 | standard | 294 | 588 | 313.323 | 56.838.981 | 1.393.382 | 0 | 0 | 24.60 |
+
+Total equivalente em preço de API: US$ 48.28. O valor é **equivalente em preço de lista da API** (claude-opus-5-5: entrada US$ 4,00, saída US$ 20,00,
+leitura de cache US$ 0,20 por milhão; escrita de cache 1,25× a entrada com TTL de 5 min e 2× com TTL de 1 h), não
+fatura: a sessão roda no plano da conta claude.ai, cobrado pelo plano. Conversão para reais não feita (precisa de
+uma cotação com fonte). Reproduzir: `python3 -I tools/session_usage.py <pasta-do-transcrito-da-sessão>`.
+O workflow do plano de qualidade AAA ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
+
+#### Tarde de 13/11 — variantes de visual, integração com a `main` e revisão
+
+Alex escolheu seguir **só no navegador** (resposta "A"), buscando o melhor visual web; a versão nativa saiu do plano.
+
+**Imagens A/B na base antiga (`02781cd`, software, 1280×800, mesmos seis planos):** `?atmo=1` muda em média
+0,16–0,54 (de 255) nos planos próximos e 4,27 no panorama: com os valores escolhidos a névoa quase não aparece.
+`?tm=agx` muda 11,9–17,3, mas deixa a imagem lavada e com menos contraste na exposição 1,08: pior, não promover.
+Nenhuma das duas acrescenta draw call (máximo de 203 por plano nas três variantes). As cascatas e a combinação não
+chegaram a sair nessa base (rodada interrompida para medir sobre a base integrada).
+
+**Integração com a `main`:** a `main` recebeu o hotfix de inicialização do iOS (`c664f9f`) com 73 arquivos novos ou
+alterados desde a base desta PR. O merge (`af033e9`) manteve o fluxo do Codex inteiro: carga com prazo, primeiro
+quadro antes do cartão, perda de dispositivo/contexto como erro final com "Tentar novamente", sem recarga automática.
+O diário de sessão deixou de recarregar com `?gl=1` e só anota a perda. A PR ficou sem conflito (`mergeable_state:
+clean`). Esta PR acrescenta 16,16 kB gzip ao JS da `main` (341,47 kB em `9c05537` contra 325,31 kB em `c664f9f`,
+builds feitos aqui com `vite build`).
+
+**Revisão adversarial (4 lentes, 8 agentes; cada achado confirmado por um segundo agente):** a primeira tentativa não
+rodou (limite de uso da conta atingido; resultado vazio não foi tratado como "nada encontrado"). Na segunda:
+1. `?shadow=csm` quase sem sombra além de ~24 m: cada cascata herdava a câmera de sombra da caixa (`far` 220) e o
+   `CSMShadowNode` a põe 200 m na direção do sol. Simulação com o nó real da r186, fração do chão visível fora da
+   profundidade da cascata: antes 1–65% / 92–100% / 100%; depois de `9c05537`, 0% nas três, em seis ângulos.
+2. **O `?bench` parou de funcionar depois do merge**: a `main` segura o quadro enquanto a fase é `intro`; o bench agora
+   é exceção.
+3. O diário anotaria perda de dispositivo falsa quando a `main` descarta o renderizador depois de uma falha.
+4. Mola da câmera não era exata com o herói andando (atraso caía ~v·dt/2 em fps baixo); agora o passo trata o alvo
+   como movendo em linha reta no quadro e o atraso é 2v/ω em qualquer fps (testado de 1/144 a 0,25 s).
+5. Cascatas não acompanhavam o redimensionamento; 3× a memória de sombra no celular e em `q=low`; `?tm=off` gravava
+   uma exposição que o three ignora; o pipeline do `?fx` não compilava antes do cartão; README falava em recarga.
+
+**Tentativas que falharam nesta tarde (causa raiz):**
+1. A prova do diário de sessão travou duas vezes: primeiro competindo com o bench pela CPU; depois esperando a
+   resposta de `Page.crash`, que nunca chega (o renderizador morre antes). Esperar o evento `crash` e recarregar pelo
+   CDP resolveu (`a47dbb5`); o Playwright recusa recarregar uma página que caiu.
+2. Duas asserções de teste minhas estavam erradas, não o código: tolerância de continuidade apertada demais
+   (`look.test.ts`) e uma conta da união de intervalos (`session_usage.py`). Corrigidas com a conta explícita.
+3. O modo cinema escondia Mapa/Colabore/Créditos durante a fala (achado pelo teste do Codex); a correção elevou a
+   barra e ela passou a cobrir a mão e o joystick deitado (achado pelo meu `check_touch`); corrigido em `b7f62b8`.
+4. Ao reiniciar a conferência apaguei a pasta local `shots/merge-r1` (provas de `af033e9`: 7/7 no `check_loading`,
+   falha do `check_hero_gesture`). Ficaram no registro da sessão; a rodada sobre `9c05537` substitui essas provas.
+
+**Conferência de navegador do build integrado (`9c05537`, Chromium com WebGL2 por software, sequencial):**
+`check_loading` 7/7 casos (lento PC/celular, falha e nova tentativa, modo seguro, perda de contexto na carga e com o
+jogo pronto, sem recarga automática). `check_touch` 390×844 passou; 844×390 falhou pelo toque coberto (corrigido em
+`b7f62b8`, reconferência em andamento). `check_hero_gesture` passa pela pausa do Colabore e os três ângulos agora
+diferem, mas esgota os 15 s reais que o script dá para a missão avançar a ~1 fps; um controle com a `main` pura no
+mesmo ambiente está na fila para separar ambiente de regressão. Demais suítes: em andamento.
+
+#### Fim da tarde de 13/11 — fauna integrada, mundo aberto, Bíblia, painel e R9
+
+**Pedidos de Alex nesta parte:** retomar código, mundo aberto e história deixando tudo commitado e publicado; uma
+**Bíblia cronológica dentro do jogo** (a do Bíblia Conectada), que o jogador abre para saber o próximo passo, em vez
+de só seguir um marcador; confirmação de que **a Bíblia não tranca o mundo**; uma **tela de analytics para devs**
+(acessos e quem/quantos contribuíram). Pelo Codex, a pedido de Alex: R9 sem bonecos de esfera/cilindro, prioridade a
+um trecho vila–praia bem acabado, e casas/solo como próxima frente desta sessão, em branch isolada.
+
+**Fila de navegador sobre `9c05537` (`shots/merge-r3`, local; Chromium com WebGL2 por software, um teste por vez):**
+passaram `check_loading`, `check_camera`, `check_session`, `check_world` e os dois benches. Falharam
+`check_hero_gesture` (15 s reais para a missão avançar), `check_worldmap` (clique esgota 30 s em 1280×800; 390 e 320
+passam), `check_premium` ("touch target"), `check_support`, `check_collaboration` e `check_feedback` (clique esgota
+30 s), `check_tripo` (andar mais de 1 m em 2 s) e `shots`. **Controles com a `main` pura no mesmo ambiente:**
+`check_hero_gesture` e `check_worldmap` falham do mesmo jeito sem nada desta PR, logo são limite do ambiente
+(~0,3 fps em 1280×800, ~0,6 fps em 390×844), não regressão. Os controles das outras suítes ficaram na fila e **ainda
+não rodaram**: essas falhas seguem sem classificação.
+`check_camera`: maior salto da câmera 0,488 m (fixa) contra 0,506 m (`?cam=mola`), 0 quadros dentro de casas nas duas;
+o benefício da mola não apareceu no navegador. Medidas das variantes na base integrada: `docs/GRAFICO-MASTER.md`.
+
+**Fila sobre `caf7244` (com a fauna R8):** `check_fauna_scene` celular passou (22 verificações). Falharam
+`check_loading` (casos `slow-desktop` e `fail-retry`), `check_touch`, fauna desktop, 404 parcial e áudio. Causa
+observada nos registros: a fauna opcional tem prazo de 30 s **reais** por arquivo e, a ~0,3 fps, expira; o cancelamento
+deixa erros `THREE.GLTFLoader: Couldn't load texture blob:` no console, que as suítes contam como erro. O
+`check_touch` passou a separar esses erros somente quando o aviso de expiração da fauna está presente. O controle
+dessas suítes na `main` pura (`ea39f63`) está na fila; até ele rodar, a causa é observação, não prova.
+
+**Mundo aberto, Bíblia e painel:** ver a tabela de commits. Decisões tomadas por mim com a delegação de Alex
+("o resto, decida pelo melhor para a evolução"), registradas em `docs/NARRATIVA.md`: o epílogo mostra só a primeira
+oração de Marcos 1:21 e a Bíblia mostra o versículo inteiro; o mapa do Codex ainda lista as missões (alinhar com ele);
+a leitura não é guardada entre visitas. O painel é construído por um `vite.painel.config.ts` próprio: como segunda
+página do mesmo build ele tirava o CSS do tema e o auxiliar de pré-carga do Vite para arquivos à parte, ou seja, dois
+pedidos a mais na abertura do jogo; separado, o CSS do jogo sai com o mesmo nome e hash (`index-CoqAIWud.css`).
+**Acessos não são medidos hoje:** a API da Vercel responde "Web Analytics not found" para o projeto do jogo
+(consulta de leitura em 13/11, 17:57 UTC) e o jogo não tem contador. O painel declara isso a partir de um registro no
+repositório (`ACCESS` em `src/project-stats.ts`, com a data da conferência), e um teste impede que alguma página
+carregue um contador enquanto o registro disser que não há fonte. Nenhum número de acesso foi inventado; a fonte de
+medição depende de Alex.
+
+**Contagem de visitas (pedido de Alex às ~18:07 UTC: `npm i @vercel/analytics`):** a produção passou a responder
+200 em `/_vercel/insights/script.js` (antes 404), sinal de que o Web Analytics foi ligado no projeto. Instalado
+`@vercel/analytics` 2.0.1 (MIT, sem dependências obrigatórias; versão exata no `package.json`, como as demais).
+`src/analytics.ts` chama o `inject()` do pacote **só no build que a Vercel faz para produção** e corta do endereço
+tudo depois de `?` ou `#` antes do envio. Medido: +2.435 bytes no JS do jogo (+1,09 kB gzip pelo relatório do Vite).
+`tools/check_analytics.mjs`, com uma cópia do script servido em produção (SHA-256 `050e35bf7e6e9659…`, 4.522 bytes)
+e os pedidos respondidos localmente: build local não pede nada; build de produção carrega o script e envia **uma**
+visita com `{"o": endereço sem parâmetros, "sv", "sdkn", "sdkv", "r": ""}`; nenhum cookie, nada no armazenamento;
+navegador automatizado carrega o script e **não** envia visita (os testes e agentes não inflam a contagem). Os
+créditos do jogo ganharam a seção "Visitas" dizendo isso. O painel de devs não é contado. A API de consulta ainda
+responde "Web Analytics not found": só haverá número depois que esta versão estiver em produção e receber visitas.
+`npm` avisou de 4 vulnerabilidades moderadas no conjunto de dependências; não foram investigadas nem alteradas aqui.
+
+**Conciliação com a R9 (`6878694`):** os trechos da R9 em `main.ts`, `hud.ts` e `journey.ts` ficaram como o Codex
+escreveu (herói sem substituto, nenhum ator/colisor/seguidor de radar para participantes, aviso de cena em
+desenvolvimento). Dois conflitos em `main.ts` (a chamada do HUD da jornada/Bíblia e os ganchos de depuração). O que
+dependia dos atores retirados foi adaptado: plano cinematográfico, volta à vila, `check_roam`, `shots` e a guarda do
+rig (o herói chega ao `animated-actor.ts` por `character-quality.ts`). O JS do jogo caiu de 1.236,36 kB para
+1.229,10 kB (362,29 → 359,68 kB gzip) com a saída de `people.ts` do grafo. A fila do navegador foi trocada para essa
+árvore quando o `check_bible` de `a66b232` terminou (passou nos dois tamanhos de tela); as demais conferências de
+`a66b232` não rodaram e são substituídas pelas da árvore conciliada.
+
+**Tentativas que falharam nesta parte (causa raiz):**
+1. Literal de teste errado: 421,4 m no `places.test.ts`; a conta à mão dá 421,03 m. Corrigido o teste, não o código.
+2. As marcas do contador não eram desenhadas ao entrar por "Explorar a região" (o contador só era montado por uma
+   missão); `drawCounter` passou a ser comum (`cf7c4a7`).
+3. `build_bible.py`: linhas do `SHA256SUMS` com espaços quebravam a leitura; e a primeira versão retirava colchetes do
+   texto. Passou a usar o texto da BLIVRE como está, que é como o site do Bíblia Conectada o mostra.
+4. O script que ligava a Bíblia ao `main.ts` abortou numa âncora duplicada, sem escrever nada; refeito com âncora
+   única e conferido por `git diff --stat`.
+5. O painel como segunda página do build mudou o bundle do jogo (ver acima); refeito com configuração própria.
+6. A guarda do rig falhou depois do merge da R9 por conferir um import que mudou de arquivo; a conferência agora
+   segue o caminho novo e continua exigindo o `animated-actor.ts`.
+7. `check_roam` falhou na árvore conciliada em 23 s ("the found place is announced"): o aviso de lugar encontrado dura
+   6 s reais e o teste o lia em quatro idas ao navegador, com a máquina ocupada por um `npm`/`tsc` meu ao mesmo tempo.
+   A leitura passou a ser uma só, no mesmo instante em que o lugar é encontrado; repetição na fila.
+8. A primeira asserção do `check_analytics` esperava a visita sem o campo do site de origem; o script da Vercel envia
+   `"r": ""` quando a página é aberta direto. Corrigida a expectativa, não o código.
+
+**Consumo real da sessão até 13/11/2026 17:53:25 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+38 arquivos; respostas desde 09:39:24 UTC). Substitui o retrato anterior, que era parcial:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 174 | 362 | 274.636 | 102.955.312 | 0 | 1.139.040 | 49.80 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 236,44**. Atividade estimada: **6,77 h** (intervalos entre respostas
+até 5 min, sem sobreposição; estimativa, não ponto batido). Não é fatura: a sessão roda no plano da conta claude.ai.
+O modelo da sessão foi trocado por Alex durante a tarde; a linha `claude-fable-5-2` usa o preço de lista da referência
+da API que acompanha o Claude Code (US$ 8 entrada, US$ 40 saída, US$ 0,20 leitura de cache por milhão), acrescentado
+ao script neste commit. Cinco respostas sintéticas (sem tokens) ficam fora da tabela. Conversão para reais não feita.
 
 ### Publicação R3 registrada
 
@@ -498,3 +823,40 @@ Claude avançou até `7c02464` com painel e diário, incluindo a integração R9
 em sua própria branch. Ela foi consultada sem alteração; casas/solo continuam
 na worktree Codex. A publicação desta R10 e o handoff final serão vinculados
 na PR e no arquivo privado de evidências, sem publicar Reels automaticamente.
+
+## 13/11/2026 — R12, continuidade e primeiro Simão no jogo
+
+Alex pediu que Codex assumisse o trabalho. A base de Claude foi preservada;
+a PR #7, com a correção RTX R11 e documentação do rig, entrou na branch da
+PR #1 antes da integração do NPC. O histórico da bancada, inclusive a
+tentativa SMAA rejeitada, permanece em `QA-RTX-R11.md`. A nova worktree é
+`codex/takeover-r12`, com ownership separado de runtime, assets e QA.
+
+Simão usa a malha própria revisada, 22 juntas, idle e caminhada. Derivados
+determinísticos de 1024/512 pixels preservam os dados de geometria/skin/clipes;
+a versão móvel tem 924.912 bytes. Carrega depois de entrar no jogo. Uma falha
+de download não cria personagem geométrico ou colisor invisível. O seguidor
+valida terreno seco e paredes; mantém 0,70 m/s, sem corrida ou teleporte de
+recuperação. Outros participantes continuam somente na narrativa até terem
+malhas e animações aprovadas. Não houve nova geração ou gasto Tripo.
+
+O primeiro build passou 300 testes, mas o navegador encontrou a rejeição da
+base relativa `./` usada pelo Vite. Corrigimos o contrato catálogo/carregador
+e a regressão passou no conjunto de 301 testes. Uma falha posterior do teste
+de epílogo era uma leitura do HUD antes do quadro de atualização; a espera
+foi corrigida. No móvel, um gesto curto ainda deixava o herói na água e o
+NPC corretamente esperava: ajustamos o percurso do teste, mantendo a regra
+de terreno. Tentativas e capturas anteriores foram preservadas.
+
+A revisão independente levantou uma dúvida sobre orientação via Bíblia.
+Conferimos a escolha explícita de Alex em `NARRATIVA.md`: a leitura revela
+a orientação, mas chegar ao encontro permite agir. Essa decisão foi mantida.
+O painel recebeu um aviso quando os totais são parciais na página de 100
+issues/PRs. Dados públicos recebidos continuam tratados como texto, sem
+executar instruções de comentários.
+
+Builds, testes de navegador, publicação dos assets e resultados finais do
+jogo são rastreados em `CONTINUIDADE-R12.md` e `QA-R12.md`. Screenshots são
+do jogo real; posicionamentos de QA não provam caminhada contínua pelo mapa.
+WebKit no Windows não substitui Safari no iPhone. O diário e os recibos
+privados ficam disponíveis para a série de Reels, sem publicação social.

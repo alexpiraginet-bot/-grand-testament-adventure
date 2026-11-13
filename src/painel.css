@@ -1,0 +1,61 @@
+/* The devs' panel (painel.html): the non-game palette of ui-theme.css (ivory, burgundy, gold). No game code loads here. */
+@font-face { font-family: "Space Grotesk"; src: url("/fonts/SpaceGrotesk-VF.woff2") format("woff2"); font-weight: 300 700; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/SpaceMono-Bold.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/SpaceMono-Regular.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+* { box-sizing: border-box; }
+html { background: var(--ui-ground); }
+body { margin: 0; color: var(--ui-ink); font: 400 16px/1.55 "Space Grotesk", system-ui, sans-serif; }
+.painel { max-width: 1040px; margin: 0 auto; padding: clamp(20px, 5vw, 56px) clamp(16px, 4vw, 40px) 64px; }
+.eyebrow { margin: 0 0 6px; font: 700 11px "Space Mono", monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--ui-accent); }
+h1 { margin: 0; font-size: clamp(32px, 6vw, 52px); font-weight: 600; line-height: 1.05; letter-spacing: -.02em; }
+.lead { margin: 12px 0 0; max-width: 62ch; color: var(--ui-secondary); }
+.painel-nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+.painel-nav a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 16px; border: 1px solid var(--ui-line-strong); border-radius: 10px;
+  color: var(--ui-action); background: var(--ui-surface); font-weight: 600; font-size: 14px; text-decoration: none; }
+.painel-nav a:first-child { background: var(--ui-action); border-color: var(--ui-action); color: var(--ui-on-action); }
+.painel-nav a:hover { border-color: var(--ui-action); }
+:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
+.stamp { margin: 16px 0 0; font: 400 12px "Space Mono", monospace; color: var(--ui-muted); }
+.stamp.is-error { color: var(--ui-danger); }
+.stamp button { margin-left: 10px; min-height: 36px; padding: 4px 12px; border: 1px solid var(--ui-action); border-radius: 8px; background: var(--ui-surface); color: var(--ui-action);
+  font: 600 13px "Space Grotesk", sans-serif; cursor: pointer; }
+
+/* headline numbers: stat tiles, not charts */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 28px 0 0; }
+.tile { padding: 16px 16px 14px; border: 1px solid var(--ui-line); border-radius: 12px; background: var(--ui-surface); }
+.tile b { display: block; font: 700 clamp(28px, 5vw, 40px)/1 "Space Mono", monospace; color: var(--ui-ink); }
+.tile span { display: block; margin-top: 8px; font-weight: 600; color: var(--ui-secondary); }
+.tile small { display: block; margin-top: 2px; font: 400 12px "Space Mono", monospace; color: var(--ui-muted); }
+
+.block { margin: 40px 0 0; padding-top: 24px; border-top: 1px solid var(--ui-line); }
+h2 { margin: 0 0 6px; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+h3 { margin: 0 0 8px; font: 700 11px "Space Mono", monospace; letter-spacing: .12em; text-transform: uppercase; color: var(--ui-accent-strong); }
+.note { margin: 0 0 16px; max-width: 70ch; font-size: 14px; color: var(--ui-muted); }
+code { font: 400 13px "Space Mono", monospace; background: var(--ui-raised); padding: 1px 5px; border-radius: 4px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+
+/* a counted list: the name, a thin bar from the same zero, the value in ink (one series, one hue, no legend) */
+.bars { width: 100%; border-collapse: collapse; }
+.bars th { text-align: left; font: 400 11px "Space Mono", monospace; letter-spacing: .06em; color: var(--ui-muted); padding: 0 0 6px; border-bottom: 1px solid var(--ui-line); }
+.bars th:last-child, .bars td:last-child { text-align: right; }
+.bars td { padding: 8px 0; border-bottom: 1px solid var(--ui-line); vertical-align: middle; }
+.bars td:first-child { padding-right: 12px; font-weight: 600; overflow-wrap: anywhere; }
+.bars td.bar { width: 42%; padding-right: 12px; }
+.bars td.bar i { display: block; height: 8px; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--ui-action); }
+.bars td:last-child { font: 700 14px "Space Mono", monospace; white-space: nowrap; }
+.bars tr:hover td { background: var(--ui-highlight); }
+.bars a { color: var(--ui-action); }
+.empty { margin: 0; padding: 14px 16px; border: 1px dashed var(--ui-line-strong); border-radius: 10px; color: var(--ui-muted); font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
+.chips li { padding: 6px 12px; border: 1px solid var(--ui-line); border-radius: 999px; background: var(--ui-surface); font-size: 14px; }
+.chips b { font: 700 14px "Space Mono", monospace; margin-right: 6px; }
+
+/* a state, never colour alone: a word and a mark */
+.status { display: flex; gap: 12px; align-items: flex-start; padding: 16px; border: 1px solid var(--ui-line-strong); border-left: 6px solid var(--ui-line-strong); border-radius: 12px; background: var(--ui-surface); }
+.status.is-on { border-left-color: var(--ui-success); } .status.is-off { border-left-color: var(--ui-danger); }
+.status strong { display: block; font-size: 17px; }
+.status p { margin: 4px 0 0; color: var(--ui-secondary); font-size: 15px; max-width: 68ch; }
+.status .mark { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font: 700 14px "Space Mono", monospace; color: var(--ui-surface); background: var(--ui-line-strong); }
+.status.is-on .mark { background: var(--ui-success); } .status.is-off .mark { background: var(--ui-danger); }
+.painel-foot { margin: 48px 0 0; padding-top: 18px; border-top: 1px solid var(--ui-line); }
+.painel-foot p { margin: 0 0 6px; font-size: 12px; color: var(--ui-muted); max-width: 80ch; }

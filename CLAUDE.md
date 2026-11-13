@@ -1,5 +1,24 @@
 # Grand Testament Adventure — continuidade local
 
+R12 (13/11): por pedido de Alex, Codex assumiu a integração da PR #1 na
+branch `codex/takeover-r12`. Ler `docs/CONTINUIDADE-R12.md`,
+`docs/NPC-INTEGRACAO-R12.md`, `docs/NPC-ASSETS-R12.md` e `docs/QA-R12.md`.
+Simão é o primeiro NPC com rig/idle/caminhada próprios: os demais continuam
+fora da cena. Respeitar o perfil móvel, o movimento a 0,70 m/s e a validação
+de terreno; não adicionar teleporte de recuperação nem primitivas de reserva.
+Os binários são hospedados separadamente e não entram na licença MIT do código.
+Consultar o registro de publicação R12 antes de tratar uma revisão como pública.
+
+R11 (13/11): bancada RTX e correção GTAO em `codex/claude-rtx-r11`, PR #7
+direcionada à branch Claude da PR #1. Ler `docs/QA-RTX-R11.md` e
+`docs/GRAFICO-MASTER.md`. Alto usa profundidade/normal opacas sem MSAA;
+Master conserva TRAA. A tentativa SMAA foi rejeitada por pontos na água,
+apesar de zero erros de shader. Não reintroduzir nem promover por seu tempo
+GPU menor. Efeitos permanecem opcionais, sem prova de Safari físico.
+O primeiro Simão rigado está revisado em viewer local, ainda fora do runtime:
+`docs/NPC-SIMAO-R11.md` identifica GLB/BLEND, clipes, hashes e limites. Próxima
+integração precisa perfil móvel e teste de terreno/seguidores/cinemática.
+
 R10 (13/11): casas/solo foram separados em `village-houses.ts`,
 `village-house-placement.ts` e `ground-surface.ts`. Antes de evoluir esses
 trechos, ler `docs/CASAS-R10.md`, `docs/SOLO-R10.md` e `docs/QA-VILA-R10.md`.

@@ -5,8 +5,11 @@ import episode from "./data/mc-pescadores.json";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
 import { missionRoutes, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
+import { countVisits } from './analytics.ts';
 import { goals as makeGoals, npcs as makeNpcs, shoreDir } from "./episode.ts";
 import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
+import { EPILOGUE_RADIUS_M, epilogueLine, finishedState, initialRoam, roamDistance, startFree, startRoam, stepRoam } from "./freeroam.ts";
+import { discover, distanceToEdge, EDGE_NOTICE_M, nearestUnfound, parseFound, PLACES_KEY, regionPlaces, serializeFound, windName } from "./places.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
@@ -14,6 +17,10 @@ import { setupFeedbackPanel } from "./feedbackui.ts";
 import { setupWorldMap } from './worldmap.ts';
 import './worldmap.css';
 import nuvem from "./data/nuvem.json";
+import bibleData from "./data/biblia-cronologica.json";
+import { currentStep, episodeSteps, readingOrder, type BibleData } from "./bible.ts";
+import { setupBible } from "./bibleui.ts";
+import { BLIVRE_NOTICE } from "./credits.ts";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
@@ -24,12 +31,25 @@ import {faunaAssetsManifest} from './fauna-assets-manifest.ts';
 import {createFaunaPopulation,type FaunaPopulation} from './fauna-population.ts';
 import {stepFauna,type FaunaAgent} from './fauna-simulation.ts';
 import { requireHero, characterDiagnostics } from './character-quality.ts';
+import npcCatalog from './data/npc-assets.json';
+import {npcManifest,type NpcCatalog} from './npc-assets.ts';
+import {loadNpcActor,type NpcActor} from './npc-actor.ts';
+import {NpcNavigation,npcSpawn,npcCrossesBox,NPC_MOTION,type NpcGround} from './npc-navigation.ts';
 import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
 import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
 import { StartupLifecycle } from './startup-lifecycle.ts';
 import { abortable } from './asset-loading.ts';
+import { BenchRun, benchShots } from "./bench.ts";
+import { createPostFx, parseAo, parseFx } from "./postfx.ts";
+import { CAM_SPRING, parseCam, snap3, spring3, stepBoom, stepSpring3Moving } from "./camera.ts";
+import { atmosphereFog, cascadedShadows, parseAtmo, parseExposure, parseShadow, parseTone, TONE_MAPPING } from "./look.ts";
+import { ease, twoShot, type CineShot } from "./cinematic.ts";
+import { BUILD_SHA, describeGpu } from "./build-info.ts";
+import { installSessionLog } from "./session-log.ts";
+import { memorySummary, renderTargetBytes } from "./bench.ts";
+import { sceneTextures } from "./scene-memory.ts";
 
-const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
+const ep = episode as unknown as EpisodeData & { personagens: { id: string; ref: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
 const DEBUG = params.has("debug");
 // tests on a software renderer (1-2 fps) let game time follow real time: ?debug&dtmax=0.5
@@ -72,28 +92,41 @@ async function load() {
 }
 
 async function main() {
+  // the session diary (session-log.ts): errors, device/context loss and unclean ends, kept in this tab only
+  const slog = installSessionLog(window);
+  if (slog.previous?.uncleanEnd) console.warn("Sessão anterior desta aba terminou sem fechamento limpo (recarga ou queda).");
   const canvas = $("c") as HTMLCanvasElement;
   const touch = touchDevice;
   // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
   const hash = location.hash.slice(1);
   const quality = params.get("q") ?? (hash === "baixa" || startupProfile.compat ? "low" : "high");
   const q = quality === "low" ? 0.55 : 1;
+  // ?fx=alto|master: post-processing under measurement (postfx.ts); without it the game renders exactly as before
+  const fxLevel = parseFx(params.get("fx"));
+  // ?tm= ?exp= ?atmo=1 ?shadow=csm: look options under measurement (look.ts); without them, the shipped render
+  const visual = { tone: parseTone(params.get("tm")), exposure: parseExposure(params.get("exp")),
+    atmo: parseAtmo(params.get("atmo")), shadow: parseShadow(params.get("shadow")) };
 
   // WebGPU only on a real adapter; iOS defaults to the bounded WebGL profile.
   // Device/context loss is terminal with an explicit retry, never an automatic reload loop.
   loading.stage('Preparando a imagem');
   let forceWebGL = params.get("gl") === "1" || startupProfile.compat;
+  type AdapterInfo = { isFallbackAdapter?: boolean; vendor?: string; architecture?: string; device?: string; description?: string };
+  let adapterInfo: AdapterInfo | null = null;            // names the GPU in bench reports (build-info.ts)
   if (!forceWebGL) {
-    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ isFallbackAdapter?: boolean; info?: { isFallbackAdapter?: boolean } } | null> } }).gpu;
+    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ isFallbackAdapter?: boolean; info?: AdapterInfo } | null> } }).gpu;
     const ad = gpu ? await withDeadline(abortable(gpu.requestAdapter(),startup.signal),8000,'O dispositivo gráfico demorou a responder.').catch(() => null) : null;
+    adapterInfo = ad?.info ?? null;
     forceWebGL = !ad || !!ad.isFallbackAdapter || !!ad.info?.isFallbackAdapter;
   }
   startup.check();
-  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low", forceWebGL, logarithmicDepthBuffer: true });
+  // GPU timestamps only while benchmarking (bench.ts): they cost queries every frame
+  const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true,
+    trackTimestamp: params.has("bench") });
   renderer.setPixelRatio(Math.min(devicePixelRatio,startupProfile.mobile?1.25:quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMapping = TONE_MAPPING[visual.tone];
+  renderer.toneMappingExposure = visual.exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   let rendererReady=false,rendererDisposed=false;
@@ -104,13 +137,24 @@ async function main() {
   };
   const lost=()=>failStartup(new Error('O navegador interrompeu a imagem. Abra no modo compatível para tentar novamente.'));
   canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost();});
+  // the session diary records a real loss, not the one stopRenderer causes by disposing after a startup failure
+  canvas.addEventListener("webglcontextlost", () => { if (!rendererDisposed) slog.mark("context-lost", "webglcontextlost"); });
   const initialising=renderer.init().then(()=>{rendererReady=true;if(startup.signal.aborted)stopRenderer();});
   await withDeadline(abortable(initialising,startup.signal),20000,'Não foi possível iniciar a imagem neste navegador.');
   startup.check();
   loading.complete('renderer','Recebendo o mundo');
   const be = renderer.backend as unknown as { isWebGPUBackend?: boolean; device?: { lost: Promise<unknown> } };
   const backend = be.isWebGPUBackend ? "WebGPU" : "WebGL2";
-  be.device?.lost.then(lost);
+  const gl = (renderer.backend as unknown as { gl?: WebGL2RenderingContext | null }).gl ?? null;
+  const glInfo = gl?.getExtension("WEBGL_debug_renderer_info");
+  const gpuName = describeGpu({ webgpu: be.isWebGPUBackend ? adapterInfo : null,
+    webglRenderer: gl && glInfo ? String(gl.getParameter(glInfo.UNMASKED_RENDERER_WEBGL)) : null });
+  slog.setBackend(backend);
+  be.device?.lost.then((info) => {
+    const why = info as { message?: string; reason?: string } | undefined;
+    if (!rendererDisposed && why?.reason !== "destroyed") slog.mark("device-lost", why?.message ?? "device lost");
+    lost();
+  });
 
   const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([
     load().then(value=>{loading.complete('world','Mapa da Galileia preparado');return value;}),
@@ -126,7 +170,8 @@ async function main() {
   const scene = new THREE.Scene();
   const sunDir = new THREE.Vector3(0.45, 0.92, 0.7).normalize();
   scene.add(sky(sunDir,skyTextures.background));
-  scene.fog = new THREE.Fog(0x9daab9, 400, 16000);
+  if (visual.atmo) scene.fogNode = atmosphereFog(sunDir);    // replaces the linear fog below (NodeManager reads fogNode first)
+  else scene.fog = new THREE.Fog(0x9daab9, 400, 16000);
   // Smaller panorama for reflections; avoid generating an environment from the 4K background.
   scene.environment = skyTextures.environment;
   scene.environmentRotation.y=-.38;
@@ -134,10 +179,15 @@ async function main() {
   scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x7d6c4f, 1.25));
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(startupProfile.mobile||quality === "low" ? 1024 : 4096,startupProfile.mobile||quality === "low" ? 1024 : 4096);
+  // three cascades each clone this shadow, so ?shadow=csm keeps their total under the single map's:
+  // 3 x 2048² against 4096² on PC, 3 x 512² against 1024² on phones and at q=low
+  const shadowSize = visual.shadow === "csm" ? (startupProfile.mobile || quality === "low" ? 512 : 2048)
+    : startupProfile.mobile || quality === "low" ? 1024 : 4096;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera; sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28; sc.near = 1; sc.far = 220;
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
+  const csm = visual.shadow === "csm" ? cascadedShadows(sun) : null;
 
   const P = meta.points;
   const movementMargin = 60;
@@ -185,8 +235,8 @@ async function main() {
   theBoat.group.rotation.y = -Math.atan2(alongShore.z,alongShore.x);
   scene.add(theBoat.group);
 
-  // Participants remain narrative data. No NPC has an approved animated asset yet.
-  // The unfinished A-pose candidates are neither instantiated nor used as invisible colliders.
+  // Participants remain narrative data; only the separately reviewed Simão may become an actor after Go.
+  // The other unfinished candidates are neither instantiated nor used as invisible colliders.
   const names = Object.fromEntries(ep.personagens.map((p) => [p.id, p.nome]));
   const specs = makeNpcs(meta, names);
   const net = castNet(assets);
@@ -201,14 +251,22 @@ async function main() {
   const heroSource = 'tripo-r1/hero-native-skeleton';
   scene.add(hero.root);
   const player = { pos: pt(P.start), heading: Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1])), speed: 0 };
+  let simao:NpcActor|null=null,simNav:NpcNavigation|null=null,npcStarted=false,optionalActorsStarted=false;
+  let npcStatus='not-started',npcError:string|null=null;
+  const actualNpc=()=>simao?.root.visible&&simao.root.parent&&simNav?simNav:null;
+  const npcFollowers=()=>{const nav=actualNpc();return nav&&state.followers.includes('simao')?[{pos:nav.pos,kind:'follower' as const}]:[];};
 
   const camera = new THREE.PerspectiveCamera(touch && innerHeight > innerWidth ? 62 : 52, innerWidth / innerHeight, 0.1, 60000);
   const cam = { yaw: player.heading, pitch: 0.2, dist: touch && innerHeight > innerWidth ? 5.2 : 4.4, idle: 0 };
+  // ?cam=mola: the head the camera looks at trails him on a spring, and the camera eases back out after a wall (camera.ts)
+  const camMode = parseCam(params.get("cam"));
+  const pivot = spring3(player.pos.x, 0, player.pos.z), boom = { x: cam.dist, v: 0 };
+  const headWas: [number, number, number] = [player.pos.x, 0, player.pos.z];   // the head one frame ago (moving target)
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   // Each modal owns its pause reason; closing one must not clear another panel's pause.
-  const panelPauses = new Set<'feedback'|'worldmap'>();
-  const setPanelPaused = (panel:'feedback'|'worldmap',open:boolean) => {
+  const panelPauses = new Set<'feedback'|'worldmap'|'biblia'>();
+  const setPanelPaused = (panel:'feedback'|'worldmap'|'biblia',open:boolean) => {
     if(open)panelPauses.add(panel);else panelPauses.delete(panel);
     input.setSuspended(panelPauses.size>0);
     syncAudio();
@@ -219,6 +277,33 @@ async function main() {
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;
+  // after the episode (freeroam.ts): keep exploring, the way back to the village and the clause of Mark 1:21
+  const roam = initialRoam();
+  const epilogue = epilogueLine(ep);
+  const roamGoal = { at: pt(P.start), radius: EPILOGUE_RADIUS_M };       // where the walk began, inside the village
+  // the lane and the shore walked the other way, for the radar's dots on the way back
+  const wayBack = keep.slice().reverse().map((r) => ({ ...r, ax: r.bx, az: r.bz, bx: r.ax, bz: r.az }));
+  // the region's places (places.ts) and the ones this browser has already found
+  const regionList = regionPlaces(meta, ep, (x, z) => terrain.heightAt(x, z), movementMargin);
+  const foundPlaces = parseFound((() => { try { return localStorage.getItem(PLACES_KEY); } catch { return null; } })(), regionList);
+  const homeName = regionList.find((p) => p.origem === "fonte")?.nome ?? null;
+  hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
+  // the Bible (bible.ts, bibleui.ts): the passage verse by verse, in its place in the chronological reading. Opening it
+  // is how the player learns the next step: until then the mission line asks for it and the radar shows no goal.
+  const bibleSteps = episodeSteps(ep, goals, epilogue && homeName ? `Volte a ${homeName}` : null);
+  const bibleOrder = readingOrder(bibleData as BibleData, ep);
+  const stepNow = () => currentStep(bibleSteps, state.phase, state.mission, roam.phase);
+  let bibleRead = -1;                                   // the furthest step whose verses were opened
+  const sealedStep = () => { const k = stepNow(); return k < bibleSteps.length && bibleRead < k ? bibleSteps[k] : null; };
+  const bible = setupBible({
+    episode: ep, steps: bibleSteps, entries: bibleOrder.entries, after: bibleOrder.after, gospelName: bibleOrder.gospelName,
+    current: stepNow,
+    canOpen: () => !$("hud").hidden && state.phase !== "intro" && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    onOpenChange: (open) => setPanelPaused("biblia", open),
+    onRead: (step) => { bibleRead = Math.max(bibleRead, step); },
+    notice: BLIVRE_NOTICE, orderSource: "Ordem de leitura: roteiro editorial do Bíblia Conectada. Texto de cada passagem: Bíblia Livre, sem alteração.",
+  });
+  $("obj").addEventListener("click", () => bible.open());
   // One graph, created by Go; audio never participates in startup readiness.
   let natureAudio:FaunaAudio|null=null,natureRunning=false;
   let faunaScene:FaunaScene|null=null,faunaPopulation:FaunaPopulation|null=null,faunaAgents:FaunaAgent[]=[];
@@ -257,6 +342,7 @@ async function main() {
   startup.signal.addEventListener('abort',()=>{
     natureAudio?.dispose();natureRunning=false;sfx.setPaused(true);audioPanels.disconnect();
     faunaScene?.dispose();faunaPopulation?.clear();faunaPopulation=null;faunaAgents=[];faunaBlocked=()=>false;faunaStatus='disposed';
+    simao?.dispose();simao=null;simNav=null;npcStatus='disposed';
   },{once:true});
   const audioCreditHeading=document.createElement('h4');audioCreditHeading.textContent='Gravações de natureza';
   const audioCredit=document.createElement('p');audioCredit.textContent='Gravações modernas usadas na recriação: ';
@@ -303,7 +389,7 @@ async function main() {
   };
   setupWorldMap({terrain,image:img,episode:ep,routes:keep,goals,buildings:town.boxes,movementMargin,
     player:()=>player,state:()=>state,
-    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line'||roam.phase!=='off') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
     onOpenChange:open=>setPanelPaused('worldmap',open),button:$("mapbtn") as HTMLButtonElement});
 
   let resizeTimer:ReturnType<typeof setTimeout>;
@@ -312,6 +398,7 @@ async function main() {
     camera.aspect = innerWidth / innerHeight;
     camera.fov = touch && innerHeight > innerWidth ? 62 : 52;
     camera.updateProjectionMatrix();
+    if (csm?.camera) csm.updateFrustums();          // cascades follow the new fov/aspect (no-op before their first build)
   },150); });
 
   // ---- saved progress (save.ts): this browser's copy, autosaved
@@ -376,11 +463,26 @@ async function main() {
   const total = ep.missoes.length;
   let prog = episodeProgress(save, ep.id);
   let resumable = prog.missionsDone > 0 && prog.missionsDone < total;
-  const beginPlay = (resume: boolean) => {
+  const openGame = () => {
     const graph=sfx.start();
     if(graph&&!natureAudio)natureAudio=new FaunaAudio(graph.context,graph.output,faunaAudioManifest(import.meta.env.BASE_URL),{habitats,maxVoices:3,onError:(id,error)=>console.warn(`Som opcional indisponível: ${id}`,error)});
     hud.show();
     sfx.setPaused(false);
+  };
+  /** A player who finished the episode can explore without replaying it. Narrative progress keeps four names;
+   * only the separately reviewed, successfully loaded Simão can become an actual follower. */
+  const beginExplore = () => {
+    openGame();
+    Object.assign(state, finishedState(ep, goals));
+    ended = true;
+    player.pos.x = P.start[0]; player.pos.z = P.start[1];
+    player.heading = Math.atan2(P.beach[0] - P.start[0], -(P.beach[1] - P.start[1]));
+    cam.yaw = player.heading;
+    startFree(roam);
+    syncAudio();void startOptionalActors();
+  };
+  const beginPlay = (resume: boolean) => {
+    openGame();
     if (resume) {
       Object.assign(state, restoreState(ep, goals, prog.missionsDone));
       const c = save.current;
@@ -395,7 +497,7 @@ async function main() {
       save = restartEpisode(save, ep.id, Date.now());
       handle(startEpisode(state));
     }
-    syncAudio();persist(false);void startFauna();
+    syncAudio();persist(false);void startOptionalActors();
   };
   const showStartCard = () => {
     prog = episodeProgress(save, ep.id);
@@ -406,9 +508,20 @@ async function main() {
       : store.status === "newer" ? "Este progresso foi salvo por uma versão mais nova do jogo: atualize a página para continuar."
       : "Este navegador não está deixando salvar (janela anônima?). Dá pra jogar, mas o progresso não fica.";
     if (resumable) hud.startCard({ primary: `Continuar · Missão ${prog.missionsDone + 1} de ${total}`, secondary: "Começar do zero", note });
-    else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
+    else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", secondary: "Explorar a região", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
     else hud.startCard({ primary: "Começar", note });
   };
+  // ---- same-scene benchmark (bench.ts, tools/bench.mjs): ?bench flies the fixed shots, no HUD, and times every frame
+  const num = (k: string, d: number) => { const v = Number(params.get(k)); return Number.isInteger(v) && v > 0 ? v : d; };
+  const bench = params.has("bench") ? new BenchRun(benchShots(P, (x, z) => terrain.heightAt(x, z)), num("warmup", 30), num("frames", 180)) : null;
+  // GPU time per frame from the renderer's timestamp queries, one resolve in flight at a time (a sample may lag a frame)
+  const gpuTimer = backend === "WebGPU" ? renderer.hasFeature("timestamp-query")
+    : !!(renderer.backend as unknown as { disjoint?: unknown }).disjoint;
+  if (bench && !gpuTimer) bench.gpuUnavailable = backend === "WebGPU" ? "sem timestamp-query neste adaptador" : "sem EXT_disjoint_timer_query_webgl2";
+  let gpuPending = false, gpuLast: number | null = null, lastShotName = "";
+  let benchLoadMs = NaN, benchHold = -1;             // after the timed route, hold(i) re-shows a shot for its picture
+  if (bench) $("start").hidden = true;
+  const fx = createPostFx(renderer, scene, camera, fxLevel, parseAo(params.get("ao")));
   // Enable the start button only after the first scene has actually rendered.
   if (cloud.enabled) setupCloudPanel({
     ensureCode: async () => {
@@ -447,6 +560,8 @@ async function main() {
   // starting over erases a run in progress: the button asks once more, in place
   let armed: ReturnType<typeof setTimeout> | undefined;
   novo.addEventListener("click", () => {
+    // with the episode finished and no run in progress, the second button is "Explorar a região": nothing to erase
+    if (!resumable && prog.completions > 0) { beginExplore(); return; }
     if (!armed) {
       novo.textContent = "Apagar a missão em andamento? Toque de novo"; novo.classList.add("armed");
       armed = setTimeout(() => { armed = undefined; novo.textContent = "Começar do zero"; novo.classList.remove("armed"); }, 4000);
@@ -455,9 +570,17 @@ async function main() {
     clearTimeout(armed); beginPlay(false);
   });
   ($("again") as HTMLButtonElement).addEventListener("click", () => location.reload());
+  // "Continuar explorando": the card goes, the region stays open (freeroam.ts)
+  const beginRoam = () => {
+    if (state.phase !== "done" || roam.phase !== "off") return;
+    $("end").hidden = true;
+    startRoam(roam, epilogue);
+    syncAudio();
+  };
+  ($("roam") as HTMLButtonElement).addEventListener("click", beginRoam);
 
   // ---- movement
-  const blocked = (x: number, z: number) => {
+  const blocked = (x: number, z: number,withNpc=true) => {
     if (!terrain.inside(x, z, movementMargin)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
@@ -465,17 +588,71 @@ async function main() {
       const lx = dx * c - dz * s, lz = dx * s + dz * c;
       if (Math.abs(lx) < b.hx + 0.3 && Math.abs(lz) < b.hz + 0.3) return true;
     }
-    return false;
+    const nav=withNpc?actualNpc():null;
+    return Boolean(nav&&Math.hypot(x-nav.pos.x,z-nav.pos.z)<NPC_MOTION.radius+.3);
   };
 
-  const tmp = new THREE.Vector3();
+  // Static buckets keep bounded follower searches independent of the full village object count.
+  const npcCells=new Map<string,Obstacle[]>(),npcCellSize=24;
+  for(const box of town.boxes){const radius=Math.hypot(box.hx,box.hz);
+    for(let z=Math.floor((box.z-radius)/npcCellSize);z<=Math.floor((box.z+radius)/npcCellSize);z++)
+      for(let x=Math.floor((box.x-radius)/npcCellSize);x<=Math.floor((box.x+radius)/npcCellSize);x++){
+        const key=`${x}:${z}`,list=npcCells.get(key)??[];list.push(box);npcCells.set(key,list);
+      }
+  }
+  const npcGround:NpcGround={heightAt:(x,z)=>terrain.heightAt(x,z),inside:(x,z)=>terrain.inside(x,z,movementMargin),
+    blocked:(x,z)=>(npcCells.get(`${Math.floor(x/npcCellSize)}:${Math.floor(z/npcCellSize)}`)??[]).some(box=>insideObstacle(x,z,box,0)),
+    segmentBlocked:(a,b,radius)=>{
+      for(let z=Math.floor((Math.min(a.z,b.z)-radius)/npcCellSize);z<=Math.floor((Math.max(a.z,b.z)+radius)/npcCellSize);z++)
+        for(let x=Math.floor((Math.min(a.x,b.x)-radius)/npcCellSize);x<=Math.floor((Math.max(a.x,b.x)+radius)/npcCellSize);x++)
+          if((npcCells.get(`${x}:${z}`)??[]).some(box=>npcCrossesBox(a,b,box,radius)))return true;
+      return false;
+    }};
+  const startNpc=async()=>{
+    if(npcStarted||startup.signal.aborted)return;npcStarted=true;npcStatus='loading';
+    let loaded:NpcActor|null=null;
+    try{
+      const spec=npcManifest(npcCatalog as NpcCatalog,startupProfile.mobile,import.meta.env.BASE_URL);
+      loaded=await loadNpcActor(spec,{signal:startup.signal});
+      if(startup.signal.aborted){loaded.dispose();return;}
+      const following=state.followers.includes('simao'),story=specs.find(s=>s.id==='simao')!;
+      const near=following?{x:player.pos.x-Math.sin(player.heading)*2.7,z:player.pos.z+Math.cos(player.heading)*2.7}:story.pos;
+      // One validated initial placement before visibility; never relocate an existing follower to catch up.
+      const spawn=npcSpawn({...npcGround,blocked:(x,z)=>npcGround.blocked(x,z)||Math.hypot(x-player.pos.x,z-player.pos.z)<1.6},near);
+      if(!spawn)throw Error('Não há um ponto de apoio seguro para Simão nesta posição.');
+      simNav=new NpcNavigation(npcGround,spawn,following?player.heading:story.facing,startupProfile.mobile?800:1600);
+      simao=loaded;simao.place(spawn,terrain.heightAt(spawn.x,spawn.z),simNav.heading);scene.add(simao.root);npcStatus='ready';
+    }catch(error){loaded?.dispose();simao=null;simNav=null;npcError=String(error);npcStatus=startup.signal.aborted?'disposed':'unavailable';
+      if(!startup.signal.aborted)console.warn('Simão visual indisponível; o encontro narrativo continua.',error);
+    }
+  };
+  const startOptionalActors=async()=>{
+    if(optionalActorsStarted)return;optionalActorsStarted=true;
+    await startFauna();await startNpc(); // One optional pipeline even if Go is tapped twice.
+  };
+
+  const tmp = new THREE.Vector3(), tmp2 = new THREE.Vector3();
+  // the story's two-shots (cinematic.ts): chosen when a line starts, blended in and out; cameraSolid matches the
+  // obstruction test the follow camera already uses for houses and walls
+  const cine: { shot: CineShot | null; k: number; left: boolean; why: string; ids: string[]; aim: THREE.Vector3; yaw: number; pitch: number } =
+    { shot: null, k: 0, left: false, why: "", ids: [], aim: new THREE.Vector3(), yaw: 0, pitch: 0 };
+  // Frame the actual Simão when visible. For absent participants, retain encounter locations (nets/boat),
+  // not invented actors; the narrative remains usable if the optional GLB fails.
+  const cinePlace = new Map(specs.map((s) => [s.id, s.pos]));
+  const cineSubjects = () => [player.pos, ...cine.ids.flatMap((id) => { const p=id==='simao'&&actualNpc()?actualNpc()!.pos:cinePlace.get(id);return p?[p]:[]; })];
+  const REDUCED_MOTION = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const hudEl = $("hud");
+  const cameraSolid = (x: number, y: number, z: number) =>
+    town.boxes.some((b) => y > (b.bottom ?? -Infinity) && y < (b.top ?? Infinity) + 0.15 && insideObstacle(x, z, b, 0.25));
   let last = performance.now(), fpsFrames = 0, fpsT = 0;
   const fpsLog: number[] = [];
   const fpsEl = $("fps");
   if (DEBUG || params.has("fps") || hash === "fps") fpsEl.hidden = false;
   let t = 0;
+  let frozen = false;                                    // ?debug only (__gta.freeze): the story's clock held; camera and controls run
 
-  const waitingToStart=()=>state.phase==='intro';
+  // the bench flies its shots without the start card, so it is never held here
+  const waitingToStart=()=>state.phase==='intro' && !bench;
   const frame = () => {
     syncAudio();
     if(startup.signal.aborted)return;
@@ -484,12 +661,20 @@ async function main() {
     const real = (now - last) / 1000; last = now;
     const paused = panelPauses.size>0;
     const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // modal panels pause mission time as well as controls
+    const shot = bench ? bench.shot ?? bench.shots[benchHold] ?? null : null;
+    if (shot) {
+      // stand him 4.5 m ahead of the shot's eye, facing its way, so shadows and vegetation detail follow as in play
+      const dx = shot.target[0] - shot.eye[0], dz = shot.target[2] - shot.eye[2], l = Math.hypot(dx, dz) || 1;
+      player.pos.x = shot.eye[0] + (dx / l) * 4.5; player.pos.z = shot.eye[2] + (dz / l) * 4.5;
+      player.heading = Math.atan2(dx, -dz);
+    }
     fpsFrames++; fpsT += real;                           // the FPS counter uses real time
     if (fpsT >= 1) { fpsLog.push(fpsFrames / fpsT); if (fpsLog.length > 120) fpsLog.shift(); fpsEl.textContent = `${backend}\n${(fpsFrames / fpsT).toFixed(0)} fps`; fpsFrames = 0; fpsT = 0; }
 
     input.poll();
     const look = input.takeLook();
-    const playing = !paused && (state.phase === "play" || state.phase === "line");
+    const roaming = roam.phase !== "off";
+    const playing = !paused && (state.phase === "play" || state.phase === "line" || roaming);
     if (playing || ended) {
       cam.yaw += look.dx * 0.0042;
       cam.pitch = Math.max(-0.25, Math.min(0.85, cam.pitch + look.dy * 0.003));
@@ -499,7 +684,7 @@ async function main() {
     // walk relative to the camera
     let mv = 0;
     const previousX = player.pos.x, previousZ = player.pos.z;
-    if (playing && !ended) {
+    if (playing && (!ended || roaming)) {
       const fx = Math.sin(cam.yaw), fz = -Math.cos(cam.yaw);
       const dx = fx * input.move.y + Math.cos(cam.yaw) * input.move.x, dz = fz * input.move.y + Math.sin(cam.yaw) * input.move.x;
       const l = Math.hypot(dx, dz);
@@ -531,9 +716,31 @@ async function main() {
     hero.root.rotation.y = -player.heading;
     actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17');
 
+    if(simao&&simNav){
+      const allowed=audioAllowed()&&!frozen&&!shot;
+      simNav.update(dt,player.pos,state.followers.includes('simao'),!allowed||state.phase==='line'||roam.phase==='line');
+      if(allowed&&state.phase==='line'&&state.mission===1){const desired=Math.atan2(player.pos.x-simNav.pos.x,-(player.pos.z-simNav.pos.z)),delta=desired-simNav.heading;simNav.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*4);}
+      simao.place(simNav.pos,terrain.heightAt(simNav.pos.x,simNav.pos.z),simNav.heading);
+      const visible=Math.hypot(player.pos.x-simNav.pos.x,player.pos.z-simNav.pos.z)<=100;
+      simao.update(dt,simNav.speed,visible,!allowed);
+    }
+
     // mission logic
-    if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
+    if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
     else input.takeAction();
+    if (!paused && !frozen && roaming) for (const e of stepRoam(roam, roamGoal, epilogue, player.pos, dt)) {
+      if (e.type === "line") sfx.line();
+      if (e.type === "epilogue-done") sfx.done();
+    }
+    // the region's places, found on foot at any time (not while the bench flies its shots)
+    if (!paused && !shot && state.phase !== "intro") {
+      const fresh = discover(regionList, foundPlaces, player.pos);
+      if (fresh.length) {
+        try { localStorage.setItem(PLACES_KEY, serializeFound(foundPlaces, regionList)); } catch { /* found for this visit only */ }
+        hud.placeFound(fresh[fresh.length - 1], foundPlaces.size, regionList.length);
+        hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
+      }
+    }
     // autosave every 15 s of play when he has moved (silent; ticked missions save at once, with the pill)
     if (!paused && (state.phase === "play" || state.phase === "line")) {
       playedSince += real; sinceSave += dt;
@@ -549,6 +756,18 @@ async function main() {
     // camera behind and above his shoulders, kept above the ground
     const cd = cam.dist, cp = cam.pitch;
     const head = new THREE.Vector3(player.pos.x, hero.root.position.y + 1.55, player.pos.z);
+    const springy = camMode === "mola" && state.phase !== "intro" && !shot;
+    if (springy) {
+      // a teleport or a cut (more than 6 m away) snaps; otherwise the head trails him, critically damped
+      // the head moved from headWas to here during the frame: step toward it moving, so the trail is the same at any fps
+      if (Math.hypot(pivot.x.x - head.x, pivot.y.x - head.y, pivot.z.x - head.z) > 6) {
+        snap3(pivot, head.x, head.y, head.z); headWas[0] = head.x; headWas[1] = head.y; headWas[2] = head.z;
+      }
+      const now3: [number, number, number] = [head.x, head.y, head.z];
+      stepSpring3Moving(pivot, headWas, now3, REDUCED_MOTION ? CAM_SPRING.pivotReduced : CAM_SPRING.pivot, dt);
+      if (dt > 0) { headWas[0] = now3[0]; headWas[1] = now3[1]; headWas[2] = now3[2]; }
+      head.set(pivot.x.x, pivot.y.x, pivot.z.x);
+    } else { snap3(pivot, head.x, head.y, head.z); headWas[0] = head.x; headWas[1] = head.y; headWas[2] = head.z; }
     tmp.set(head.x - Math.sin(cam.yaw) * Math.cos(cp) * cd, head.y + Math.sin(cp) * cd, head.z + Math.cos(cam.yaw) * Math.cos(cp) * cd);
     const floor = Math.max(terrain.heightAt(tmp.x, tmp.z), 0) + 0.4;
     if (tmp.y < floor) tmp.y = floor;
@@ -565,8 +784,48 @@ async function main() {
         tmp.lerpVectors(head,tmp,Math.max(.12,d-.23)/cameraDistance);break;
       }
     }
-    camera.position.copy(tmp);
-    camera.lookAt(head.x, head.y + 0.15, head.z);
+    if (springy) {
+      // in at once when a wall cuts the view, back out on the spring (reduced motion: no ease, straight to the test)
+      const allowed = head.distanceTo(tmp);
+      const use = REDUCED_MOTION ? (boom.x = allowed) : stepBoom(boom, allowed, CAM_SPRING.outward, dt);
+      if (allowed > 1e-6) tmp.sub(head).multiplyScalar(use / allowed).add(head);
+    } else { boom.x = head.distanceTo(tmp); boom.v = 0; }
+    // a line being read: the composed two-shot (cinematic.ts), unless the player walks out of it or asks for less motion
+    const lineOn = state.phase === "line" || roam.phase === "line";   // a mission's line, or the epilogue's
+    if (lineOn && !cine.left && !REDUCED_MOTION) {
+      if (!cine.shot) {
+        const g = goals[state.mission];
+        // who the line is about: those called now; back in the village the hero alone, since no one is drawn beside him
+        cine.ids = roam.phase === "line" ? [] : g.kind === "call" ? g.npcs : [];
+        const people = cineSubjects().map((p) => ({ x: p.x, z: p.z, ground: terrain.heightAt(p.x, p.z) }));
+        const hfov = 2 * Math.atan(Math.tan((camera.fov * Math.PI) / 360) * camera.aspect);
+        cine.shot = twoShot(people, hfov, { heightAt: (x, z) => terrain.heightAt(x, z), solid: cameraSolid }, tmp) ?? null;
+        if (!cine.shot) { cine.left = true; cine.why = "no-clear-shot"; }   // nowhere clear to stand: stay with the game camera
+        else { cine.why = "shot"; cine.aim.set(cine.shot.look.x, cine.shot.look.y, cine.shot.look.z); cine.yaw = cam.yaw; cine.pitch = cam.pitch; }
+      }
+      if (Math.hypot(input.move.x, input.move.y) > 0.3 && !cine.left) { cine.left = true; cine.why = "moved"; }
+      // turning the view (a drag, or anything else that sets the yaw or pitch) means the player wants the camera back,
+      // as walking does; during a line nothing else turns it
+      if ((look.dx || look.dy || cam.yaw !== cine.yaw || cam.pitch !== cine.pitch) && !cine.left && cine.shot) { cine.left = true; cine.why = "looked"; }
+    }
+    if (!lineOn) { cine.left = false; if (cine.k < 0.001) cine.shot = null; }
+    const want = lineOn && !cine.left && cine.shot ? 1 : 0;
+    cine.k += (want - cine.k) * Math.min(1, dt * 2.6);
+    const k = cine.shot ? ease(cine.k) : 0;
+    if (k > 0 && cine.shot) {
+      // the eye holds still; the aim follows the centre of what is framed as he moves, eased
+      const ps = cineSubjects();
+      const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length, cz = ps.reduce((a, p) => a + p.z, 0) / ps.length;
+      const cy = ps.reduce((a, p) => a + Math.max(terrain.heightAt(p.x, p.z), 0), 0) / ps.length + 1.45;
+      cine.aim.lerp(tmp2.set(cx, cy, cz), Math.min(1, dt * 3));
+      const e = cine.shot.eye, l = cine.aim;
+      camera.position.set(tmp.x + (e.x - tmp.x) * k, tmp.y + (e.y - tmp.y) * k, tmp.z + (e.z - tmp.z) * k);
+      camera.lookAt(head.x + (l.x - head.x) * k, head.y + 0.15 + (l.y - head.y - 0.15) * k, head.z + (l.z - head.z) * k);
+    } else {
+      camera.position.copy(tmp);
+      camera.lookAt(head.x, head.y + 0.15, head.z);
+    }
+    hudEl.classList.toggle("cine", k > 0.5);
     // Animal downloads do not gate Go. Empty/pending catalogues never generate a population.
     // Muting audio does not freeze animals; menus/visibility use the same independent pause gate.
     if(faunaPopulation&&faunaScene&&audioAllowed()){
@@ -583,12 +842,47 @@ async function main() {
 
     if (state.phase !== "intro") {
       const g = state.phase === "done" ? null : goals[state.mission].at;
-      // The counter records the passage; radar marks require actual approved scene actors.
-      hud.update(state, player.pos, player.heading, g, distanceToGoal(state, goals, player.pos), [], input.touch, dt);
+      // The counter records the passage; radar marks require actual approved scene actors (R9).
+      const followers = npcFollowers();
+      // the audit of R6 found an invisible wall at the region's limit: say where it is before he reaches it
+      const edge = distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z);
+      const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
+      const closed = sealedStep();                                 // the step still unread in the Bible, if any
+      if (roaming) {
+        const back = roam.phase === "return";
+        // free: the radar points to the nearest place not yet found, so the open region has somewhere to go
+        const next = roam.phase === "free" ? nearestUnfound(regionList, foundPlaces, player.pos) : null;
+        const count = `Lugares encontrados: ${foundPlaces.size} de ${regionList.length}.`;
+        hud.roam({
+          kind: roam.phase === "line" ? "line" : back ? "return" : "free",
+          objective: back || roam.phase === "line" ? `Volte a ${homeName ?? "onde a caminhada começou"}` : next ? "Encontre os lugares da região" : "Explore a região",
+          dist: back ? roamDistance(roam, roamGoal, player.pos) : next ? next.dist : null, line: roam.line,
+          narrative: back ? "Os que foram chamados agora caminham com ele. A trilha sobe de volta à vila."
+            : "O episódio termina aqui. A região continua aberta para caminhar.",
+          guidance: back ? "Suba pela trilha até as casas."
+            : next ? `${count} O mais próximo por encontrar fica a ${windName(next.place.x - player.pos.x, next.place.z - player.pos.z)}.`
+            : `Todos os ${regionList.length} lugares desta região foram encontrados.`,
+          routes: back ? wayBack : [],
+        }, state, player.pos, player.heading, back ? (closed ? null : roamGoal.at) : next ? { x: next.place.x, z: next.place.z } : null, followers, notice, dt,
+          input.touch, closed ? { ref: closed.ref } : null);
+      } else hud.update(state, player.pos, player.heading, closed ? null : g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice,
+        closed ? { ref: closed.ref } : null);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
+    if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
+    if (shot && shot.name !== lastShotName) { lastShotName = shot.name; slog.mark("shot", shot.name); }
+    const cpuMs = performance.now() - now;                  // the frame's main-thread work before rendering
     renderer.info.reset();
-    renderer.render(scene, camera);
+    if (fx) fx.render(); else renderer.render(scene, camera);
+    if (shot && bench && !bench.done) {
+      if (Number.isNaN(benchLoadMs)) benchLoadMs = now;      // first measured frame, ms since navigation start
+      if (gpuTimer && !gpuPending) {
+        gpuPending = true;
+        renderer.resolveTimestampsAsync("render").then((ms) => { gpuLast = typeof ms === "number" ? ms : null; }, () => { gpuLast = null; })
+          .finally(() => { gpuPending = false; });
+      }
+      bench.record(real * 1000, renderer.info.render.drawCalls, renderer.info.render.triangles, { gpuMs: gpuLast, cpuMs });
+    }
   };
   hero.root.position.set(player.pos.x,terrain.heightAt(player.pos.x,player.pos.z),player.pos.z);
   camera.position.set(player.pos.x,hero.root.position.y+3,player.pos.z+5);
@@ -600,17 +894,34 @@ async function main() {
   startup.check();
   await withDeadline(abortable(renderer.renderAsync(scene,camera),startup.signal),20000,'O primeiro quadro não ficou pronto. Experimente o modo compatível.');
   startup.check();
+  if (fx) fx.render();                              // ?fx: its passes and post shaders compile behind the loading screen too
   loading.complete('frame','Imagem pronta');
   if(!loading.ready())throw new Error('A inicialização foi interrompida.');
   showStartCard();
   await renderer.setAnimationLoop(frame);
   startup.check();
+  if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
+    get done() { return bench.done; },
+    hold: (i: number) => { benchHold = i; },
+    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null,
+      antialiasing: fx?.antialiasing ?? (quality === "low" ? "none" : "msaa4"), temporal: fx?.temporal ?? false,
+      look: { ...visual, exposure: visual.tone === "off" ? null : visual.exposure }, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+      build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
+      models: { loaded: Object.keys(assets).length },
+      // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)
+      memory: { renderer: { ...renderer.info.memory }, textures: memorySummary(sceneTextures(scene)),
+        canvasBytes: renderTargetBytes(innerWidth, innerHeight, renderer.getPixelRatio(), 4 + 4, fxLevel === "off" && quality !== "low" ? 4 : 1) },
+      session: { status: slog.status, loads: slog.snapshot().loads, uncleanEnds: slog.snapshot().uncleanEnds, previous: slog.previous },
+      viewport: [innerWidth, innerHeight], pixelRatio: renderer.getPixelRatio(), textureBytes: renderer.info.memory.texturesSize }),
+  };
 
   if (DEBUG) {
     (window as unknown as Record<string, unknown>).__gta = {
       backend, state, player, meta, goals, fpsLog, cam, heroSource,
       actor: () => actor.diagnostics(),
-      characters:()=>({...characterDiagnostics(scene),npcVisuals:'pending',npcColliders:[],radarFollowers:[]}),
+      characters:()=>({...characterDiagnostics(scene),npcVisuals:npcStatus,npcColliders:actualNpc()?[{id:'simao',pos:{...actualNpc()!.pos},radius:NPC_MOTION.radius}]:[],radarFollowers:npcFollowers().map(f=>({id:'simao',pos:{...f.pos}}))}),
+      npc:()=>({status:npcStatus,error:npcError,profile:startupProfile.mobile?'mobile':'desktop',actor:simao?.diagnostics()??null,navigation:simNav?.diagnostics()??null,
+        y:simao?.root.position.y??null,groundHeight:simNav?terrain.heightAt(simNav.pos.x,simNav.pos.z):null,constants:NPC_MOTION}),
       audio:()=>({...sfx.stats,nature:natureAudio?.stats??null,habitats,visibleAnimalEmitters:faunaScene?.visibleApprovedAgents().filter(a=>a.kind!=='fish').length??0}),
       fauna:()=>({status:faunaStatus,error:faunaError,profile:startupProfile.mobile?'mobile':'desktop',
         renderer:faunaScene?.diagnostics()??null,population:faunaPopulation?.diagnostics()??null,
@@ -625,19 +936,37 @@ async function main() {
       loading:()=>({...loading.diagnostics(),assetProfiles:Object.entries(assets).map(([id,asset])=>({id,...asset?.userData?.loadingProfile})),maxTextureDimension:Math.max(0,...Object.values(assets).flatMap(asset=>(asset?.userData?.loadingProfile?.images??[]).flatMap((i:{width:number;height:number})=>[i.width,i.height])))}),
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
+      freeze: (on: boolean) => { frozen = on; },
+      // exploring after the episode (freeroam.ts) and the region's places (places.ts)
+      roam: () => ({ phase: roam.phase, line: roam.line, goal: roamGoal, places: regionList, found: [...foundPlaces],
+        edge: distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z) }),
+      beginRoam, beginExplore,
+      // the Bible (bible.ts): the step being played, the furthest one read, and the panel
+      bible: () => ({ step: stepNow(), read: bibleRead, sealed: sealedStep() !== null, steps: bibleSteps, open: bible.isOpen() }),
+      openBible: () => bible.open(),
+      session: () => ({ status: slog.status, previous: slog.previous, record: slog.snapshot() }),
+      cine: () => ({ k: cine.k, left: cine.left, why: cine.why, shot: cine.shot, on: hudEl.classList.contains("cine"),
+        // fraction of the shot's people whose chest projects inside the central 90% of the picture
+        framed: cine.shot ? cineSubjects().filter((p) => { const v = tmp2.set(p.x, Math.max(terrain.heightAt(p.x, p.z), 0) + 1.2, p.z).project(camera);
+          return Math.abs(v.x) < 0.9 && Math.abs(v.y) < 0.9 && v.z < 1; }).length / cineSubjects().length : 0,
+        camera: camera.position.toArray() }),
       teleport: (x: number, z: number, heading?: number) => {
         player.pos.x = x; player.pos.z = z;
         if (heading !== undefined) { player.heading = heading; cam.yaw = heading; }
       },
-      followers: () => [],
-      npcPositions: () => [],
+      followers: () => npcFollowers(),
+      npcPositions: () => actualNpc()?[{id:'simao',...simNav!.diagnostics(),y:simao!.root.position.y,groundHeight:terrain.heightAt(simNav!.pos.x,simNav!.pos.z),inBoat:false}]:[],
       narrativeFollowers: () => [...state.followers],
       narrativeLocations: () => specs.map(spec=>({id:spec.id,pos:{...spec.pos},inBoat:spec.inBoat})),
+      // the camera this frame and whether it is inside a building's footprint (no margin), for tools/check_camera.mjs
+      camera: () => { const c = camera.position;
+        return { pos: c.toArray(), mode: camMode, inside: town.boxes.some((b) => c.y > (b.bottom ?? -Infinity) && c.y < (b.top ?? Infinity) && insideObstacle(c.x, c.z, b, 0)) }; },
       info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }
 }
 
+countVisits();
 main().catch((e) => {
   console.error(e);
   failStartup(e);

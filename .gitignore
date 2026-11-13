@@ -16,6 +16,10 @@ export/
 
 # Assets keep their own license, including nested integration directories.
 *.glb
+# KTX2 textures compressed from those meshes carry the same license as the meshes
+*.ktx2
+# CC0 textures (ground, sky) may ship as KTX2 later (docs/PLANO-AAA.md R10); Tripo derivatives never do
+!public/textures/**/*.ktx2
 *.gltf
 .claude.local/
 .vercel/

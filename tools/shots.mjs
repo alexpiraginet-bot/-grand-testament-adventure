@@ -85,7 +85,7 @@ async function play(name, ctxOpts, extra = "") {
   await page.screenshot({ path: `${OUT}/${name}-7-fim.png` });
   // FPS: the renderer's own count, the last seconds of play
   const fps = await g(() => window.__gta ? window.__gta.fpsLog.slice(-8) : []);
-  const st = await page.evaluate(() => ({ backend: window.__gta?.backend, followers: window.__gta?.followers(), info: window.__gta?.info() }));
+  const st = await page.evaluate(() => ({ backend: window.__gta?.backend, followers: window.__gta?.narrativeFollowers(), info: window.__gta?.info() }));
   assert.equal(st.followers.length,4);assert.deepEqual(errors,[]);
   report[name] = { readyMs: ready, bytes, transfer: gz, files, fps, ...st, errors: errors.slice(0, 12) };
   await browser.close();

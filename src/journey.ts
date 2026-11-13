@@ -5,11 +5,13 @@ import type {Segment} from './world-layout.ts';
 
 type JourneyState=Pick<State,'phase'|'mission'|'promptVisible'>;
 
+export const SCENE_DEVELOPMENT_NOTICE='Cena em desenvolvimento · personagens em preparação.';
+
 /** Participants are not yet rendered; keep encounters playable and label the missing scene honestly. */
 export function sceneDevelopmentNotice(state:JourneyState,distance:number|null):string {
   if(state.mission<1||state.mission>2||state.phase==='intro'||state.phase==='done')return '';
   const near=distance!==null&&Number.isFinite(distance)&&distance>=0&&distance<35;
-  return state.phase==='line'||state.promptVisible||near?'Cena em desenvolvimento · personagens em preparação.':'';
+  return state.phase==='line'||state.promptVisible||near?SCENE_DEVELOPMENT_NOTICE:'';
 }
 
 export function journeyNarrative(mission:number):string {

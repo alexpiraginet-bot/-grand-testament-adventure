@@ -1,5 +1,6 @@
 // Credits shown in the game (start card link, HUD button, end card). The BLIVRE notice is the authors' text, to be
 // copied exactly (biblia-conectada/ATTRIBUTION.md); test/data.test.ts checks it is here unchanged.
+import { BUILD_SHORT } from "./build-info.ts";
 
 export const BLIVRE_NOTICE =
   "Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE), Copyright © Diego Santos, Mario Sérgio, e Marco Teles, http://sites.google.com/site/biblialivre/ - fevereiro de 2018. Licença Creative Commons Atribuição 4.0 Brasil (http://creativecommons.org/licenses/by/4.0/br/). Reprodução permitida desde que devidamente mencionados fonte e autores.";
@@ -13,6 +14,7 @@ export const SHORT = [
 export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Texto bíblico", quote: BLIVRE_NOTICE, p: [
     "As legendas identificadas como Bíblia Livre são trechos literais dos versículos citados. Os colchetes da BLIVRE (palavras acrescentadas pelos tradutores) não aparecem nas falas usadas aqui.",
+    "Na Bíblia do jogo, a ordem das passagens é o roteiro editorial de leitura do Bíblia Conectada: uma ordem ampla, não uma cronologia histórica harmonizada. Os versículos dos outros momentos dessa leitura aparecem como estão na BLIVRE, sem alteração.",
   ] },
   { h: "Narrativa do jogo", p: [
     "Os textos com a etiqueta Narrativa do jogo são autorais, inspirados em Marcos 1:16–20. Contextualizam a jornada e não são citações bíblicas nem transcrições históricas. Orientação identifica ajuda de controles e navegação.",
@@ -22,7 +24,7 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
     "AWS Terrain Tiles (Mapzen): SRTM e GMTED2010 (USGS), ETOPO1 (NOAA). O chão e o horizonte vêm desses dados; o fundo do lago é nosso (os dados só têm a superfície da água).",
   ] },
   { h: "Modelos 3D", p: [
-    "Herói com esqueleto e caminhada do Tripo. Casas, barco, vegetação, pedras e redes: malhas geradas por Alex no Tripo Pro. Os outros personagens ainda usam formas provisórias enquanto aguardam rig.",
+    "Herói com esqueleto e caminhada do Tripo. Casas, barco, vegetação, pedras e redes: malhas geradas por Alex no Tripo Pro. Os outros personagens ainda não aparecem: aguardam rig, animação e revisão no jogo.",
     "As malhas e texturas têm licença separada do código MIT. A pose parada é derivada da caminhada; corrida e gesto de chamar ainda não possuem animações próprias.",
   ] },
   { h: "Cenário e materiais", p: [
@@ -32,6 +34,11 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   ] },
   { h: "Código e fontes tipográficas", p: [
     "three.js (MIT). Space Grotesk e Space Mono (SIL Open Font License 1.1).",
+    `Versão do jogo: commit ${BUILD_SHORT}.`,
+  ] },
+  { h: "Visitas", p: [
+    "O endereço publicado do jogo conta visitas com o Web Analytics da Vercel. O jogo envia o endereço da página sem os parâmetros e, quando existe, o site que trouxe a visita; a Vercel deriva do pedido o país, o tipo de aparelho, o sistema e o navegador. O script de contagem não grava cookies.",
+    "Progresso, apelido e código de recuperação não fazem parte dessa contagem.",
   ] },
   { h: "Arte da abertura", p: [
     "Conceito artístico criado com IA para Alex. Indica a direção visual do projeto; não é uma captura do jogo nem uma demonstração de DLSS. A arte tem condições separadas do código MIT.",
