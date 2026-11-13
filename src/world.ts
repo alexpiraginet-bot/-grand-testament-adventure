@@ -1,12 +1,13 @@
 // The 3D world: ground from the real relief, the lake, the far hills, sky, plants, Capernaum's houses, the boat.
 // Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
-import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float, step, color, uniform, normalMap, cameraPosition } from 'three/tsl';
-import { settlementDetails } from './settlement-details.ts';
+import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, float, step, color, uniform, normalMap, cameraPosition } from 'three/tsl';
+import { createGroundSurface, type GroundTextures } from './ground-surface.ts';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
-import { rng, distanceToSegment, insideObstacle, settlementLayout, type Segment, type Obstacle } from './world-layout.ts';
+import { rng, distanceToSegment, insideObstacle, type Segment, type Obstacle } from './world-layout.ts';
 export { rng, type Segment } from './world-layout.ts';
+export { houses } from './village-houses.ts';
 
 function hash2(x: number, z: number) {
   const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
@@ -18,35 +19,6 @@ function noise2(x: number, z: number) {
   const u = fx * fx * (3 - 2 * fx), v = fz * fz * (3 - 2 * fz);
   const a = hash2(ix, iz), b = hash2(ix + 1, iz), c = hash2(ix, iz + 1), d = hash2(ix + 1, iz + 1);
   return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
-}
-
-/** A tiling grain texture (grey) for the ground's close-up detail. */
-function grainTexture(size = 256): THREE.CanvasTexture {
-  const c = document.createElement("canvas"); c.width = c.height = size;
-  const g = c.getContext("2d")!;
-  const img = g.createImageData(size, size);
-  const r = rng(11);
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    // periodic value noise: sample the lattice modulo the tile
-    let v = 0, amp = 0.5, f = 8;
-    for (let o = 0; o < 4; o++) {
-      const px = (x / size) * f, py = (y / size) * f;
-      const ix = Math.floor(px), iy = Math.floor(py), fx = px - ix, fy = py - iy;
-      const h = (i: number, j: number) => hash2(((i % f) + f) % f + o * 17, ((j % f) + f) % f);
-      const u = fx * fx * (3 - 2 * fx), w = fy * fy * (3 - 2 * fy);
-      v += amp * ((h(ix, iy) * (1 - u) + h(ix + 1, iy) * u) * (1 - w) + (h(ix, iy + 1) * (1 - u) + h(ix + 1, iy + 1) * u) * w);
-      amp *= 0.5; f *= 2;
-    }
-    const n = 200 + (v - 0.5) * 90 + (r() - 0.5) * 30;
-    const i = (y * size + x) * 4;
-    img.data[i] = img.data[i + 1] = img.data[i + 2] = Math.max(0, Math.min(255, n)); img.data[i + 3] = 255;
-  }
-  g.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 4;
-  return t;
 }
 
 /** Normal map of small waves, tiling. */
@@ -75,9 +47,8 @@ function waveNormals(size = 256): THREE.CanvasTexture {
 const SAND = new THREE.Color(0xcdb68c), WET = new THREE.Color(0x8d7b5e), GRASS = new THREE.Color(0x8b8a52),
   DRY = new THREE.Color(0xb3a06c), ROCK = new THREE.Color(0x5a5048), BED = new THREE.Color(0x6f6550);
 
-type GroundTextures = { albedo: THREE.Texture; normal: THREE.Texture; roughness: THREE.Texture };
 export async function loadGroundTextures(): Promise<GroundTextures> {
-  const loader=new THREE.TextureLoader(), result={} as GroundTextures;
+  const loader=new THREE.TextureLoader(), result={} as Record<keyof GroundTextures,THREE.Texture>;
   await Promise.all((['albedo','normal','roughness'] as const).map(async role=>{
     const tex=await loader.loadAsync(`${import.meta.env.BASE_URL}textures/ground/rocky-gravel-${role}.webp`);
     tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
@@ -119,25 +90,10 @@ export function groundMesh(t: Terrain, segments: number, routes: Segment[], maps
   }
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
-  // One measured surface. Paths are a fragment mask, not floating decal planes or altered elevation.
+  // Material transitions stay on the measured surface; no decals or terrain deformation.
   const uv = geo.attributes.uv as THREE.BufferAttribute;
   for (let i = 0; i < uv.count; i++) uv.setXY(i,pos.getX(i)/3.6,-pos.getZ(i)/3.6);
-  const m = new THREE.MeshStandardNodeMaterial({vertexColors:true,normalMap:maps.normal,normalScale:new THREE.Vector2(.72,.72),roughness:.96,metalness:0});
-  const xz=positionWorld.xz, detailUV=vec2(positionWorld.x,positionWorld.z.negate()).div(3.6);
-  let pathDistance=min(float(10000),float(10000));
-  for(const s of routes) {
-    const a=vec2(s.ax,s.az),d=vec2(s.bx-s.ax,s.bz-s.az),p=xz.sub(a);
-    const u=clamp(p.dot(d).div(d.dot(d)),0,1);
-    pathDistance=min(pathDistance,p.sub(d.mul(u)).length());
-  }
-  const macro=texture(grainTexture(),xz.div(27)).r;
-  const path=smoothstep(.65,1.5,pathDistance.add(macro.sub(.5).mul(.6))).oneMinus();
-  const photographed=texture(maps.albedo,detailUV).rgb;
-  const gravel=mix(vec3(photographed.dot(vec3(.2126,.7152,.0722))),photographed,.38);
-  const undisturbed=gravel.mul(vec3(1.45,1.42,1.37));
-  const worn=gravel.mul(.72).add(vec3(.26,.23,.18));
-  m.colorNode=mix(undisturbed,worn,path).mul(macro.mul(.3).add(.9));
-  m.roughnessNode=texture(maps.roughness,detailUV).r.mul(.2).add(.8);
+  const m = createGroundSurface(maps, routes);
   const mesh = new THREE.Mesh(geo, m);
   mesh.receiveShadow = true;
   return mesh;
@@ -401,35 +357,6 @@ export function props(t: Terrain, keepClear: Segment[], q: number, assets: Asset
   g.userData.counts={trees:trees.length,bushes:bushes.length,rocks:rocks.length,reeds:reeds.length,grassTufts:grasses.length};
   g.userData.update=(x:number,z:number)=>{for(const child of g.children) child.userData.update?.(x,z);};
   return g;
-}
-
-/** Basalt blocks, shared courtyards and an inhabited lane; see docs/CAFARNAUM-CENARIO.md. */
-export function houses(t: Terrain, cx: number, cz: number, keepClear: Segment[], assets: AssetLibrary = {}): { group: THREE.Group; boxes: Obstacle[] } {
-  const group=new THREE.Group(), plans=settlementLayout(t,keepClear,cx,cz);
-  const boxes:Obstacle[]=plans.map(p=>({x:p.x,z:p.z,hx:p.w/2+.35,hz:p.d/2+.35,rot:p.rot,bottom:p.y-p.foundation,top:p.y+p.h}));
-  const wall=new THREE.MeshStandardMaterial({color:0x49473f,roughness:.98});
-  const o=new THREE.Object3D(), foundation=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),wall,plans.length);
-  const models=['casa-basalto-a','casa-basalto-b','casa-basalto-c'].map(id=>sceneryMesh(assets[id as AssetId]));
-  models.forEach((model,variant)=>{
-    const list=plans.filter(p=>p.variant===variant);
-    const geo=model?.geometry ?? new THREE.BoxGeometry(1,1,1).translate(0,.5,0);
-    geo.computeBoundingBox();const size=geo.boundingBox!.getSize(new THREE.Vector3());
-    const batch=new THREE.InstancedMesh(geo,model?.material??wall,list.length);
-    list.forEach((p,i)=>{
-      o.position.set(p.x,p.y,p.z);o.rotation.set(0,p.rot,0);o.scale.set(p.w/size.x,p.h/size.y,p.d/size.z);o.updateMatrix();batch.setMatrixAt(i,o.matrix);
-      batch.setColorAt(i,new THREE.Color().setRGB(.91+(i%4)*.03,.90+(i%3)*.03,.87+(i%5)*.025));
-    });
-    batch.castShadow=true;batch.receiveShadow=true;group.add(batch);
-  });
-  plans.forEach((p,i)=>{
-    o.position.set(p.x,p.y-p.foundation/2,p.z);o.rotation.set(0,p.rot,0);o.scale.set(p.w,p.foundation,p.d);o.updateMatrix();foundation.setMatrixAt(i,o.matrix);
-  });
-  foundation.receiveShadow=true;group.add(foundation);
-
-  const details=settlementDetails(t,plans,keepClear,boxes,sceneryMesh(assets['muro-pedra']));
-  group.add(details.group);boxes.push(...details.boxes);
-  group.userData.counts={houses:plans.length,...details.counts};
-  return {group,boxes};
 }
 
 /** A wooden fishing boat, open, about 8 m long, with nets heaped at the stern. Its deck height is returned. */
