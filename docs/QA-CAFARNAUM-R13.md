@@ -2,9 +2,10 @@
 
 Responsável: Codex / r7_browser_checks. Data: 13/11/2026.
 
-Estado: baseline R12 e candidata integrada WIP capturadas; build final,
-caminhada final e vídeos ainda pendentes. Este documento não declara publicação
-nem aprovação de qualidade final da demonstração ambiciosa.
+Estado: baseline R12, candidatas WIP e build R13 final capturados. A matriz final
+passou 34 verificações e o smoke de configurações padrão/toque passou mais 18.
+Vídeo desktop real de 10 s gravado e conferido. Este documento não declara publicação nem
+aprovação de qualidade final da demonstração ambiciosa.
 
 ## Baseline preservada
 
@@ -98,6 +99,71 @@ Simão próximo no móvel. As demais imagens estão disponíveis para comparaç�
 
 ## Candidata
 
+### Build final congelado
+
+Runtime `0b8f5a8`, build com 320 testes CPU aprovados pelo integrador. Esta
+rodada de QA não reconstruiu o dist. Preview somente leitura na porta 4203:
+
+- `index-U3_FX1lA.js`.
+- SHA-256 `9122cfe0add6c7566b11153accaa8c529f115a7ce475c9e39a3e764cd1476190`.
+- Acervo: `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario/R13-AMOSTRA-20261113/candidate-final`.
+- Relatório SHA `8438ca1bc31460974d6bb9be964cc8c78f31f7058c516f2f8fff3fd97ee55ac3`.
+- Manifesto SHA `7ccab797ab6534872daf979f35fadb3023f6c825b6156fa27963a6714b3700cb`.
+
+34/34 verificações, quatro contextos Chrome sequenciais, 18 PNGs. Nos dois
+perfis: 14 assets centrais, duas espécies, Simão correto por bytes/hash, nenhum
+humano de primitivas. Nenhum erro de página, console error, HTTP/requisição ou
+escrita externa foi capturado. Warning `renderAsync()` obsoleto preservado.
+
+`FINAL-COMPARISON.json`, ao lado dos diretórios de evidência, compara os 16
+pares estáticos: câmera efetiva idêntica, posição do jogador com delta zero,
+mesmo viewport/canvas/DPR/backend e tempo zero. O cenário tem o mesmo SHA da
+baseline. As sondas de colisão de 754 centros de rota continuaram livres em
+ambos os perfis; isso não equivale a percorrer todas as rotas com um jogador.
+
+| Janela final ao vivo | Desktop / WebGPU | Móvel emulado / WebGL2 |
+| --- | ---: | ---: |
+| Abertura pronta, ms | 4.292 | 5.711 |
+| RAF nativo médio, fps | 99,996 | 99,996 |
+| Intervalo de quadro p95, ms | 10,1 | 10,1 |
+| Caminhada W real, m | 5,500 | 5,500 |
+| Resource Timing transferSize, bytes | 28.965.791 | 22.513.031 |
+| Resource Timing encodedBodySize, bytes | 28.953.491 | 22.500.731 |
+| Renderer textureBytes, estimativa | 1.287.485.752 | 217.028.104 |
+| Draw calls no quadro observado | 261 | 96 |
+
+São janelas de build comparáveis ao protocolo da baseline, não os bytes do
+Vite/WIP. Transferência cresceu 5.513.681 bytes no desktop e 1.175.017 no móvel.
+Calls observadas passaram de 124 para 261 no desktop e de 88 para 96 no móvel;
+o refletor desktop renderiza a cena adicionalmente, custo deliberado que deve
+ser acompanhado. Não se atribui todo o delta a um único material, pois chão e
+fachadas também mudaram. O teto de ~100 Hz impede alegar ganho ou ausência de
+custo de GPU. Memória, abertura e FPS não foram medidos em aparelho físico.
+
+Inspeção final dos PNGs de início, fachada C e praia no desktop, praia no móvel:
+porta C agora é uma folha opaca contínua, sem a aparência de grade detectada
+na WIP. Madeira e piso são mais coerentes e o solo fora da rua usa terra.
+Água permanece visível nos dois backends. A integração recebeu aprovação como
+melhoria incremental; repetição de casas, forma de corredor e margem reta
+continuam limitações explícitas. Não é o acabamento cinematográfico pretendido.
+
+### Entrada padrão e joystick
+
+`tools/check_cafarnaum_default_r13.mjs`, acervo `default-final` no mesmo diretório
+R13, adiciona somente `?debug=1` para observar estado. Nenhum `fx`, `cam`, `dtmax`,
+clima, posição ou tempo é alterado. Abertura, Go real e pipeline padrão passaram
+18/18 verificações em desktop/móvel, quatro PNGs, mesmo bundle/hash final.
+
+KeyW real deslocou 5,425 m no desktop. No móvel, toque Chromium real sobre o
+joystick visível, mantido por aproximadamente 2 s, deslocou 5,062 m; 20 amostras
+intermediárias estavam livres de colisão estática e penetração da câmera.
+O relógio do jogo avançou normalmente. Nenhum erro capturado ou envio externo.
+Manifesto: `e603fc17521f5d78002672e8deb1d4cbf95c26fdc6edd1e7d98d8b8515e56bef`.
+
+O `debug` expõe observação e indicador na tela, mas não seleciona outro
+pós-processamento. Este smoke valida o padrão atual; não promove os modos
+experimentais Alto/Master nem demonstra DLSS. Analytics foi interceptado.
+
 ### Integrada WIP r1
 
 `shots/r13-integrated-wip-r1`, servidor de fontes Vite 4202. Chrome desktop e
@@ -132,8 +198,8 @@ fachada B e praia no móvel:
   e o conjunto mantém forte repetição das casas. É progresso incremental, não
   o acabamento cinematográfico que se deseja como resultado de produção.
 
-Build final e take em movimento aguardam decisão do integrador. Não promover
-uma candidata só por passar verificações ou produzir mais objetos.
+Essa WIP foi preservada antes da correção das portas e do build final acima.
+Não promover uma candidata só por passar verificações ou produzir mais objetos.
 
 ### Primeira água WIP, inspeção limitada
 
@@ -159,22 +225,36 @@ conferência posterior do PNG baseline mostrou a mesma linha na mesma posição.
 Ela foi reclassificada como condição preexistente, não regressão do refletor.
 
 Para essa rotina curta há `--water-wip --profile=desktop`: duas poses fixas e
-W/200 RAF, sem janela de benchmark. A rodada completa final continua pendente.
+W/200 RAF, sem janela de benchmark. A rodada completa final está registrada acima.
 
-### Vídeo preparado, ainda não executado
+### Vídeo real de 10 segundos
 
-`tools/capture_cafarnaum_r13.mjs` passou `node --check` e exige SHA de build
-aprovado. Usa Playwright `recordVideo` e FFmpeg/FFprobe já instalados. Guarda o
-WebM inteiro e produz um recorte MP4 real de 10 s, sem interpolação nem mudança
-de velocidade, a partir de um trecho interno de 12,5 s de W continuamente
-pressionado. O posicionamento ocorre antes; nenhuma posição/câmera/tempo é
-atribuída durante o take. O bruto inclui carregamento e staging, claramente
-identificados. Os vídeos são silenciosos: Playwright não captura áudio do jogo.
+`tools/capture_cafarnaum_r13.mjs` executado apenas no desktop, suficiente para o
+acervo solicitado. Chrome encerrado antes da conversão CPU pelo FFmpeg existente.
+O script é configurável para móvel, mas não se alega take móvel nesta rodada.
 
-Os dois perfis serão sequenciais. Amostras intermediárias comprovam movimento
-e ausência de colisão; vídeo não serve como medição de FPS. Sem upload social.
-O script ainda precisa da execução/inspeção reais antes de ser tratado como
-validado; preparação e sintaxe não provam o resultado da gravação.
+Entrega privada: `video-final/desktop/cafarnaum-r13-desktop-10s.mp4`, sob o acervo
+R13. H.264, 1280×800, 25 fps de gravação, 10,000 s, 4.702.012 bytes.
+SHA-256 `370f9833bd395df550173ed1cea257cdb1bd1c46a3f179813e87aa260022e923`.
+Manifesto do take `2ee60f55dd054db1204491c3ca4c705e396b9ccc3971f7e0451410af53ab7714`.
+O mesmo bundle final foi verificado antes de gravar. Zero erros capturados.
+
+Playwright `recordVideo` preservou o WebM inteiro. O MP4 é um recorte interno
+real de 10 s, sem interpolação ou mudança de velocidade, do final de 12,529 s
+de KeyW continuamente pressionada. 126 amostras registraram 31,251 m no trecho
+bruto controlado, sem colisão estática/penetração de câmera. Esse deslocamento
+é do segmento bruto de 12,5 s, não uma medição da distância exata dos 10 s cortados.
+
+O posicionamento ocorre antes; nenhuma posição/câmera/tempo é atribuída durante
+o take. O bruto inclui carregamento e staging, identificados no relatório.
+Vídeo silencioso: Playwright não captura o áudio do jogo. A gravação e seu
+25 fps não são benchmark; quadros podem ser repetidos pelo gravador.
+
+Conferência: FFprobe validou duração, resolução e codec; uma prancha de 20
+quadros a cada 0,5 s foi realmente inspecionada (`VIDEO-FINAL-CONTACT.png`).
+A rua se aproxima de modo contínuo nesses pontos e o herói permanece íntegro.
+Isso não substitui uma revisão humana audiovisual contínua nem valida todos os
+contatos dos pés. Sem geração de imagem, render externo, DLSS ou upload social.
 
 ## Reprodução
 

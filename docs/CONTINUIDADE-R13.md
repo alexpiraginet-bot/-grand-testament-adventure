@@ -40,9 +40,18 @@ As casas ainda usam as três malhas anteriores; sua repetição/qualidade e a
 margem reta continuam pendentes. Não acrescentar NPCs de primitivas para ocupar
 o espaço, e não chamar este passo de demo completa ou qualidade AAA.
 
-Resultados finais de build, revisão visual, navegação e publicação serão
-registrados no QA/PR, associados aos hashes efetivamente verificados. Uma janela
-de 100 fps num PC não comprova 100 fps no Safari do iPhone.
+Runtime testado: commit `0b8f5a8b51306f8b28515856469b8ca41a8ac08d`; build completo
+com **320 testes aprovados**. Bundle local `index-U3_FX1lA.js`, SHA-256
+`9122cfe0add6c7566b11153accaa8c529f115a7ce475c9e39a3e764cd1476190`.
+QA comparativa: 34 verificações, 18 PNGs; os 16 pares fixos conservaram câmera,
+posição, viewport, backend e tempo. Smoke com os efeitos/câmera padrão: 18
+verificações, incluindo joystick de toque emulado com deslocamento de 5,06 m.
+Nenhum erro capturado nessas rodadas. A janela RAF ficou limitada perto de 100 Hz
+no PC: não comprova ganho de desempenho nem FPS no Safari do iPhone.
+
+Fontes de runtime estão congeladas após esse commit. Alterações documentais
+posteriores e o merge têm outro carimbo de build; a publicação precisa de
+verificação própria do bundle público. Ver QA/PR para recibos da publicação.
 
 ## Próxima unidade de produção
 

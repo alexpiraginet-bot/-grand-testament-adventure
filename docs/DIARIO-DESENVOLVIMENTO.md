@@ -920,3 +920,11 @@ A validação final e o hash publicado ficam na PR #11 e em `QA-CAFARNAUM-R13.md
 Amostra não significa demo completa: kit de casas, costa irregular e o encontro
 com ação/consequência continuam como próximos trabalhos. Os registros privados
 servem aos Reels; nenhum vídeo foi publicado em rede social.
+
+O build congelado `0b8f5a8` passou 320 testes e 34 verificações comparativas de
+navegador, com 18 PNGs. Um smoke independente com câmera/efeitos padrão passou
+18 verificações e o joystick por toque emulado deslocou o personagem 5,06 m.
+O integrador conferiu as imagens: porta fechada e solo coerente melhoraram,
+mas a repetição das casas e a costa reta permanecem. Nenhuma medição em telefone
+físico foi feita. Seis conjuntos de trabalho, incluindo tentativas rejeitadas,
+foram copiados ao acervo privado e 62 arquivos tiveram SHA-256 confrontado.

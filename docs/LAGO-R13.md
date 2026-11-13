@@ -28,9 +28,12 @@ uso. Não houve atualização de dependências nem cópia de um jogo proprietár
 `shore-detail-r13.ts` reutiliza a malha de basalto de Alex em pequenos grupos
 baixos próximos de praia/Simão. Tem um batch, nenhum mapa novo e nenhuma sombra
 projetada; preserva os corredores. São até 90 grupos no desktop e 40 no móvel.
-São enfeites baixos sem colisores, não uma nova forma de costa. Os números reais
-e triângulos estão no diagnóstico e relatório de navegador; a contagem de
-instâncias sozinha não mede trabalho GPU.
+São enfeites baixos sem colisores, não uma nova forma de costa. O grupo guarda
+sua contagem em `userData.shoreDetails`, mas a API pública de QA ainda não a
+expõe; não atribuir o antigo contador `rocks` a essas pedras extras. O teto é
+306.180 triângulos no desktop e 136.080 no móvel, reutilizando a mesma geometria.
+Instâncias e triângulos sozinhos não medem trabalho GPU. O grupo herda a limpeza
+do renderer na recarga, sem um disposer específico de geometria em abort.
 
 ## Revisões e limites observados
 
