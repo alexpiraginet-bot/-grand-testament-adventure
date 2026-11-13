@@ -20,6 +20,7 @@ import { animatedActor } from './animated-actor.ts';
 import { loadTripoAssets } from './tripo-assets.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseFx } from "./postfx.ts";
+import { atmosphereFog, cascadedShadows, parseAtmo, parseExposure, parseShadow, parseTone, TONE_MAPPING } from "./look.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
 import { BUILD_SHA, describeGpu } from "./build-info.ts";
 import { installSessionLog } from "./session-log.ts";
@@ -57,6 +58,9 @@ async function main() {
   const q = quality === "low" ? 0.55 : 1;
   // ?fx=alto|master: post-processing under measurement (postfx.ts); without it the game renders exactly as before
   const fxLevel = parseFx(params.get("fx"));
+  // ?tm= ?exp= ?atmo=1 ?shadow=csm: look options under measurement (look.ts); without them, the shipped render
+  const visual = { tone: parseTone(params.get("tm")), exposure: parseExposure(params.get("exp")),
+    atmo: parseAtmo(params.get("atmo")), shadow: parseShadow(params.get("shadow")) };
 
   // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
   // later (it happened with the software adapter of the test browser), the page reloads on WebGL 2.
@@ -74,8 +78,8 @@ async function main() {
     trackTimestamp: params.has("bench") });
   renderer.setPixelRatio(Math.min(devicePixelRatio, quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.08;
+  renderer.toneMapping = TONE_MAPPING[visual.tone];
+  renderer.toneMappingExposure = visual.exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
   await renderer.init();
@@ -96,7 +100,8 @@ async function main() {
   const scene = new THREE.Scene();
   const sunDir = new THREE.Vector3(0.45, 0.92, 0.7).normalize();
   scene.add(sky(sunDir,skyTextures.background));
-  scene.fog = new THREE.Fog(0x9daab9, 400, 16000);
+  if (visual.atmo) scene.fogNode = atmosphereFog(sunDir);    // replaces the linear fog below (NodeManager reads fogNode first)
+  else scene.fog = new THREE.Fog(0x9daab9, 400, 16000);
   // Smaller panorama for reflections; avoid generating an environment from the 4K background.
   scene.environment = skyTextures.environment;
   scene.environmentRotation.y=-.38;
@@ -104,10 +109,13 @@ async function main() {
   scene.add(new THREE.HemisphereLight(0xcfe0f5, 0x7d6c4f, 1.25));
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(quality === "low" ? 1024 : touch ? 2048 : 4096, quality === "low" ? 1024 : touch ? 2048 : 4096);
+  // three cascades each clone this shadow, so ?shadow=csm keeps their total near the single box's (3 x 2048² vs 4096²)
+  const shadowSize = visual.shadow === "csm" ? (quality === "low" || touch ? 1024 : 2048) : quality === "low" ? 1024 : touch ? 2048 : 4096;
+  sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera; sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28; sc.near = 1; sc.far = 220;
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
+  if (visual.shadow === "csm") cascadedShadows(sun);
 
   const P = meta.points;
   const pt = (p: [number, number]): Vec2 => ({ x: p[0], z: p[1] });
@@ -537,7 +545,7 @@ async function main() {
   if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
-    results: () => ({ ...bench.results(), fx: fxLevel, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+    results: () => ({ ...bench.results(), fx: fxLevel, look: visual, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
       build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
       models: { loaded: Object.keys(assets).length },
       // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)

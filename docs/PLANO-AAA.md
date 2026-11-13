@@ -247,7 +247,7 @@ Legenda: esforço P (pequeno), M (médio) ou G (grande). O ganho percebido é es
 - **Trocar a mão em SVG provisória** (`index.html:41-50`) e o joystick pela arte do Codex ou do Higgsfield (ASSETS.md:75-76) antes de dar o HUD do celular por definitivo.
 - **Moradores**, só adultos (TRIPO.md:26,195): no máximo ~8 com pele, perto da margem, medidos. Hoje não há teto de créditos autorizado pelo Alex.
 - **Episódio 2** (Mc 2:1-12): depende do roteiro do Alex e de um teto de créditos.
-- **Versão nativa em Unreal na RTX**, com os mesmos seis planos (GRAFICO-MASTER.md:59). Os termos de licença do Unreal não foram verificados.
+- **Versão nativa em Unreal na RTX**, com os mesmos seis planos (GRAFICO-MASTER.md:59). Os termos de licença do Unreal não foram verificados. **Decisão do Alex em 13/11/2026 (resposta "A"): seguir só no navegador, buscando o melhor visual web.** A versão nativa fica fora até nova decisão dele.
 
 ## 4. Decisões só do Alex
 

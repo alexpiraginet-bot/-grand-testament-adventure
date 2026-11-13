@@ -43,6 +43,9 @@ node tools/check_session.mjs   # prova o diário de sessão: recarga limpa x que
 ```
 
 `?q=low|high` muda a qualidade (padrão: high em ambos, por pedido de Alex); `?gl=1` força WebGL 2; `?fps` mostra o FPS;
+em medição, todos desligados por padrão: `?fx=alto` (pós-processamento), `?atmo=1` (névoa por altura e distância),
+`?tm=aces|agx|neutral|off` e `?exp=` (curva tonal e exposição), `?shadow=csm` (sombras do sol em três cascatas até 600 m),
+ver `src/look.ts` e [docs/GRAFICO-MASTER.md](docs/GRAFICO-MASTER.md);
 `?debug` liga os ganchos de teste (`window.__gta`; `&dtmax=0.25` deixa o tempo do jogo andar no renderizador por software). 
 `tools/shots.mjs` joga o episódio com o Playwright e tira os prints em 1280×800 e 390×844 (precisa do `vite preview`
 rodando e do Playwright instalado à parte: `npm i -g playwright && npx playwright install chromium`).
