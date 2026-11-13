@@ -8,7 +8,8 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
-const FORBIDDEN = [/\.glb$/i, /\.gltf$/i, /\.ktx2$/i, /(?:^|\/)assets-src\//, /(?:^|\/)export\//];
+// .ktx2 is forbidden except for the CC0 textures under public/textures/ (ground, sky), which R10 may convert to KTX2
+const FORBIDDEN = [/\.glb$/i, /\.gltf$/i, /^(?!public\/textures\/).*\.ktx2$/i, /(?:^|\/)assets-src\//, /(?:^|\/)export\//];
 // one path per rule, in directories that are otherwise tracked, so each probe is caught by its own .gitignore rule
 const PROBES = ["src/probe.glb", "src/probe.gltf", "src/probe.ktx2", "assets-src/probe.bin", "export/probe.bin"];
 

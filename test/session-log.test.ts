@@ -193,3 +193,23 @@ test("the heartbeat writes lastBeat through the injected interval, and uninstall
   assert.equal(p.log.snapshot().counts.error, 0);
   assert.equal(parseSessionRecord(tab.getItem(SESSION_LOG_KEY))!.cleanExit, false);
 });
+
+test("the spec's literal values: key, heartbeat period and message cap (a changed constant must fail here)", () => {
+  assert.equal(SESSION_LOG_KEY, "gta:session");
+  assert.equal(BEAT_MS, 5000);
+  assert.equal(MAX_MESSAGE, 200);
+  const tab = new MapStorage(), p = page(tab, 1_000, "lit");
+  assert.equal(p.timer.ms, 5000, "the heartbeat asks for a 5 s interval");
+  assert.ok(tab.getItem("gta:session"), "written under the literal key");
+  assert.equal(shortMessage("x".repeat(1000)).length, 200);
+});
+
+test("messages lose credentials, queries and fragments on any URL scheme, and never end on half a surrogate", () => {
+  assert.equal(shortMessage("failed wss://ws.example/live?token=abc#x now"), "failed wss://ws.example/live now");
+  assert.equal(shortMessage("GET https://user:secret@host.example/p?q=1"), "GET https://host.example/p");
+  assert.equal(shortMessage("blob:https://x.example/uuid#frag"), "blob:https://x.example/uuid");
+  const emoji = "😀".repeat(150);                                     // 300 UTF-16 units, pairs all along
+  const cut = shortMessage(emoji);
+  assert.ok(cut.length <= 200 && cut.endsWith("…"));
+  assert.ok(!/[\uD800-\uDBFF]…$/.test(cut), "no lone high surrogate before the ellipsis");
+});

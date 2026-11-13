@@ -164,3 +164,13 @@ test("memory summary groups bytes by format and by origin, largest first", () =>
   assert.deepEqual(memorySummary([]), { count: 0, totalBytes: 0, byFormat: {}, byOrigin: {} });
   assert.throws(() => memorySummary([{ origin: "x", format: "rgba8", bytes: NaN }]), RangeError);
 });
+
+test("zero and negative GPU/CPU times are not samples (three reports 0 before anything resolves)", () => {
+  const run = new BenchRun([{ name: "a", eye: [0, 2, 0], target: [0, 1, -10] }], 0, 3);
+  run.record(16, 1, 1, { gpuMs: 0, cpuMs: -1 });
+  run.record(16, 1, 1, { gpuMs: 4, cpuMs: 2 });
+  run.record(16, 1, 1, { gpuMs: -3, cpuMs: 0 });
+  const r = run.results();
+  assert.equal(r.shots[0].gpu!.frames, 1); assert.equal(r.shots[0].gpu!.p50Ms, 4);
+  assert.equal(r.shots[0].cpu!.frames, 1); assert.equal(r.shots[0].cpu!.p50Ms, 2);
+});

@@ -11,9 +11,10 @@ import { BenchRun, frameStats, type FrameStats, type ShotResult } from "../src/b
 type Pair = { a: number | null; b: number | null; ratio: number | null };
 type Delta = { a: number | null; b: number | null; diff: number | null };
 type Row = { name: string; route: boolean; p50: Pair; p95: Pair; gpuP95: Pair; cpuP95: Pair; calls: Delta; triangles: Delta };
-type Opts = { allowUnstamped?: boolean; variant?: string; variantB?: string };
+type Opts = { allowUnstamped?: boolean; allowDirty?: boolean; acrossCommits?: boolean; variant?: string; variantB?: string };
 type Tool = {
   checkComparable(a: unknown, b: unknown, opts?: Opts): string[];
+  parseSha(s: unknown): { sha: string; dirty: boolean } | null;
   pickVariants(a: unknown, b: unknown, opts?: Opts): { variantA: string; variantB: string; reasons: string[] };
   compareRuns(a: unknown, b: unknown): Row[];
   markdownTable(rows: Row[]): string;
@@ -79,18 +80,18 @@ test("refuses a report from before the build stamp unless --allow-unstamped", ()
   delete old.build; delete old.gpu;
   const reasons = tool.checkComparable(A, old);
   assert.equal(reasons.length, 1);
-  assert.match(reasons[0], /^B has no build\.sha and no gpu: the report predates the build stamp/);
-  assert.match(tool.checkComparable(old, A)[0], /^A has no build\.sha and no gpu/);
+  assert.match(reasons[0], /^B has no usable build\.sha \(missing or "desconhecido"\): the report predates the build stamp/);
+  assert.match(tool.checkComparable(old, A)[0], /^A has no usable build\.sha/);
   assert.equal(tool.checkComparable(old, old).length, 2, "each side is named");
   assert.deepEqual(tool.checkComparable(A, old, { allowUnstamped: true }), []);
   assert.deepEqual(tool.checkComparable(old, old, { allowUnstamped: true }), []);
 
   const noGpu = clone(B);
   delete noGpu.gpu;
-  assert.match(tool.checkComparable(A, noGpu)[0], /^B has no gpu: the report predates/);
+  assert.match(tool.checkComparable(A, noGpu)[0], /^B has no GPU name: the browser did not expose it/);
   const timingOnly = clone(noGpu);
   timingOnly.runs["fx=master"].gpu = frameStats([3, 4, 5]);
-  assert.match(tool.checkComparable(A, timingOnly)[0], /^B has no gpu/, "a GPU timing block is not the GPU's name");
+  assert.match(tool.checkComparable(A, timingOnly)[0], /^B has no GPU name/, "a GPU timing block is not the GPU's name");
 
   const inRun = clone(old);
   Object.assign(inRun.runs["fx=master"], { build: { sha: "2e3211c" }, gpu: "synthetic adapter" });
@@ -206,4 +207,31 @@ test("the command prints the table for a valid pair and exits non-zero on refusa
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("the stamp is read strictly: a dirty tree, an unknown commit and two different commits are each refused by default", () => {
+  // literal stamps as vite.config.ts writes them
+  assert.deepEqual(tool.parseSha("2e3211cc25fd92599d715bef7c5bb8d16684821a"), { sha: "2e3211cc25fd92599d715bef7c5bb8d16684821a", dirty: false });
+  assert.deepEqual(tool.parseSha("2E3211C+alterado"), { sha: "2e3211c", dirty: true });
+  assert.equal(tool.parseSha("desconhecido"), null);
+  assert.equal(tool.parseSha("2e3211"), null, "fewer than 7 hex digits is not a commit");
+  assert.equal(tool.parseSha("not-a-sha"), null);
+
+  const withSha = (sha: string) => { const r = clone(B); r.build = { ...(r.build ?? {}), sha }; return r; };
+  const base = withSha("2e3211cc25fd92599d715bef7c5bb8d16684821a"), A2 = clone(A);
+  A2.build = { ...(A2.build ?? {}), sha: "2e3211c" };
+  assert.deepEqual(tool.checkComparable(A2, base), [], "short and long form of one commit");
+
+  const dirty = withSha("2e3211cc25fd92599d715bef7c5bb8d16684821a+alterado");
+  assert.match(tool.checkComparable(A2, dirty).join("\n"), /B was built from uncommitted changes \(\+alterado\)/);
+  assert.deepEqual(tool.checkComparable(A2, dirty, { allowDirty: true }), []);
+
+  const unknown = withSha("desconhecido");
+  assert.match(tool.checkComparable(A2, unknown).join("\n"), /B has no usable build\.sha/, "desconhecido is no stamp, not a match");
+  assert.match(tool.checkComparable(unknown, unknown).join("\n"), /A has no usable build\.sha/);
+
+  const other = withSha("0c83cad2fde6ca83ed0faf6cf967d1cd84d8fe3b");
+  assert.match(tool.checkComparable(A2, other).join("\n"), /build\.sha differs: A 2e3211c, B 0c83cad/);
+  assert.deepEqual(tool.checkComparable(A2, other, { acrossCommits: true }), []);
+  assert.equal(tool.parseSha("2e3211c")!.sha.startsWith("0c83cad"), false);
 });

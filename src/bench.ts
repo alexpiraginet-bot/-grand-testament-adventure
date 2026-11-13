@@ -24,14 +24,16 @@ export function frameStats(frameMs: readonly number[]): FrameStats {
 
 /** Statistics of the samples that arrived, or null when none did (no GPU timer on this backend, or never measured). */
 const statsOrNull = (ms: readonly number[]): FrameStats | null => (ms.length ? frameStats(ms) : null);
-const isSample = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x);
+// A GPU or CPU time must be positive: three hands back 0 while nothing has resolved yet, and a timestamp pair can come
+// out negative; neither is a measurement.
+const isSample = (x: number | null | undefined): x is number => typeof x === "number" && Number.isFinite(x) && x > 0;
 
 /**
  * Optional per-frame timings next to the frame interval. gpuMs: GPU time of the frame from the renderer's timestamp
- * queries; null or absent when it did not arrive. three r186 tracks them only with `timestamp-query` on WebGPU
- * (WebGPUBackend.js:298) and resolves them asynchronously (Renderer.js:3018) to the last resolved frame's total, or the
- * previous value when nothing new resolved (WebGPUTimestampQueryPool.js:96-106,229-236), so a sample can lag a frame or
- * two: the warm-up after each cut absorbs that. cpuMs: main-thread time the caller measured for the same frame.
+ * queries; null or absent when it did not arrive. three r186 times the GPU with `timestamp-query` on WebGPU
+ * (WebGPUBackend.js:298) and with EXT_disjoint_timer_query_webgl2 on WebGL 2 (WebGLBackend.js:272), when the browser
+ * offers them, and resolves them asynchronously (Renderer.js:3018) to the last resolved frame's total, so a sample can
+ * lag a frame or two: the warm-up after each cut absorbs that. cpuMs: main-thread time the caller measured.
  */
 export type FrameExtra = { gpuMs?: number | null; cpuMs?: number };
 
@@ -56,7 +58,7 @@ export class BenchRun {
   readonly shots: readonly Shot[];
   readonly warmup: number;
   readonly frames: number;
-  /** Why gpuMs is missing (e.g. "no timestamp-query"), set by the caller and reported, so a null is never silent. */
+  /** Why gpuMs is missing (e.g. "no timestamp-query"), set by the caller and reported next to the null. */
   gpuUnavailable?: string;
 
   constructor(shots: readonly Shot[], warmup = 30, frames = 180) {

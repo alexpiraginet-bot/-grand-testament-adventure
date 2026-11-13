@@ -1,17 +1,21 @@
 // Compares two same-scene bench reports written by tools/bench.mjs, shot by shot, and refuses pairs that cannot compare.
 //   node tools/compare_bench.mjs <a.json> <b.json> [--variant <name>] [--variant-b <name>]
-//                                [--images <dirA> <dirB> <outDir>] [--allow-unstamped]
+//                                [--images <dirA> <dirB> <outDir>] [--allow-unstamped] [--allow-dirty] [--across-commits]
 // --variant picks the run of A (and of B, unless --variant-b names another one). By default: A's first run and the run of
 // the same name in B, else B's first. One file can be passed twice to compare two of its variants.
 // Frame times only mean something on one machine, one build and one window (tools/bench.mjs, docs/PLANO-AAA.md R4), so
 // a pair with a different viewport, DPR, browser channel, touch emulation, commit (build.sha) or GPU is refused (exit 1).
-// Reports written before the build stamp have neither commit nor GPU: refused too, unless --allow-unstamped.
+// Reports written before the build stamp have neither commit nor GPU: refused too, unless --allow-unstamped. A stamp of
+// "desconhecido" (the build could not read git) counts as no stamp. A commit marked "+alterado" (built from a tree with
+// uncommitted changes, vite.config.ts) does not identify its code: refused unless --allow-dirty. Two different commits
+// (before/after a change) are refused unless --across-commits, which allows them and says so in the notes.
 // Prints Markdown. B/A above 1 means B is slower. Shots are matched by name, never by position. GPU and CPU times print
 // "n/d" where the backend could not time them. --images writes the A and B pictures of each shot side by side.
 // A report may come from someone else's machine (docs/CONSTRUA-CONOSCO.md): its strings are data. They are stripped of
 // control characters before printing, and a shot name only becomes part of a file name when it is a plain word.
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const isNum = (x) => typeof x === "number" && Number.isFinite(x);
 const num = (x) => (isNum(x) ? x : null);
@@ -23,22 +27,26 @@ const firstTimed = (...xs) => xs.find(timed) ?? null;
 const key = (x) => JSON.stringify(x ?? null);
 const show = (x) => (Array.isArray(x) ? x.join("x") : x === undefined ? "missing" : String(x));
 /** Printable text from report data: no control or bidi-override characters (no terminal escapes, no spoofing). */
-export const text = (s) => String(s ?? "").replace(/[\p{Cc}‪-‮⁦-⁩]/gu, "");
+export const text = (s) => String(s ?? "").replace(/[\p{Cc}\p{Cf}]/gu, "");
 
 // --- stamp and variants -------------------------------------------------------------------------------------------
 
 // a GPU identity is a string (adapter or WEBGL_debug_renderer_info); an object that is not a timing block also counts
 const gpuName = (g) => (typeof g === "string" ? g.trim() || null : isObj(g) && !timed(g) ? JSON.stringify(g) : null);
-// the same commit written short and long still matches
-const sameSha = (x, y) => x === y || (Math.min(x.length, y.length) >= 7 && (x.startsWith(y) || y.startsWith(x)));
+// A commit as the build stamp writes it: hex, 7 to 40 characters, optionally "+alterado" for an uncommitted tree.
+// Anything else ("desconhecido", empty, garbage) is no stamp at all.
+const SHA = /^([0-9a-f]{7,40})(\+alterado)?$/;
+export const parseSha = (s) => { const m = typeof s === "string" ? SHA.exec(s.trim().toLowerCase()) : null; return m ? { sha: m[1], dirty: !!m[2] } : null; };
+// the same commit written short and long still matches; both are plain hex by construction
+const sameSha = (x, y) => x === y || x.startsWith(y) || y.startsWith(x);
 
 /** Commit and GPU a report was measured on, read at the top level and else in the chosen run; null when absent. */
 export function stampOf(report, variant) {
   const runs = !isObj(report?.runs) ? [] : variant != null && Object.hasOwn(report.runs, variant) ? [report.runs[variant]] : Object.values(report.runs);
   const places = [report, ...runs].filter(isObj);
-  const sha = places.map((p) => (typeof p.build === "string" ? p.build : p.build?.sha)).find((s) => typeof s === "string" && s.trim());
-  return { sha: sha?.trim().toLowerCase() ?? null, gpu: places.flatMap((p) => [p.gpu, p.build?.gpu]).map(gpuName).find(Boolean) ?? null,
-    dirty: places.some((p) => p.build?.dirty === true) };
+  const parsed = places.map((p) => parseSha(typeof p.build === "string" ? p.build : p.build?.sha)).find(Boolean) ?? null;
+  return { sha: parsed?.sha ?? null, gpu: places.flatMap((p) => [p.gpu, p.build?.gpu]).map(gpuName).find(Boolean) ?? null,
+    dirty: !!parsed?.dirty || places.some((p) => p.build?.dirty === true) };
 }
 
 /** Which run of A and of B to compare (see the header), with the reasons when one of them does not exist. */
@@ -67,12 +75,16 @@ export function checkComparable(a, b, opts = {}) {
   for (const f of ["viewport", "dpr", "channel", "touch"])
     if (key(a[f]) !== key(b[f])) reasons.push(`${f} differs: A ${show(a[f])}, B ${show(b[f])}`);
   const sa = stampOf(a, variantA), sb = stampOf(b, variantB);
-  if (sa.sha && sb.sha && !sameSha(sa.sha, sb.sha)) reasons.push(`build.sha differs: A ${sa.sha}, B ${sb.sha}`);
+  if (sa.sha && sb.sha && !sameSha(sa.sha, sb.sha) && !opts.acrossCommits)
+    reasons.push(`build.sha differs: A ${sa.sha}, B ${sb.sha} (pass --across-commits to compare two commits on purpose)`);
+  if (!opts.allowDirty) for (const [side, s] of [["A", sa], ["B", sb]])
+    if (s.dirty) reasons.push(`${side} was built from uncommitted changes (+alterado): its commit does not identify the code; commit and rerun, or pass --allow-dirty`);
   if (sa.gpu && sb.gpu && sa.gpu !== sb.gpu) reasons.push(`gpu differs: A ${sa.gpu}, B ${sb.gpu}`);
   if (!opts.allowUnstamped) for (const [side, s] of [["A", sa], ["B", sb]]) {
-    const missing = [!s.sha && "build.sha", !s.gpu && "gpu"].filter(Boolean);
-    if (missing.length) reasons.push(`${side} has no ${missing.join(" and no ")}: the report predates the build stamp; ` +
-      "rerun tools/bench.mjs on a stamped build, or pass --allow-unstamped to compare without it");
+    if (!s.sha) reasons.push(`${side} has no usable build.sha (missing or "desconhecido"): the report predates the build stamp or ` +
+      "the build could not read git; rerun tools/bench.mjs on a stamped build, or pass --allow-unstamped");
+    else if (!s.gpu) reasons.push(`${side} has no GPU name: the browser did not expose it (masked WebGL or no adapter info), so ` +
+      "the machine cannot be checked; pass --allow-unstamped to compare anyway");
   }
   if (!matchShots(a.runs[variantA], b.runs[variantB]).length) reasons.push(`no shot in common between A "${variantA}" and B "${variantB}"`);
   return reasons;
@@ -129,7 +141,8 @@ export function notesFor(a, b, variantA, variantB) {
     if (Array.isArray(r.errors) && r.errors.length) notes.push(`${side} logged ${r.errors.length} page error(s): the scene may not have loaded fully`);
   const sa = stampOf(a, variantA), sb = stampOf(b, variantB);
   if (!sa.sha || !sb.sha || !sa.gpu || !sb.gpu) notes.push("compared without a full build stamp: commit and GPU were not both checked");
-  if (sa.dirty || sb.dirty) notes.push("a build had uncommitted changes (build.dirty): its commit does not identify the code");
+  if (sa.dirty || sb.dirty) notes.push("a build had uncommitted changes (+alterado): its commit does not identify the code");
+  if (sa.sha && sb.sha && !sameSha(sa.sha, sb.sha)) notes.push(`two different commits compared on purpose (--across-commits): ${sa.sha} vs ${sb.sha}`);
   return notes;
 }
 
@@ -138,7 +151,8 @@ export function notesFor(a, b, variantA, variantB) {
 const ms = (x) => (x === null ? "n/d" : x.toFixed(2));
 const plain = (x) => (x === null ? "n/d" : String(x));
 const signed = (x) => (x === null ? "n/d" : x > 0 ? `+${x}` : String(x));
-const cell = (s) => text(s).replace(/\|/g, "\\|");
+// report strings may come from another machine: no table breaks, no HTML, no @mentions when pasted into GitHub
+const cell = (s) => text(s).replace(/\|/g, "\\|").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/@/g, "&#64;");
 const line = (cells) => `| ${cells.join(" | ")} |`;
 
 /** The comparison table of compareRuns' rows. */
@@ -198,11 +212,12 @@ async function sideBySide(fileA, fileB, out, labelA, labelB) {
 // --- command line -------------------------------------------------------------------------------------------------
 
 const USAGE = "usage: node tools/compare_bench.mjs <a.json> <b.json> [--variant <name>] [--variant-b <name>] " +
-  "[--images <dirA> <dirB> <outDir>] [--allow-unstamped]";
+  "[--images <dirA> <dirB> <outDir>] [--allow-unstamped] [--allow-dirty] [--across-commits]";
 
 /** Command-line options; throws on an unknown option, a missing value or a count of files other than two. */
 export function parseArgs(argv) {
-  const out = { files: [], variant: undefined, variantB: undefined, images: undefined, allowUnstamped: false, help: false };
+  const out = { files: [], variant: undefined, variantB: undefined, images: undefined, allowUnstamped: false, allowDirty: false,
+    acrossCommits: false, help: false };
   for (let i = 0; i < argv.length; i++) {
     const x = argv[i];
     const take = (n) => {
@@ -215,6 +230,8 @@ export function parseArgs(argv) {
     else if (x === "--variant-b") [out.variantB] = take(1);
     else if (x === "--images") out.images = take(3);
     else if (x === "--allow-unstamped") out.allowUnstamped = true;
+    else if (x === "--allow-dirty") out.allowDirty = true;
+    else if (x === "--across-commits") out.acrossCommits = true;
     else if (x === "-h" || x === "--help") out.help = true;
     else if (x.startsWith("-")) throw new Error(`unknown option ${x}`);
     else out.files.push(x);
@@ -233,7 +250,8 @@ async function main(argv) {
     console.error(`${text(e instanceof Error ? e.message : e)}\n${USAGE}`);
     return void (process.exitCode = 2);
   }
-  const opts = { allowUnstamped: args.allowUnstamped, variant: args.variant, variantB: args.variantB };
+  const opts = { allowUnstamped: args.allowUnstamped, allowDirty: args.allowDirty, acrossCommits: args.acrossCommits,
+    variant: args.variant, variantB: args.variantB };
   const reasons = checkComparable(a, b, opts);
   if (reasons.length) {
     console.error(["Refused: these two reports cannot be compared.", ...reasons.map((r) => `- ${text(r)}`)].join("\n"));
@@ -263,4 +281,5 @@ async function main(argv) {
     ...notes.map((n) => `- ${text(n)}`), ...written.map((f) => `- picture: ${text(f)}`)].join("\n"));
 }
 
-if (import.meta.main) await main(process.argv.slice(2));
+// run as a program only (not when a test imports it); import.meta.main is absent on Node 24.0 and 24.1
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main(process.argv.slice(2));

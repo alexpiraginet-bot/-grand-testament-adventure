@@ -50,7 +50,8 @@ function randomId(): string {
 const FRAME = /^\s+at\s+\S|@\S+:\d+:\d+\s*$/;
 
 /** Anything thrown or rejected -> one short line: the message only, never the stack (stack frames carry script URLs),
- * URLs without their query or fragment (they may hold a token), at most MAX_MESSAGE characters. */
+ * URLs of any scheme (http, ws, blob...) without user:password@, query or fragment (they may hold a token), at most
+ * MAX_MESSAGE characters, never ending on half of a surrogate pair. */
 export function shortMessage(input: unknown): string {
   let s: string;
   try {
@@ -63,8 +64,13 @@ export function shortMessage(input: unknown): string {
   const lines = s.split(/\r?\n/);
   const frame = lines.findIndex((l) => FRAME.test(l));
   s = (frame < 0 ? lines : lines.slice(0, frame)).join(" ")
-    .replace(/\b(https?:\/\/[^\s?#]+)[?#]\S*/g, "$1").replace(/\s+/g, " ").trim() || "(no message)";
-  return s.length > MAX_MESSAGE ? `${s.slice(0, MAX_MESSAGE - 1)}…` : s;
+    .replace(/\b([a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi, "$1")          // credentials in userinfo
+    .replace(/\b([a-z][a-z0-9+.-]*:\/\/[^\s?#]+)[?#]\S*/gi, "$1")      // query and fragment
+    .replace(/\s+/g, " ").trim() || "(no message)";
+  if (s.length <= MAX_MESSAGE) return s;
+  let cut = MAX_MESSAGE - 1;
+  if (/[\uD800-\uDBFF]/.test(s[cut - 1])) cut--;                   // do not split a surrogate pair
+  return `${s.slice(0, cut)}…`;
 }
 
 /** A record as stored (JSON text) -> a checked record, or null when missing, corrupt or from another version. Bad

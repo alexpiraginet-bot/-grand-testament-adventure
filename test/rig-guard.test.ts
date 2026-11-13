@@ -12,11 +12,12 @@ const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const RIG = join(ROOT, "src", "rig.ts");
 const SOURCE = /\.(?:[cm]?[jt]sx?|html)$/;
 
-// `import ... from "x"`, `export ... from "x"`, bare `import "x"` and dynamic `import("x")`. The clause before `from`
-// may span lines (multi-line braces) but never crosses a quote, so the captured specifier is that statement's own.
-const SPECIFIER = /\b(?:import|export)\b[^;'"`]*?\bfrom\s*(['"])([^'"\r\n]+)\1|\bimport\s*\(\s*(['"])([^'"\r\n]+)\3\s*\)|\bimport\s*(['"])([^'"\r\n]+)\5/g;
+// Every quoted string in the file, whatever statement it sits in: import/export clauses split over lines with comments,
+// import() with backticks, createRequire(...)("../src/rig.ts"), <script src="/src/rig.ts">. Recognising import syntax
+// alone missed some of those; a quoted path that resolves to src/rig.ts is a reference, whatever surrounds it.
+const QUOTED = /(['"`])((?:\\.|(?!\1)[^\\\r\n])*)\1/g;
 
-const specifiers = (text: string) => [...text.matchAll(SPECIFIER)].map((m) => m[2] ?? m[4] ?? m[6]);
+const specifiers = (text: string) => [...text.matchAll(QUOTED)].map((m) => m[2]);
 
 /** Whether `spec`, written in `file`, names src/rig.ts (with .ts or .js, without extension, or root-absolute as Vite allows). */
 function namesRig(file: string, spec: string): boolean {
@@ -45,6 +46,10 @@ test("the import scanner recognises every way of naming src/rig.ts", () => {
     [main, `const r = await import ( './rig.ts' )`],
     [main, `import { rigPerson } from "/src/rig.ts"`],
     [tool, `import { rigPerson } from "../src/rig.ts"`],
+    [main, "import {\n  bakedGeometry, // the rig's own; don't\n} from './rig.ts'"],
+    [main, "const m = await import(`./rig.ts`)"],
+    [tool, `const { rigPerson } = createRequire(import.meta.url)("../src/rig.ts")`],
+    [join(ROOT, "index.html"), `<script type="module" src="/src/rig.ts"></script>`],
   ] as const) assert.ok(specifiers(text).some((s) => namesRig(file, s)), `missed: ${text}`);
   for (const [file, text] of [
     [main, `import { animatedActor } from "./animated-actor.ts"`],
@@ -54,9 +59,9 @@ test("the import scanner recognises every way of naming src/rig.ts", () => {
   ] as const) assert.ok(!specifiers(text).some((s) => namesRig(file, s)), `false alarm: ${text}`);
 });
 
-test("no file under src/ or tools/ imports the provisional rig", () => {
+test("no file under src/ or tools/, nor index.html, refers to the provisional rig", () => {
   assert.ok(existsSync(RIG), "src/rig.ts is gone or renamed: update or drop this guard with it");
-  const files = [...sources(join(ROOT, "src")), ...sources(join(ROOT, "tools"))];
+  const files = [...sources(join(ROOT, "src")), ...sources(join(ROOT, "tools")), join(ROOT, "index.html")];
   // the scanner must actually see this codebase's imports, or an empty match would pass for the wrong reason
   assert.ok(specifiers(readFileSync(join(ROOT, "src", "main.ts"), "utf8")).includes("./animated-actor.ts"), "scanner sees no imports in src/main.ts");
   const offenders = files.filter((f) => f !== RIG)
