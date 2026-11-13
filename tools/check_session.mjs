@@ -16,11 +16,13 @@ await page.goto(url, { waitUntil: "load" }); await ready();
 const first = await session();
 assert.equal(first.status, "ok"); assert.equal(first.previous, null, "a fresh tab has no previous load");
 assert.equal(first.record.loads, 1); assert.ok(first.record.backend, "backend recorded");
+console.log(`1/3 fresh tab ok (${first.record.backend})`);
 
 await page.reload({ waitUntil: "load" }); await ready();
 const clean = await session();
 assert.equal(clean.record.loads, 2);
 assert.equal(clean.previous?.uncleanEnd, false, "a normal reload passes pagehide and is clean");
+console.log("2/3 normal reload ok: previous load ended clean");
 
 const cdp = await page.context().newCDPSession(page);
 await cdp.send("Page.crash").catch(() => {});                 // the renderer dies: no pagehide runs
