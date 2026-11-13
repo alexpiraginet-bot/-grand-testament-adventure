@@ -48,6 +48,7 @@ import { BUILD_SHA, describeGpu } from "./build-info.ts";
 import { installSessionLog } from "./session-log.ts";
 import { memorySummary, renderTargetBytes } from "./bench.ts";
 import { sceneTextures } from "./scene-memory.ts";
+import {loadFacadeMaterials} from './facade-materials.ts';
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; ref: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -156,11 +157,12 @@ async function main() {
     lost();
   });
 
-  const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([
+  const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures,facadeWood] = await Promise.all([
     load().then(value=>{loading.complete('world','Mapa da Galileia preparado');return value;}),
     startup.track(loadTripoAssets({mobile:startupProfile.mobile,onProgress:p=>loading.updateAssets(p),signal:startup.signal}),disposeTripoAssets),
-    withDeadline(startup.track(loadGroundTextures(),maps=>Object.values(maps).forEach(disposeTexture)),25000,'As texturas do terreno demoraram a responder.').then(value=>{loading.complete('ground','Terreno preparado');return value;}),
+    withDeadline(startup.track(loadGroundTextures(startupProfile.mobile,startup.signal),maps=>Object.values(maps).forEach(disposeTexture)),25000,'As texturas do terreno demoraram a responder.').then(value=>{loading.complete('ground','Terreno preparado');return value;}),
     withDeadline(startup.track(loadSkyTextures(),maps=>Object.values(maps).forEach(disposeTexture)),25000,'O céu demorou a responder.').then(value=>{loading.complete('sky','Iluminação preparada');return value;}),
+    withDeadline(startup.track(loadFacadeMaterials(startupProfile.mobile,startup.signal),maps=>Object.values(maps).forEach(disposeTexture)),25000,'As texturas da vila demoraram a responder.'),
   ]);
   startup.check();
   const actor=requireHero(assets.heroi);
@@ -196,11 +198,13 @@ async function main() {
   const ground=groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures);
   scene.add(ground);
   const fm = farMesh(far, meta.far.size, meta.far.n); fm.position.y = -0.3; scene.add(fm);
-  const lake = water(meta.far.size,terrain); scene.add(lake.mesh);
+  const lake = await startup.track(Promise.resolve(water(meta.far.size,terrain,{mobile:startupProfile.mobile || quality==='low',
+    reflection:!startupProfile.mobile && quality!=='low'})),value=>{value.mesh.geometry.dispose();value.mesh.material.dispose();}); scene.add(lake.mesh);
   const cap = meta.places.find((p) => p.id === "Capernaum") ?? { x: 0, z: 0 };
   const town = houses(terrain, cap.x, cap.z, keep, assets, {
     map:groundTextures.albedo,normalMap:groundTextures.normal,roughnessMap:groundTextures.roughness,
     groundSegments:quality === 'low' ? 192 : 256,
+    facadeWood,
   });
   scene.add(town.group);
   const vegetation=props(terrain,keep,q,assets,town.boxes); scene.add(vegetation);
@@ -929,7 +933,8 @@ async function main() {
           heading:a.heading,scale:a.scale,radius:a.radius,halfHeight:a.halfHeight,groundHeight:terrain.heightAt(a.x,a.z),blockedStatic:faunaBlocked(a.x,a.z)}))??[]}),
       assets: Object.keys(assets),
       world: {...town.group.userData.counts,...vegetation.userData.counts},
-      worldQuality:()=>({houses:town.diagnostics,ground:(ground.material as THREE.Material).userData.groundSurface}),
+      worldQuality:()=>({houses:town.diagnostics,ground:(ground.material as THREE.Material).userData.groundSurface,
+        lake:lake.mesh.userData.lakeSurface}),
       routes:keep,
       blocked,
       quality,
