@@ -120,6 +120,12 @@ Nada desta sessão está em produção até a PR ser revisada e integrada.
 | `9c05537` | Correções da revisão adversarial (10 achados confirmados, ver abaixo) | 167/167 testes; simulação do `CSMShadowNode` real | — |
 | `cecfa1e` | Atividade estimada no `tools/session_usage.py`; resultados das variantes no roteiro gráfico | conferência da união de intervalos | — |
 | `b7f62b8` | A barra de links elevada deixa o toque passar para a mão e o joystick; painéis voltam depois das faixas de cinema | achado pelo `check_touch` deitado (844×390) no build integrado | reconferência no navegador em andamento |
+| `caf7244` | Merge da `main` (`ea39f63`, fauna própria R8 e áudio de natureza do Codex) | testes e build com assets; suítes de carga, toque e fauna rodadas no build integrado (ver "Fim da tarde") | fauna opcional expira aos 30 s reais no renderizador por software daqui |
+| `14ce1b1` `6b339be` `740c25a` `1e4779b` `d0c055d` `cf7c4a7` `8b8af85` | Mundo aberto depois do episódio: "Continuar explorando", volta a Cafarnaum com a oração literal de Marcos 1:21 ("Eles entraram em Cafarnaum"), cinco lugares para encontrar (posições dos dados do mundo), aviso a 40 m do limite da região, "Explorar a região" no cartão inicial, radar aponta o lugar mais próximo por encontrar | testes de `freeroam.ts` e `places.ts`; `tools/check_roam.mjs` | conferência de navegador final na árvore conciliada com a R9 |
+| `0f5e9fe` | Medidas das variantes de visual na base integrada, em `docs/GRAFICO-MASTER.md` | `shots/merge-r3/bench-*` (local) | sem GPU: imagens e draw calls, nenhum FPS |
+| `b0dd3d3` `fe8d67b` `c39170f` `a66b232` | Bíblia do jogo (ideia de Alex): leitura em ordem do Bíblia Conectada (10 momentos, 26 versículos literais da BLIVRE, SHA-256 da fonte conferido), a passagem jogada no seu lugar da ordem, e a linha da missão selada até a leitura. A Bíblia orienta, não tranca o mundo (confirmado por Alex) | `test/bible.test.ts`; `tools/build_bible.py --check`; `tools/check_bible.mjs` passou em 390×844 e 1280×800 sobre `a66b232` (17:54 UTC) | viewport emulado, renderizador por software; repetição na árvore conciliada com a R9 em andamento |
+| `30e8820` | Painel de devs (`painel.html`, link no rodapé do Colabore): commits por autoria, coautoria e conta, por dia, PRs, issues e contas de fora, lidos da API pública do GitHub; acessos declarados como não medidos | 6 testes sobre respostas gravadas deste repositório; `tools/check_painel.mjs` em 1280×800 e 390×844, recusa do GitHub e nova tentativa | sem fonte de medição de acessos: decisão de Alex |
+| `6878694` | Merge da R9 do Codex (`4438ba7`, PR #5): sem NPCs provisórios. O plano cinematográfico passa a enquadrar o herói e o lugar do encontro; ninguém é desenhado na volta à vila; o aviso de cena em desenvolvimento aparece também no epílogo | 252/252 testes, `tsc` limpo, build | conferência de navegador em andamento neste registro |
 
 Fora do Git: ambiente de nuvem pessoal "Grand Testament + Bíblia Conectada" criado com aprovação do Alex,
 liberando só `grand-testament-assets.vercel.app` e `grand-testament-adventure-lexprojects.vercel.app`.
@@ -206,6 +212,77 @@ jogo pronto, sem recarga automática). `check_touch` 390×844 passou; 844×390 f
 `b7f62b8`, reconferência em andamento). `check_hero_gesture` passa pela pausa do Colabore e os três ângulos agora
 diferem, mas esgota os 15 s reais que o script dá para a missão avançar a ~1 fps; um controle com a `main` pura no
 mesmo ambiente está na fila para separar ambiente de regressão. Demais suítes: em andamento.
+
+#### Fim da tarde de 13/11 — fauna integrada, mundo aberto, Bíblia, painel e R9
+
+**Pedidos de Alex nesta parte:** retomar código, mundo aberto e história deixando tudo commitado e publicado; uma
+**Bíblia cronológica dentro do jogo** (a do Bíblia Conectada), que o jogador abre para saber o próximo passo, em vez
+de só seguir um marcador; confirmação de que **a Bíblia não tranca o mundo**; uma **tela de analytics para devs**
+(acessos e quem/quantos contribuíram). Pelo Codex, a pedido de Alex: R9 sem bonecos de esfera/cilindro, prioridade a
+um trecho vila–praia bem acabado, e casas/solo como próxima frente desta sessão, em branch isolada.
+
+**Fila de navegador sobre `9c05537` (`shots/merge-r3`, local; Chromium com WebGL2 por software, um teste por vez):**
+passaram `check_loading`, `check_camera`, `check_session`, `check_world` e os dois benches. Falharam
+`check_hero_gesture` (15 s reais para a missão avançar), `check_worldmap` (clique esgota 30 s em 1280×800; 390 e 320
+passam), `check_premium` ("touch target"), `check_support`, `check_collaboration` e `check_feedback` (clique esgota
+30 s), `check_tripo` (andar mais de 1 m em 2 s) e `shots`. **Controles com a `main` pura no mesmo ambiente:**
+`check_hero_gesture` e `check_worldmap` falham do mesmo jeito sem nada desta PR, logo são limite do ambiente
+(~0,3 fps em 1280×800, ~0,6 fps em 390×844), não regressão. Os controles das outras suítes ficaram na fila e **ainda
+não rodaram**: essas falhas seguem sem classificação.
+`check_camera`: maior salto da câmera 0,488 m (fixa) contra 0,506 m (`?cam=mola`), 0 quadros dentro de casas nas duas;
+o benefício da mola não apareceu no navegador. Medidas das variantes na base integrada: `docs/GRAFICO-MASTER.md`.
+
+**Fila sobre `caf7244` (com a fauna R8):** `check_fauna_scene` celular passou (22 verificações). Falharam
+`check_loading` (casos `slow-desktop` e `fail-retry`), `check_touch`, fauna desktop, 404 parcial e áudio. Causa
+observada nos registros: a fauna opcional tem prazo de 30 s **reais** por arquivo e, a ~0,3 fps, expira; o cancelamento
+deixa erros `THREE.GLTFLoader: Couldn't load texture blob:` no console, que as suítes contam como erro. O
+`check_touch` passou a separar esses erros somente quando o aviso de expiração da fauna está presente. O controle
+dessas suítes na `main` pura (`ea39f63`) está na fila; até ele rodar, a causa é observação, não prova.
+
+**Mundo aberto, Bíblia e painel:** ver a tabela de commits. Decisões tomadas por mim com a delegação de Alex
+("o resto, decida pelo melhor para a evolução"), registradas em `docs/NARRATIVA.md`: o epílogo mostra só a primeira
+oração de Marcos 1:21 e a Bíblia mostra o versículo inteiro; o mapa do Codex ainda lista as missões (alinhar com ele);
+a leitura não é guardada entre visitas. O painel é construído por um `vite.painel.config.ts` próprio: como segunda
+página do mesmo build ele tirava o CSS do tema e o auxiliar de pré-carga do Vite para arquivos à parte, ou seja, dois
+pedidos a mais na abertura do jogo; separado, o CSS do jogo sai com o mesmo nome e hash (`index-CoqAIWud.css`).
+**Acessos não são medidos hoje:** `/_vercel/insights/script.js` responde 404 em produção (Web Analytics da Vercel
+desligado) e o jogo não tem contador. Nenhum número de acesso foi inventado; a fonte de medição depende de Alex.
+
+**Conciliação com a R9 (`6878694`):** os trechos da R9 em `main.ts`, `hud.ts` e `journey.ts` ficaram como o Codex
+escreveu (herói sem substituto, nenhum ator/colisor/seguidor de radar para participantes, aviso de cena em
+desenvolvimento). Dois conflitos em `main.ts` (a chamada do HUD da jornada/Bíblia e os ganchos de depuração). O que
+dependia dos atores retirados foi adaptado: plano cinematográfico, volta à vila, `check_roam`, `shots` e a guarda do
+rig (o herói chega ao `animated-actor.ts` por `character-quality.ts`). O JS do jogo caiu de 1.236,36 kB para
+1.229,10 kB (362,29 → 359,68 kB gzip) com a saída de `people.ts` do grafo. A fila do navegador foi trocada para essa
+árvore quando o `check_bible` de `a66b232` terminou (passou nos dois tamanhos de tela); as demais conferências de
+`a66b232` não rodaram e são substituídas pelas da árvore conciliada.
+
+**Tentativas que falharam nesta parte (causa raiz):**
+1. Literal de teste errado: 421,4 m no `places.test.ts`; a conta à mão dá 421,03 m. Corrigido o teste, não o código.
+2. As marcas do contador não eram desenhadas ao entrar por "Explorar a região" (o contador só era montado por uma
+   missão); `drawCounter` passou a ser comum (`cf7c4a7`).
+3. `build_bible.py`: linhas do `SHA256SUMS` com espaços quebravam a leitura; e a primeira versão retirava colchetes do
+   texto. Passou a usar o texto da BLIVRE como está, que é como o site do Bíblia Conectada o mostra.
+4. O script que ligava a Bíblia ao `main.ts` abortou numa âncora duplicada, sem escrever nada; refeito com âncora
+   única e conferido por `git diff --stat`.
+5. O painel como segunda página do build mudou o bundle do jogo (ver acima); refeito com configuração própria.
+6. A guarda do rig falhou depois do merge da R9 por conferir um import que mudou de arquivo; a conferência agora
+   segue o caminho novo e continua exigindo o `animated-actor.ts`.
+
+**Consumo real da sessão até 13/11/2026 17:53:25 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+38 arquivos; respostas desde 09:39:24 UTC). Substitui o retrato anterior, que era parcial:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 174 | 362 | 274.636 | 102.955.312 | 0 | 1.139.040 | 49.80 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 236,44**. Atividade estimada: **6,77 h** (intervalos entre respostas
+até 5 min, sem sobreposição; estimativa, não ponto batido). Não é fatura: a sessão roda no plano da conta claude.ai.
+O modelo da sessão foi trocado por Alex durante a tarde; a linha `claude-fable-5-2` usa o preço de lista da referência
+da API que acompanha o Claude Code (US$ 8 entrada, US$ 40 saída, US$ 0,20 leitura de cache por milhão), acrescentado
+ao script neste commit. Cinco respostas sintéticas (sem tokens) ficam fora da tabela. Conversão para reais não feita.
 
 ### Publicação R3 registrada
 

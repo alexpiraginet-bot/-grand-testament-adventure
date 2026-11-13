@@ -24,6 +24,9 @@ from decimal import Decimal, ROUND_HALF_UP
 # but not its cache-read price, so a fast-mode row is reported as "sem preço" instead of a guessed figure.
 PRICES = {
     ("claude-opus-5-5", "standard"): {"input": Decimal("4.00"), "output": Decimal("20.00"), "cache_read": Decimal("0.20")},
+    # same reference, shared/models.md (read 2026-11-13): $8 / $40, cache reads $0.20, writes $10 (5 min) and $16 (1 h),
+    # which are the 1.25x and 2x of the input price used below
+    ("claude-fable-5-2", "standard"): {"input": Decimal("8.00"), "output": Decimal("40.00"), "cache_read": Decimal("0.20")},
 }
 WRITE_5M, WRITE_1H = Decimal("1.25"), Decimal("2")
 MTOK = Decimal(1_000_000)
