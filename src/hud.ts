@@ -5,11 +5,9 @@ import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
 import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice, SCENE_DEVELOPMENT_NOTICE } from './journey.ts';
 import type { Segment } from './world-layout.ts';
-import { ORIGIN_LABEL, type Place } from "./places.ts";
+import { ORIGIN_LABEL, PLACE_NOTICE, placeNoticeOpacity, type Place } from "./places.ts";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
-/** How long a found place stays announced, in game seconds. */
-const PLACE_NOTICE_S = 6;
 
 export type RadarMark = { pos: Vec2; kind: "follower" };
 
@@ -51,6 +49,7 @@ export class Hud {
   private roamKind = "";
   private foundOnRadar: readonly Place[] = [];
   private placeLeft = 0;                 // game seconds the place notice still has on screen
+  private reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
   constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
@@ -132,15 +131,18 @@ export class Hud {
     $("placecount").textContent = `Lugar encontrado · ${found} de ${total}`;
     $("placename").textContent = place.nome;
     $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]}`;
-    el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
-    this.placeLeft = PLACE_NOTICE_S;
+    this.placeLeft = PLACE_NOTICE.stay;
+    el.style.opacity = String(placeNoticeOpacity(this.placeLeft, this.reducedMotion));
+    el.hidden = false;
   }
 
-  /** The place notice is timed by the frames that show it (game time, as update() and roam() receive it), not by the
-   * clock: the first place is found on the first frame after Go, when one frame can take longer than the whole notice.
-   * A wall-clock timer hid it before it was ever drawn on a slow start (seen at 1280×800 on a software renderer). */
+  /** The place notice lives in game time (places.ts placeNoticeOpacity), as update() and roam() receive it each frame. */
   private tickPlace(dt: number) {
-    if (this.placeLeft > 0 && (this.placeLeft -= dt) <= 0) $("placefound").hidden = true;
+    if (this.placeLeft <= 0) return;
+    this.placeLeft -= dt;
+    const el = $("placefound");
+    if (this.placeLeft <= 0) { el.hidden = true; return; }
+    el.style.opacity = String(placeNoticeOpacity(this.placeLeft, this.reducedMotion));
   }
 
   /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */

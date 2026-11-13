@@ -41,14 +41,18 @@ async function run(name, ctxOpts) {
   await page.waitForFunction(() => window.__gta.state.phase === "play", null, LONG);
 
   // the walk begins inside the village: it is found at once, and the HUD says what kind of place it is
-  // read in the same page task that sees the place found. The notice stays up 6 s of game time (hud.ts): while it was
-  // timed by the clock, this renderer at 1280×800 took longer than that to draw the next frame and never showed it
+  // read in the same page task that sees the place found. The notice lives 6 s of game time (places.ts): while it was
+  // timed by the clock (a timer and a CSS animation), this renderer drew it at opacity 0 or not at all
   const first = await (await page.waitForFunction(() => {
     const e = document.getElementById("placefound"), t = (id) => document.getElementById(id).textContent;
     return window.__gta.roam().found.includes("Capernaum")
-      && { name: t("placename"), count: t("placecount"), note: t("placenote"), shown: !e.hidden && getComputedStyle(e).display !== "none" };
+      && { name: t("placename"), count: t("placecount"), note: t("placenote"), shown: !e.hidden && getComputedStyle(e).display !== "none" && Number(getComputedStyle(e).opacity) >= 0.2 };
   }, null, LONG)).jsonValue();
   assert.deepEqual(first, { name: "Cafarnaum", count: "Lugar encontrado · 1 de 5", note: "Lugar com fonte", shown: true }, "the found place is announced");
+  // and it comes fully in, on the screen and inside the viewport, before the picture is taken
+  const seen = await (await page.waitForFunction(() => { const e = document.getElementById("placefound"), b = e.getBoundingClientRect();
+    return !e.hidden && getComputedStyle(e).opacity === "1" && { inView: b.width > 0 && b.left >= 0 && b.right <= innerWidth && b.top >= 0 && b.bottom <= innerHeight }; }, null, LONG)).jsonValue();
+  assert.equal(seen.inView, true, "the notice is drawn opaque inside the screen");
   await page.screenshot({ path: `${OUT}/${name}-0-lugar.png` });
   assert.equal(await g(() => window.__gta.roam().phase), "off", "no exploring mode while the episode is played");
 
