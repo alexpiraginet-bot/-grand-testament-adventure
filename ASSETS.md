@@ -61,6 +61,20 @@ as animações. **Não conferido aqui; não está pronto.**
 
 ## Referências visuais
 
+### Arte da abertura — revisão de 13/11/2026
+
+`public/images/loading-concept.webp` é uma derivação web do conceito artístico
+`meta-grafica-convite-r1.png`, criado com IA para Alex e preservado no acervo local
+`Serie-Reels-R1/Fontes-R6/Conceito-Convite-R1`. Autorizado para a abertura do jogo.
+A imagem é identificada na própria tela como **Conceito visual**; não é captura
+de gameplay, processamento NVIDIA nem demonstração de DLSS.
+
+- Preparação: redimensionamento técnico com Sharp para 900 px, WebP qualidade 82.
+- Arquivo web: 316.470 bytes; SHA-256
+  `4498da966b575f7428ec1d32b98ffcb17e2d512f75e35508d2b9278c58b5c03b`.
+- A arte mantém condições separadas do código MIT. Não foi declarada CC0 nem
+  relicenciada como MIT. O original continua preservado fora do Git.
+
 | Arquivo (fora do git) | SHA-256 | O que é |
 |---|---|---|
 | `assets-src/referencias/conceito-visual-01.png` | `ea81dd752e8342e9737f62bcc65d21128ac625811fb26ad9e50021dbe859bee6` | conceito em imagem gerada, enviado pelo Alex em 12/11/2026 como referência final; análise em `docs/ALTO-NIVEL.md` |

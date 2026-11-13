@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0e100e">
+<meta name="theme-color" content="#f7f0e5">
 <link rel="icon" href="data:,">
 <title>Grand Testament Adventure</title>
 <meta name="description" content="Fatia jogável: Pescadores de gente (Marcos 1:16–20), na margem do mar da Galileia em Cafarnaum. Recriação.">
 <link rel="preload" href="./fonts/SpaceGrotesk-VF.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="./fonts/SpaceMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/src/hud.css">
+<link rel="stylesheet" href="/src/ui-theme.css">
+<link rel="stylesheet" href="/src/loading.css">
 </head>
 <body>
 <canvas id="c" aria-label="Margem do mar da Galileia em Cafarnaum"></canvas>
@@ -41,12 +43,25 @@
   <button class="act" id="act" type="button" hidden>E</button>
 </div>
 
-<div class="card" id="start">
+<div class="card start-screen" id="start" data-state="loading">
+  <div class="loading-art">
+    <img src="/images/loading-concept.webp" alt="Conceito artístico: Jesus e pescadores à margem do mar da Galileia" width="900" height="1439" fetchpriority="high">
+    <div class="loading-art-brand">GRAND TESTAMENT<br>ADVENTURE</div>
+    <div class="loading-art-caption"><span class="loading-art-label">Conceito visual · nossa direção artística</span><strong>A história ganha<br>um novo caminho.</strong><p>Um mundo em construção. Uma jornada para explorar, descobrir e viver no navegador.</p></div>
+  </div>
+  <div class="loading-panel">
   <p class="start-identity">GRAND TESTAMENT ADVENTURE</p>
-  <p class="hook">E SE EXISTISSE UM JOGO COM AS<br>MISSÕES DA VIDA DE JESUS?</p>
-  <h1 id="title"></h1>
-  <i class="rule"></i>
+  <p class="hook">UMA JORNADA PELOS EVANGELHOS</p>
+  <h1 id="title">Pescadores<br>de gente</h1>
   <p class="ref" id="ref"></p>
+  <section id="loading-screen" data-state="loading" aria-busy="true" aria-label="Preparação do jogo">
+    <div class="loading-status-row">
+      <svg id="loading-cross" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33" fill="none" stroke-width="1" class="loading-orbit"/><circle cx="36" cy="36" r="28" fill="none" stroke="#d8e4ec" stroke-width="2"/><circle cx="36" cy="36" r="28" fill="none" stroke-width="2.5" pathLength="100" class="loading-ring"/><path class="loading-cross-core" d="M36 19v34M24 30h24"/></svg>
+      <div><p id="loading-stage" role="status" aria-live="polite">Preparando sua jornada</p><p id="loading-count">Conectando aos recursos do jogo</p></div>
+    </div>
+    <div class="loading-meter-row"><div id="loading-progress" role="progressbar" aria-label="Etapas de preparação concluídas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div><span id="loading-percent" aria-hidden="true">0%</span></div>
+    <div id="loading-actions" hidden><button id="loading-retry" type="button">Tentar novamente</button><button id="loading-safe" type="button">Abrir modo compatível</button></div>
+  </section>
   <div class="startbtns">
     <button id="go" type="button" disabled>Carregando…</button>
     <button id="novo" class="sec" type="button" hidden>Começar do zero</button>
@@ -56,6 +71,7 @@
   <button class="link community-link" data-feedback-open type="button">Colabore</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação em desenvolvimento. <a href="#" id="credlink">Créditos</a></p>
+  </div>
 </div>
 
 <div class="card end" id="end" hidden>

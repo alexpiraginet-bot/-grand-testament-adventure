@@ -33,6 +33,9 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Código e fontes tipográficas", p: [
     "three.js (MIT). Space Grotesk e Space Mono (SIL Open Font License 1.1).",
   ] },
+  { h: "Arte da abertura", p: [
+    "Conceito artístico criado com IA para Alex. Indica a direção visual do projeto; não é uma captura do jogo nem uma demonstração de DLSS. A arte tem condições separadas do código MIT.",
+  ] },
   { h: "O que é recriação", p: [
     "Este jogo é uma recriação, não uma reconstituição histórica.",
     "O traçado dos pátios, casas e caminhos é uma composição do jogo sobre o relevo medido em época moderna. Não representa uma planta comprovada do século I nem altera o nível do lago para aproximar a vila da água.",

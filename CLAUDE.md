@@ -25,6 +25,11 @@ repositório público `alexpiraginet-bot/-grand-testament-adventure`. O trabalho
 sessão web foi encerrado para transferência; não recrie o jogo do zero.
 
 - Converse em PT-BR. Feche cada rodada com O que mudou / Como verifiquei / Riscos / Próximo passo.
+- Direção visual atualizada por Alex em 13/11/2026: **marfim, bordô e dourado**
+  em toda interface fora do gameplay (abertura, Colabore, apoio, prestação de
+  contas, voluntariado, créditos e painéis auxiliares). Usar `src/ui-theme.css`,
+  com referência no modo Dia da Bíblia Conectada. Substitui a paleta azul/cristal
+  anterior; preservar contraste e a identidade própria do HUD durante o jogo.
 - Código aberto a contribuições. Preserve as licenças separadas de dados, fontes e malhas.
 - As 20 malhas do Tripo estão em `assets-src/tripo-r1/`, ignoradas pelo Git.
   Leia o manifesto e confira hashes. Não publique esses binários como MIT ou CC0.

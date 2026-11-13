@@ -1,0 +1,36 @@
+/* Non-game interface palette, aligned with Bíblia Conectada's explicit Dia theme.
+   Namespaced tokens intentionally do not change HUD/world-map/gameplay colours. */
+:root {
+  --ui-ground: #f7f0e5;
+  --ui-surface: #fffbf3;
+  --ui-raised: #eee3d5;
+  --ui-overlay: #fff9ef;
+  --ui-line: #d9c3b7;
+  --ui-line-strong: #907568;
+  --ui-ink: #361b28;
+  --ui-secondary: #513836;
+  --ui-muted: #674b42;
+  --ui-action: #4b1e31;
+  --ui-action-hover: #361323;
+  --ui-on-action: #f8e6bc;
+  --ui-accent: #784b25;
+  --ui-accent-strong: #65391e;
+  --ui-gold: #c3a36a;
+  --ui-highlight: #eadbca;
+  --ui-focus: #713d30;
+  --ui-danger: #8e2a22;
+  --ui-success: #3f5b35;
+  --ui-scrim: rgba(42, 17, 27, .42);
+  --ui-shadow: 0 18px 52px rgba(54, 27, 40, .15);
+}
+@media (forced-colors: active) {
+  :root {
+    --ui-ground: Canvas; --ui-surface: Canvas; --ui-raised: Canvas; --ui-overlay: Canvas;
+    --ui-line: CanvasText; --ui-line-strong: CanvasText; --ui-ink: CanvasText;
+    --ui-secondary: CanvasText; --ui-muted: CanvasText;
+    --ui-action: Highlight; --ui-action-hover: Highlight; --ui-on-action: HighlightText;
+    --ui-accent: LinkText; --ui-accent-strong: LinkText; --ui-gold: CanvasText;
+    --ui-highlight: Canvas; --ui-focus: Highlight;
+    --ui-danger: CanvasText; --ui-success: CanvasText; --ui-shadow: none;
+  }
+}
