@@ -860,3 +860,29 @@ jogo são rastreados em `CONTINUIDADE-R12.md` e `QA-R12.md`. Screenshots são
 do jogo real; posicionamentos de QA não provam caminhada contínua pelo mapa.
 WebKit no Windows não substitui Safari no iPhone. O diário e os recibos
 privados ficam disponíveis para a série de Reels, sem publicação social.
+
+## 13/11/2026 — R13, revisão da estratégia visual e da demonstração
+
+Alex questionou por que mods parecem tão mais completos e pediu uma estrutura
+mais ambiciosa para gerar interesse. A auditoria da árvore main `9dcd6cc`
+identificou repetição de três modelos de casa, materiais de solo reaproveitados,
+terreno regional sem microtopografia, água simples, animações limitadas e poucas
+categorias de ação. Não tratamos a aprovação dos testes como qualidade artística.
+
+Registro documental iniciado às 21:46 UTC; a pesquisa começou antes desse
+registro, sem horário inicial aferido. Branch `codex/demo-direcao-r13`, responsável
+Codex; três agentes fizeram leituras independentes de código, bases web e
+alternativas GTA/FiveM/Unreal. Uma consulta local Gemma terminou sem parecer
+utilizável e foi descartada; não foi usada como prova nem repetida.
+
+`DEMO-CONVINCENTE-R13.md` propõe uma viela–pátio–margem com encontro completo,
+produção artística concentrada e uma comparação limitada de ferramentas. A
+pesquisa confirma que OpenSA usa Three/Rapier com arquivos do jogo-base; FiveM
+exige GTA V e cliente PC; Unreal no navegador por Pixel Streaming depende de
+renderização remota. Documentamos fontes, limites, estimativas condicionais,
+reaproveitamento e critérios de decisão. Não instalamos outro motor, não
+compramos assets e não modificamos o runtime ou as metas financeiras públicas.
+
+Esta etapa entrega diagnóstico e plano, não novo cenário, benchmark de engine
+ou gameplay melhorado. Horas totais e tokens desta revisão ficaram sem medição;
+nenhum consumo foi inventado ou somado manualmente ao painel público.
