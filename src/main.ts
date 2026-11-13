@@ -21,6 +21,7 @@ import { loadTripoAssets } from './tripo-assets.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseFx } from "./postfx.ts";
 import { ease, twoShot, type CineShot } from "./cinematic.ts";
+import { BUILD_SHA, describeGpu } from "./build-info.ts";
 
 const ep = episode as unknown as EpisodeData & { personagens: { id: string; nome: string }[] };
 const params = new URLSearchParams(location.search);
@@ -53,9 +54,12 @@ async function main() {
   // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
   // later (it happened with the software adapter of the test browser), the page reloads on WebGL 2.
   let forceWebGL = params.get("gl") === "1";
+  type AdapterInfo = { isFallbackAdapter?: boolean; vendor?: string; architecture?: string; device?: string; description?: string };
+  let adapterInfo: AdapterInfo | null = null;            // names the GPU in bench reports (build-info.ts)
   if (!forceWebGL) {
-    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ isFallbackAdapter?: boolean; info?: { isFallbackAdapter?: boolean } } | null> } }).gpu;
+    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ isFallbackAdapter?: boolean; info?: AdapterInfo } | null> } }).gpu;
     const ad = gpu ? await gpu.requestAdapter().catch(() => null) : null;
+    adapterInfo = ad?.info ?? null;
     forceWebGL = !ad || !!ad.isFallbackAdapter || !!ad.info?.isFallbackAdapter;
   }
   const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true });
@@ -68,6 +72,10 @@ async function main() {
   await renderer.init();
   const be = renderer.backend as unknown as { isWebGPUBackend?: boolean; device?: { lost: Promise<unknown> } };
   const backend = be.isWebGPUBackend ? "WebGPU" : "WebGL2";
+  const gl = (renderer.backend as unknown as { gl?: WebGL2RenderingContext | null }).gl ?? null;
+  const glInfo = gl?.getExtension("WEBGL_debug_renderer_info");
+  const gpuName = describeGpu({ webgpu: be.isWebGPUBackend ? adapterInfo : null,
+    webglRenderer: gl && glInfo ? String(gl.getParameter(glInfo.UNMASKED_RENDERER_WEBGL)) : null });
   be.device?.lost.then(() => { const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u); });
 
   const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures(),loadSkyTextures()]);
@@ -505,6 +513,8 @@ async function main() {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
     results: () => ({ ...bench.results(), fx: fxLevel, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+      build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
+      models: { loaded: Object.keys(assets).length },
       viewport: [innerWidth, innerHeight], pixelRatio: renderer.getPixelRatio(), textureBytes: renderer.info.memory.texturesSize }),
   };
 

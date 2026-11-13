@@ -12,7 +12,9 @@
     "assets": "node tools/fetch_assets.mjs",
     "assets:prepare": "node tools/prepare_tripo.mjs",
     "build": "node tools/fetch_assets.mjs && tsc --noEmit && node --test test/*.test.ts && vite build",
-    "preview": "vite preview --port 4173"
+    "preview": "vite preview --port 4173",
+    "bench": "node tools/bench.mjs",
+    "bench:all": "node tools/bench_all.mjs"
   },
   "dependencies": {
     "three": "0.186.1"

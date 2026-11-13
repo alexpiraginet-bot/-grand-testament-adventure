@@ -1,5 +1,6 @@
 // Credits shown in the game (start card link, HUD button, end card). The BLIVRE notice is the authors' text, to be
 // copied exactly (biblia-conectada/ATTRIBUTION.md); test/data.test.ts checks it is here unchanged.
+import { BUILD_SHORT } from "./build-info.ts";
 
 export const BLIVRE_NOTICE =
   "Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE), Copyright © Diego Santos, Mario Sérgio, e Marco Teles, http://sites.google.com/site/biblialivre/ - fevereiro de 2018. Licença Creative Commons Atribuição 4.0 Brasil (http://creativecommons.org/licenses/by/4.0/br/). Reprodução permitida desde que devidamente mencionados fonte e autores.";
@@ -32,6 +33,7 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   ] },
   { h: "Código e fontes tipográficas", p: [
     "three.js (MIT). Space Grotesk e Space Mono (SIL Open Font License 1.1).",
+    `Versão do jogo: commit ${BUILD_SHORT}.`,
   ] },
   { h: "O que é recriação", p: [
     "Este jogo é uma recriação, não uma reconstituição histórica.",
