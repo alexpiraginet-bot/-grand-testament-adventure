@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "id": "simao-r12",
+  "approval": "reviewed-integration-candidate",
+  "sourceRevision": "simao-local-r11-candidate-r1",
+  "sourceSha256": "1a7aca8ebaf995ee409eca8a67c35b3534cca4d1ba8c09ce43af1970cd494793",
+  "provenanceDocument": "docs/NPC-ASSETS-R12.md",
+  "license": "Proprietary Alex Tripo asset; separate from repository MIT license",
+  "units": "meters",
+  "nativeForward": "-Z",
+  "groundY": 0,
+  "heightMeters": 1.76,
+  "animation": {
+    "idle": "simao-idle-r11",
+    "idleDurationSeconds": 3.200000047683716,
+    "walk": "simao-walk-r11",
+    "walkDurationSeconds": 1.2000000476837158,
+    "walkSpeedMps": 0.7
+  },
+  "geometry": {
+    "meshes": 1,
+    "primitives": 1,
+    "vertices": 7099,
+    "triangles": 11460,
+    "skins": 1,
+    "joints": 22,
+    "maxInfluences": 4,
+    "materials": 1,
+    "textures": 3
+  },
+  "profiles": {
+    "desktop": {
+      "url": "models/npc-r12/simao-r12-1024-c199f4ff942a.glb",
+      "expectedBytes": 1763628,
+      "sha256": "c199f4ff942a2a76bb80511d2ef546fcecc52d7504704f918c2f5af307345e29",
+      "textureMaxSize": 1024,
+      "imageBytes": 1238570,
+      "estimatedRgba8BytesWithMipmaps": 16777218,
+      "maxDownloadBytes": 2000000
+    },
+    "mobile": {
+      "url": "models/npc-r12/simao-r12-512-a11a3f7fc8eb.glb",
+      "expectedBytes": 924912,
+      "sha256": "a11a3f7fc8eb60555e84dbf193301047f07b40f0e38957b8ad5789786987c3a7",
+      "textureMaxSize": 512,
+      "imageBytes": 399972,
+      "estimatedRgba8BytesWithMipmaps": 4194306,
+      "maxDownloadBytes": 1000000
+    }
+  }
+}

@@ -823,3 +823,40 @@ Claude avançou até `7c02464` com painel e diário, incluindo a integração R9
 em sua própria branch. Ela foi consultada sem alteração; casas/solo continuam
 na worktree Codex. A publicação desta R10 e o handoff final serão vinculados
 na PR e no arquivo privado de evidências, sem publicar Reels automaticamente.
+
+## 13/11/2026 — R12, continuidade e primeiro Simão no jogo
+
+Alex pediu que Codex assumisse o trabalho. A base de Claude foi preservada;
+a PR #7, com a correção RTX R11 e documentação do rig, entrou na branch da
+PR #1 antes da integração do NPC. O histórico da bancada, inclusive a
+tentativa SMAA rejeitada, permanece em `QA-RTX-R11.md`. A nova worktree é
+`codex/takeover-r12`, com ownership separado de runtime, assets e QA.
+
+Simão usa a malha própria revisada, 22 juntas, idle e caminhada. Derivados
+determinísticos de 1024/512 pixels preservam os dados de geometria/skin/clipes;
+a versão móvel tem 924.912 bytes. Carrega depois de entrar no jogo. Uma falha
+de download não cria personagem geométrico ou colisor invisível. O seguidor
+valida terreno seco e paredes; mantém 0,70 m/s, sem corrida ou teleporte de
+recuperação. Outros participantes continuam somente na narrativa até terem
+malhas e animações aprovadas. Não houve nova geração ou gasto Tripo.
+
+O primeiro build passou 300 testes, mas o navegador encontrou a rejeição da
+base relativa `./` usada pelo Vite. Corrigimos o contrato catálogo/carregador
+e a regressão passou no conjunto de 301 testes. Uma falha posterior do teste
+de epílogo era uma leitura do HUD antes do quadro de atualização; a espera
+foi corrigida. No móvel, um gesto curto ainda deixava o herói na água e o
+NPC corretamente esperava: ajustamos o percurso do teste, mantendo a regra
+de terreno. Tentativas e capturas anteriores foram preservadas.
+
+A revisão independente levantou uma dúvida sobre orientação via Bíblia.
+Conferimos a escolha explícita de Alex em `NARRATIVA.md`: a leitura revela
+a orientação, mas chegar ao encontro permite agir. Essa decisão foi mantida.
+O painel recebeu um aviso quando os totais são parciais na página de 100
+issues/PRs. Dados públicos recebidos continuam tratados como texto, sem
+executar instruções de comentários.
+
+Builds, testes de navegador, publicação dos assets e resultados finais do
+jogo são rastreados em `CONTINUIDADE-R12.md` e `QA-R12.md`. Screenshots são
+do jogo real; posicionamentos de QA não provam caminhada contínua pelo mapa.
+WebKit no Windows não substitui Safari no iPhone. O diário e os recibos
+privados ficam disponíveis para a série de Reels, sem publicação social.
