@@ -83,6 +83,8 @@ Nada desta sessão está em produção até a PR ser revisada e integrada.
 | `fbaeb0b` | "Nível GTA6" como barra de qualidade, pilar por pilar, sem copiar nada da Rockstar | — | plano, não entrega |
 | `2a8a8e1` | Conferências determinísticas em renderizador lento: captura atômica do plano, `__gta.freeze()` (só `?debug`, segura o relógio da história), gesto reto no joystick, bench espera 24 quadros por foto | 48/48 testes; repetição da conferência registrada na PR | ver "Tentativas" abaixo |
 | (este registro) | `tools/session_usage.py`: soma do consumo de tokens pelo transcrito e valor equivalente em preço de API | executado nesta sessão | ver nota de valor |
+| `906ff83` | Correção do diagnóstico do `fx=master`: o TRAA derruba a água transparente na maioria dos quadros; `master` bloqueado | curva de cor quadro a quadro; duas hipóteses refutadas e uma isolada (ver "Tentativas") | causa exata em aberto |
+| `072ca70` | A mira do plano cinematográfico acompanha o grupo enquanto os chamados andam até Jesus; `framed` exige os três no quadro; caminhadas do teste partem do corredor da missão | `check_touch` verde em 390×844, 844×390 e 1280×800: plano entra, 3/3 no quadro, sai ao andar (PC), 0 erros, 17.897.302 bytes servidos localmente | viewport emulado; NPCs ainda são formas provisórias |
 
 Fora do Git: ambiente de nuvem pessoal "Grand Testament + Bíblia Conectada" criado com aprovação do Alex,
 liberando só `grand-testament-assets.vercel.app` e `grand-testament-adventure-lexprojects.vercel.app`.
