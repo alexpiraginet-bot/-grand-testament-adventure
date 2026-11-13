@@ -5,6 +5,79 @@ Este diário guarda fatos verificáveis, decisões e limitações. Não é rotei
 nem autorização de publicação social. Código publicado e episódio de Reel publicado
 são etapas diferentes.
 
+## 13/11/2026 — R11, conferência RTX da branch Claude e primeiro rig de NPC
+
+Alex aceitou a recomendação de validar a branch do Claude na RTX e depois
+preparar o primeiro NPC finalizado. Registro de continuidade às 19:13 UTC;
+este horário de registro não mede a duração trabalhada. Worktree isolada
+`codex/claude-rtx-r11`, base Claude `7dc836b`; main observada `cdf7360`.
+Coordenação na PR #1, comentário `6862475124`, preservando a branch do autor.
+
+Build inicial do jogo/painel e 269 testes passaram. Cópia imutável de baseline:
+`index-Bizgc6U3.js`, SHA-256
+`751bc77a56e70acf9d354e742db111ea0643aa57fbefa85dc91bee3fb1d4aecd`.
+NVIDIA observada: RTX5060Ti, driver616.92,16GB; Ollama sem modelo carregado.
+Aplicativos do usuário permanecem abertos; viewport móvel no PC não é iPhone.
+Bench original não carrega fauna nem mede custo CPU completo: essas limitações
+serão registradas e complementadas por percurso jogável separado.
+
+Frentes sem edição concorrente: QA/bench, pós-processamento/testes e autoria
+isolada de um NPC. Hipótese do master: mistura de transparência, profundidade
+e velocidade incompatíveis no TRAA; candidato delimitado SMAA espacial,
+sem temporal/DLSS, mantendo efeitos desligados por padrão. O candidato só
+será aceito após comparação visual e funcional, sem inferir êxito do build.
+Também será conferido o descarte dos recursos de pós-processamento.
+
+Simão é o primeiro candidato de malha existente para rig local. Nenhuma nova
+geração/compra Tripo; autoria e fontes ficam fora do Git, preservadas. Processos
+Blender pesados e geração local aguardam janela livre dos benchmarks. Rig,
+animação e aprovação visual são etapas separadas; não colocar A-pose ou humano
+geométrico no jogo. Os parágrafos anteriores registram o início; resultados abaixo.
+
+### Resultado e tentativa rejeitada
+
+A baseline revelou erro real WGSL no `fx=alto`: GTAO recebia profundidade MSAA.
+O pré-passe opaco sem MSAA corrigiu o shader, mantendo MSAA4 na cor. O custo
+extra foi medido; não comparar com a versão quebrada como se fosse ganho ou
+perda do mesmo efeito. Off preservou a imagem da vila byte a byte.
+
+As duas matrizes somaram 43.200 quadros medidos, em seis poses, dois viewports
+e três presets por build. A tentativa de SMAA passou tecnicamente, mas tornou
+visíveis pontos escuros na água e mais ruído no horizonte. Duas revisões
+rejeitaram a troca; o código final conserva TRAA no Master. O teste curto com
+AO indireta reduziu esse ruído, uma pista para investigação separada, não
+aprovação geral. As versões, limites e evidências estão em
+[QA-RTX-R11.md](QA-RTX-R11.md) e [GRAFICO-MASTER.md](GRAFICO-MASTER.md).
+
+Build final do jogo/painel e 279 testes passaram. Fonte funcional `69d0840`,
+bundle local `index-ClM63sgn.js`, SHA-256
+`b996e4bfd93af8b6cd3b8fb3c7f6c85e8c76f4d0dfabf5a78fee4a50601b4b7a`.
+O carimbo local inclui `+alterado` por documentos/métricas ainda em trabalho.
+Smoke final: Alto em seis poses e dois viewports, 100 quadros por pose;
+32 verificações jogáveis do Master, além de um smoke Master/AO indireta.
+Zero erros capturados. Não equivale a teste em Safari físico; FPS perto de
+100 no PC não prova capacidade de celular ou margem livre da GPU.
+
+Código entregue na [PR #7](https://github.com/alexpiraginet-bot/-grand-testament-adventure/pull/7),
+direcionada à branch Claude da PR #1. Não sobrescreve a branch do autor nem
+afirma merge/deploy da produção. Efeitos continuam opcionais.
+
+### Simão com rig local
+
+A malha existente recebeu 22 joints deformantes e dois clipes próprios,
+espera e caminhada. Foram conferidos skin/pesos, loop e contato dos pés no
+GLB reimportado, materiais preservados por hash e 40,24 s de gravação no
+Three/Chromium. Duas revisões de sequências consideraram o candidato apto
+à integração controlada; rig e textura reais, sem humano geométrico.
+Detalhes, hashes, vídeo e limitações em [NPC-SIMAO-R11.md](NPC-SIMAO-R11.md).
+O jogo ainda não carrega esse ator: falta perfil móvel e validação no terreno,
+colisão, seguidores e cinemática. Nenhum crédito Tripo novo foi consumido.
+
+O agregado autorizado desta sessão foi publicado em `metrics/development`,
+commit `7e29ff1292291ef1357039b6cb40e09a696ee42b`, às 19:35:24 UTC. Só metadados
+da própria sessão; não são tokens observados dos agentes/Claude nem cobrança
+de API. Não houve publicação social ou coleta de outras conversas.
+
 ## Linha do tempo comprovável
 
 ### 13/11/2026 — abertura e urgência Safari

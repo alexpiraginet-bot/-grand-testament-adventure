@@ -845,7 +845,9 @@ async function main() {
   if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
-    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null, look: { ...visual, exposure: visual.tone === "off" ? null : visual.exposure }, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
+    results: () => ({ ...bench.results(), fx: fxLevel, ao: fx?.ao ?? null,
+      antialiasing: fx?.antialiasing ?? (quality === "low" ? "none" : "msaa4"), temporal: fx?.temporal ?? false,
+      look: { ...visual, exposure: visual.tone === "off" ? null : visual.exposure }, backend, quality, loadMs: benchLoadMs, warmup: bench.warmup, framesPerShot: bench.frames,
       build: { sha: BUILD_SHA, three: THREE.REVISION }, gpu: gpuName, userAgent: navigator.userAgent, heroSource,
       models: { loaded: Object.keys(assets).length },
       // estimates, labelled as such: textures per format/origin, and the canvas (colour + depth, MSAA when on)
