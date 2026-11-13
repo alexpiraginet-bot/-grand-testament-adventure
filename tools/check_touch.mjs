@@ -135,6 +135,16 @@ async function run(name, ctxOpts) {
     assert.equal(await page.getByRole("button", { name: label, exact: true }).count(), 1, "button's accessible name is the action word");
     const actR = await rect("#act");
     assert.ok(inside(actR, vw, vh) && !overlap(actR, await rect("#joy")), "action button on screen and clear of the stick");
+    // nothing on top takes the touch: the hand at its centre, the stick at its centre and lower edge
+    const hits = await g(() => {
+      const top = (x, y) => { const e = document.elementFromPoint(x, y); return e ? (e.closest("#act") ? "act" : e.closest("#joy") ? "joy" : e.closest("#hud") ? "hud" : e.tagName) : null; };
+      const a = document.getElementById("act").getBoundingClientRect(), j = document.getElementById("joy").getBoundingClientRect();
+      return { act: top(a.x + a.width / 2, a.y + a.height / 2), joy: top(j.x + j.width / 2, j.y + j.height / 2), joyLow: top(j.x + j.width / 2, j.y + j.height - 6) };
+    });
+    r.action.hits = hits;
+    assert.equal(hits.act, "act", "a tap at the hand's centre reaches the hand button");
+    assert.notEqual(hits.joy, "hud", "the stick's centre is not covered by another HUD element");
+    assert.notEqual(hits.joyLow, "hud", "the stick's lower edge is not covered by the links bar");
     for (const b of await page.$$(".hud-links button")) assert.ok(!overlap(actR, await b.boundingBox()), "action button clear of the links");
     for (const s of [".radarbox", ".mission"]) assert.ok(!overlap(actR, await rect(s)), `action button clear of ${s}`);
     r.action.rect = actR;

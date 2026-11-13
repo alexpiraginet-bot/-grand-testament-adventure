@@ -169,6 +169,12 @@ button { font: inherit; cursor: pointer; }
 #hud.cine::before, #hud.cine::after { height: 9vh; }
 #hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: opacity .35s ease; }
 #hud.cine .mission, #hud.cine .radarbox, #hud.cine .joy, #hud.cine .top { opacity: 0; pointer-events: none; }
-/* Map, Colabore and Credits stay in reach during a line (they pause the game), above the cinema bars */
+/* Map, Colabore and Credits stay in reach during a line (they pause the game), above the cinema bars. Raised, the
+   bar spans the bottom edge, so only its buttons take touches: the hand button and the stick under it stay reachable */
 #hud .sub, #hud .hud-links { z-index: 1; }
+#hud nav.hud-links { pointer-events: none; }
+/* leaving a two-shot, the panels come back once the bars have mostly gone; entering, they step aside at once */
+/* (not the stick: its own rest/touch opacity must answer the thumb at once) */
+#hud .mission, #hud .radarbox, #hud .top { transition-delay: .3s; }
+#hud.cine .mission, #hud.cine .radarbox, #hud.cine .top { transition-delay: 0s; }
 @media (prefers-reduced-motion: reduce) { #hud::before, #hud::after, #hud .mission, #hud .radarbox, #hud .joy, #hud .top { transition: none; } }
