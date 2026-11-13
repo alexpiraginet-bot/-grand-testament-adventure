@@ -41,6 +41,16 @@ PLAYWRIGHT_CHANNEL=chrome BENCH_VIEWPORT=390x844 BENCH_DPR=3 BENCH_TOUCH=1 node 
 O segundo comando é viewport emulado no PC, **não** é celular. Para celular físico: abrir
 `?bench=1&fx=alto` no aparelho e ler `__gtaBench.results()` pelo depurador remoto (Safari/Chrome).
 
+## Variantes em medição desde 13/11 (todas desligadas por padrão)
+
+| Flag | O que faz | Resultado até agora (renderizador por software, só imagem e draw calls) |
+|---|---|---|
+| `?atmo=1` | névoa por altura e distância num único nó de névoa, mais quente na direção do sol | nenhuma draw call nova; com os valores escolhidos (8% em 1 km, ~metade em 10 km) a diferença média de pixel é 0,16–0,54 de 255 nos planos próximos e 4,27 no panorama: **quase não aparece**; ajuste é decisão visual |
+| `?tm=agx` / `neutral` / `off`, `?exp=` | curva tonal e exposição | nenhuma draw call nova; AgX na exposição 1,08 deixou a imagem lavada e com menos contraste: **pior**, não promover sem gradação; `?exp` não age com `tm=off` |
+| `?shadow=csm` | três cascatas do sol até 600 m no lugar da caixa de 56 m | corrigido em `9c05537` (ver degrau 4); imagens e custo na rodada sobre a base integrada |
+| `?ao=indireta` (com `?fx=alto`) | GTAO só na luz ambiente/indireta, por pré-passe de profundidade e normal (`builtinAOContext` da r186) | segundo passe de geometria; imagens na rodada sobre a base integrada |
+| `?cam=mola` | câmera com mola criticamente amortecida, exata a qualquer fps; entra na hora na parede e sai em ~0,34 s | `tools/check_camera.mjs` compara com a câmera atual na viela |
+
 ## Próximos degraus, em ordem de ganho por esforço
 
 Cada item entra como variante de `?fx` ou de qualidade, medido com `tools/bench.mjs`, e só então vira padrão.
@@ -50,13 +60,13 @@ Cada item entra como variante de `?fx` ou de qualidade, medido com `tools/bench.
 | 1 | Medir `fx=off/alto/master` no PC da RTX e em 1 Android + 1 iPhone físicos | decidir padrão por aparelho com número, não impressão | Alex roda / Claude analisa | pendente |
 | 2 | Texturas KTX2 (UASTC nas normais, ETC1S/UASTC nas cores) + meshopt | as texturas ocupam ~1,2 GB na GPU; KTX2 fica comprimido na própria GPU, o que abre espaço para 4K no herói sem estourar o celular. Ganho a medir | Codex (derivados e host de assets) + Claude (`KTX2Loader`) | não iniciado; `toktx`/`basisu` não estão instalados nesta máquina |
 | 3 | Céu HDR de verdade (a mesma fonte CC0 da Poly Haven tem versão HDR) para a luz ambiente | hoje o ambiente vem de um panorama LDR já tonemapeado: reflexos e luz rebatida ficam chapados | Claude | não iniciado |
-| 4 | Sombras em cascata (`CSMShadowNode`) e sombras de contato (SSS) | uma sombra única de 56 m some na vila e no panorama | Claude | não iniciado |
+| 4 | Sombras em cascata (`CSMShadowNode`) e sombras de contato (SSS) | uma sombra única de 56 m some na vila e no panorama | Claude | `?shadow=csm` em medição (`src/look.ts`): três cascatas até 600 m; a primeira versão deixava quase tudo sem sombra além de ~24 m (câmera de sombra com `far` 220), corrigido em `9c05537` e conferido por simulação com o `CSMShadowNode` real. Sombras de contato: não iniciado |
 | 5 | Água: SSR na superfície, espuma e cáusticas por profundidade | o elemento mais visível da referência | Claude (código), Codex (direção de arte) | não iniciado |
 | 6 | Godrays do sol, gradação de cor por LUT, profundidade de campo nas falas | linguagem de cinema dos reels | Claude; a LUT é arte: Codex/Higgsfield | não iniciado |
 | 7 | TAAU no celular: renderizar a ~67% e reconstruir no tempo | é o equivalente web do DLSS Super Resolution; pode pagar os efeitos no telefone | Claude | não iniciado |
 | 8 | SSGI só no PC (perfil "ultra") | luz rebatida entre casas e chão; caro | Claude | não iniciado |
 | 9 | NPCs rigados, `idle`/`run`/`beckon`, vegetação menos facetada | motor nenhum corrige malha e animação | Codex (Tripo) | pendente |
-| 10 | Versão nativa (Unreal 5 + DLSS na RTX 5060) usando `export/engine/` e **os mesmos seis planos** | teto real de qualidade no PC; o DLSS 5 segue sem SDK público (`DLSS5-STATUS.md`) | Alex/Codex na máquina com a placa | pendente |
+| 10 | Versão nativa (Unreal 5 + DLSS na RTX 5060) usando `export/engine/` e **os mesmos seis planos** | teto real de qualidade no PC; o DLSS 5 segue sem SDK público (`DLSS5-STATUS.md`) | Alex/Codex na máquina com a placa | **fora por decisão do Alex em 13/11/2026: só navegador** |
 
 ## Barra AAA de mundo aberto, pilar por pilar
 
