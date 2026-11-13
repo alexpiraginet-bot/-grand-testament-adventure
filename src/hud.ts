@@ -40,7 +40,7 @@ export class Hud {
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
-      ? "Arraste do lado esquerdo para andar · do lado direito para olhar<br>Botão redondo para agir"
+      ? "Controle à esquerda para andar · arraste do lado direito para olhar<br>Botão da mão para agir"
       : "WASD ou setas para andar · Shift corre · arraste o mouse para olhar (duplo clique trava o cursor)<br>E para agir";
     const bar = $("bar");
     bar.innerHTML = ep.missoes.map(() => "<i><b></b></i>").join("");
@@ -123,7 +123,7 @@ export class Hud {
     pr.hidden = !(s.promptVisible && s.phase === "play") || touch;     // on a phone the round button is the prompt
     $("promptt").textContent = label;
     act.hidden = !touch || !(s.promptVisible && s.phase === "play");
-    if (!act.hidden) act.textContent = label;
+    if (!act.hidden) $("actt").textContent = label;           // the hand stays; only its word changes
 
     const sub = $("sub");
     sub.hidden = !s.line;

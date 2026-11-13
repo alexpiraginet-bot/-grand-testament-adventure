@@ -1,5 +1,7 @@
 // Controls. PC: WASD or arrows to walk, Shift to run, mouse to look (drag, or click the scene to lock the pointer),
-// E to act. Phone: virtual joystick on the left half, drag on the right half to look, the action button.
+// E to act. Phone: a joystick always shown at the lower left (joystick.ts), drag on the right side to look, the
+// round action button with the hand.
+import { JOY_CAPTURE_RATIO, JOY_RADIUS, stickOrigin, stickVector } from "./joystick.ts";
 
 export class Input {
   move = { x: 0, y: 0 };          // x right, y forward, length <= 1
@@ -10,6 +12,7 @@ export class Input {
   private keys = new Set<string>();
   private joyId: number | null = null;
   private joyOrigin = { x: 0, y: 0 };
+  private joyRadius = JOY_RADIUS;
   private lookId: number | null = null;
   private lookLast = { x: 0, y: 0 };
   private dragging = false;
@@ -18,10 +21,14 @@ export class Input {
 
   constructor(canvas: HTMLCanvasElement, joy: HTMLElement, knob: HTMLElement, actionBtn: HTMLElement) {
     this.touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+    joy.classList.toggle("rest", this.touch);           // on a phone the stick stays in view, waiting for the thumb
+    const releaseStick = () => {
+      this.joyId = null; this.move = { x: 0, y: 0 }; this.run = false;
+      knob.style.transform = ""; joy.style.transform = ""; joy.classList.remove("on");
+    };
     this.resetControls = () => {
       this.keys.clear(); this.actionQueued = false; this.dragging = false;
-      this.joyId = null; this.lookId = null; this.move = { x: 0, y: 0 }; this.run = false;
-      this.look = { dx: 0, dy: 0 }; knob.style.transform = ""; joy.classList.remove("on");
+      this.lookId = null; this.look = { dx: 0, dy: 0 }; releaseStick();
     };
     addEventListener("keydown", (e) => {
       if (this.suspended || e.repeat || (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable]"))) return;
@@ -44,27 +51,27 @@ export class Input {
       for (const p of Array.from(e.changedTouches)) {
         if (e.type === "touchstart") {
           if (p.clientX < innerWidth * 0.45 && this.joyId === null) {
-            this.joyId = p.identifier; this.joyOrigin = { x: p.clientX, y: p.clientY };
-            joy.style.left = `${p.clientX}px`; joy.style.top = `${p.clientY}px`; joy.classList.add("on");
+            // the resting centre, read from the layout (CSS places it; safe areas and rotation move it)
+            const box = joy.getBoundingClientRect();
+            const rest = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+            const touchPt = { x: p.clientX, y: p.clientY };
+            this.joyRadius = box.width / 2 || JOY_RADIUS;    // the drawn size sets how far the knob travels
+            this.joyId = p.identifier; this.joyOrigin = stickOrigin(rest, touchPt, this.joyRadius * JOY_CAPTURE_RATIO);
+            joy.style.transform = `translate(${this.joyOrigin.x - rest.x}px, ${this.joyOrigin.y - rest.y}px)`;
+            joy.classList.add("on");
+            this.steer(touchPt, knob);
           } else if (this.lookId === null) {
             this.lookId = p.identifier; this.lookLast = { x: p.clientX, y: p.clientY };
           }
         } else if (e.type === "touchmove") {
           if (p.identifier === this.joyId) {
-            const R = 56; let dx = p.clientX - this.joyOrigin.x, dy = p.clientY - this.joyOrigin.y;
-            const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; }
-            knob.style.transform = `translate(${dx}px, ${dy}px)`;
-            this.move = { x: dx / R, y: -dy / R };
-            this.run = l > R * 0.95;
+            this.steer({ x: p.clientX, y: p.clientY }, knob);
           } else if (p.identifier === this.lookId) {
             this.look.dx += (p.clientX - this.lookLast.x) * 1.6; this.look.dy += (p.clientY - this.lookLast.y) * 1.6;
             this.lookLast = { x: p.clientX, y: p.clientY };
           }
         } else {
-          if (p.identifier === this.joyId) {
-            this.joyId = null; this.move = { x: 0, y: 0 }; this.run = false;
-            knob.style.transform = ""; joy.classList.remove("on");
-          }
+          if (p.identifier === this.joyId) releaseStick();
           if (p.identifier === this.lookId) this.lookId = null;
         }
       }
@@ -72,6 +79,14 @@ export class Input {
     };
     for (const ev of ["touchstart", "touchmove", "touchend", "touchcancel"] as const) canvas.addEventListener(ev, t, { passive: false });
     actionBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.queueAction(); });
+  }
+
+  /** The joystick writes move/run directly, and draws the knob where the thumb is (clamped to the rim). */
+  private steer(touch: { x: number; y: number }, knob: HTMLElement) {
+    const s = stickVector(this.joyOrigin, touch, this.joyRadius);
+    knob.style.transform = `translate(${s.knob.x}px, ${s.knob.y}px)`;
+    this.move = { x: s.x, y: s.y };
+    this.run = s.run;
   }
 
   /** Reads the keyboard into move/run (the joystick writes them directly). */

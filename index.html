@@ -36,8 +36,20 @@
     <button class="credbtn community-btn" data-feedback-open type="button">Construa conosco</button>
     <button class="credbtn" id="credbtn" type="button">Créditos</button>
   </nav>
-  <div class="joy" id="joy"><div class="knob" id="knob"></div></div>
-  <button class="act" id="act" type="button" hidden>E</button>
+  <div class="joy" id="joy" aria-hidden="true"><div class="knob" id="knob"></div></div>
+  <button class="act" id="act" type="button" hidden>
+    <!-- PROVISÓRIO (Claude): a mão abaixo é só um marcador em SVG. Pedido de arte ao Codex (gerador de imagem dele) ou
+         Higgsfield: ícone de mão chamando, próprio, sem emoji, traço #18120c sobre fundo transparente, legível a 40 px.
+         Especificação completa em ASSETS.md → "Pedidos de arte". Ao trocar, manter aria-hidden e o texto #actt. -->
+    <svg class="hand" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+      <g transform="rotate(-14 24 30)" fill="currentColor" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16.5 26V11.5M23 25V7.5M29.5 25.5V9.5M35.5 28V15" fill="none" stroke-width="5.2"/>
+        <path d="M14 33.5 8 25.5" fill="none" stroke-width="5.2"/>
+        <path d="M13.5 26.5c0-1.6 1.3-2.9 2.9-2.9h19.2c1.6 0 2.9 1.3 2.9 2.9v6.2c0 6.6-5.3 11.8-11.8 11.8h-1.3c-4.8 0-8.5-2.7-10.3-6.9l-1.6-4z" stroke-width="1"/>
+      </g>
+    </svg>
+    <span id="actt">E</span>
+  </button>
 </div>
 
 <div class="card" id="start">
