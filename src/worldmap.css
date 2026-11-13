@@ -1,0 +1,57 @@
+.worldmap-dialog{
+  --map-ink:#163052;--map-muted:#425a75;--map-blue:#244fc8;
+  box-sizing:border-box;width:min(1140px,calc(100vw - 40px));height:min(860px,calc(100dvh - 40px));max-width:none;max-height:none;
+  margin:auto;padding:0;border:1px solid rgba(255,255,255,.92);border-radius:24px;color:var(--map-ink);
+  background:linear-gradient(130deg,rgba(224,234,255,.4),transparent 35%,rgba(230,226,249,.38)),#f8fafc;
+  box-shadow:0 24px 100px rgba(10,30,57,.35);font:400 15px/1.45 'Space Grotesk',sans-serif;text-align:left;text-shadow:none;overflow:hidden;
+}
+.worldmap-dialog[open]{display:flex;flex-direction:column}
+.worldmap-dialog::backdrop{background:rgba(17,31,49,.52);backdrop-filter:blur(8px)}
+.worldmap-dialog *{box-sizing:border-box}
+.worldmap-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:23px 26px 10px;flex:none}
+.worldmap-eyebrow{margin:0 0 4px;color:var(--map-muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.worldmap-header h2{margin:0;font-size:clamp(24px,3.2vw,36px);font-weight:600;line-height:1.05;letter-spacing:-.035em;color:var(--map-ink);text-shadow:none}
+.worldmap-dialog button{appearance:none;min-height:44px;padding:9px 14px;border:1px solid #b5c5dd;border-radius:12px;background:#fff;color:var(--map-ink);font:600 14px/1.2 'Space Grotesk',sans-serif;text-transform:none;letter-spacing:0;text-shadow:none;cursor:pointer;box-shadow:none}
+.worldmap-dialog button:hover{border-color:var(--map-blue);background:#edf2ff}
+.worldmap-dialog button:disabled{opacity:.42;cursor:default}
+.worldmap-dialog :focus-visible{outline:3px solid #355bd5;outline-offset:3px}
+.worldmap-dialog #worldmap-close{background:#173fbe;border-color:#173fbe;color:#fff;flex:none}
+.worldmap-intro{margin:0;padding:0 26px;color:var(--map-muted);font-size:13px;max-width:900px;flex:none}
+.worldmap-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:14px 26px;flex:none}
+.worldmap-toolbar button:first-child,.worldmap-toolbar button:nth-child(2){width:44px;padding:4px;font-size:23px}
+.worldmap-zoom{font-size:13px;font-weight:700;color:var(--map-muted);min-width:44px;text-align:center;margin-right:6px}
+.worldmap-layout{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:0;min-height:0;flex:1;border-top:1px solid #dbe3ef;border-bottom:1px solid #dbe3ef}
+.worldmap-stage{position:relative;min-height:0;overflow:hidden;background:#edf1f5}
+.worldmap-stage canvas{display:block;width:100%;height:100%;position:absolute;inset:0;touch-action:none;cursor:grab}
+.worldmap-stage canvas.dragging{cursor:grabbing}
+.worldmap-stage canvas:focus-visible{outline-offset:-5px}
+.worldmap-sidebar{padding:18px 20px;overflow:auto;min-height:0;background:rgba(255,255,255,.65);border-left:1px solid #dbe3ef}
+.worldmap-sidebar h3{font:600 17px/1.25 'Space Grotesk',sans-serif;letter-spacing:-.02em;margin:0 0 6px;color:var(--map-ink);text-transform:none}
+.worldmap-reference{font-size:12px;margin:0 0 14px;color:var(--map-muted)}
+.worldmap-missions{padding:0 0 0 22px;margin:0 0 20px}
+.worldmap-missions li{padding:0 0 12px 2px;color:var(--map-muted)}
+.worldmap-missions li::marker{font-weight:700;color:var(--map-blue)}
+.worldmap-missions button{display:block;text-align:left;border-color:transparent;background:transparent;padding:8px;min-height:44px;width:100%;font-size:13px}
+.worldmap-missions .current button{color:#173eaa;background:#e8efff;border-color:#b9c9ec}
+.worldmap-mission-status{display:block;font-size:11px;line-height:1.45;color:var(--map-muted);padding:4px 8px 0}
+.worldmap-places{padding:0;margin:0 0 16px;list-style:none}.worldmap-places button{width:100%;text-align:left;background:#f7f9fd}
+.worldmap-legend{list-style:none;margin:0;padding:16px 0 0;border-top:1px solid #dbe3ef;display:grid;gap:9px;font-size:12px;color:var(--map-muted)}
+.worldmap-legend li{display:flex;align-items:center;gap:9px}.worldmap-swatch{width:17px;height:13px;display:inline-block;flex:none;border-radius:3px;background:#fff;border:1px solid #163052}
+.worldmap-swatch.player{clip-path:polygon(50% 0,100% 100%,50% 75%,0 100%);background:#163052;border:0}
+.worldmap-swatch.route{height:4px;border:0;background:#244fc8}.worldmap-swatch.water{background:#689ac2;border-color:#316b9c}.worldmap-swatch.limit{border:1.5px dashed #334976;background:transparent}
+.worldmap-note{font-size:12px;line-height:1.55;color:var(--map-muted);margin:15px 0 0}
+.worldmap-footer{padding:10px 26px 14px;flex:none;color:var(--map-muted);font-size:12px;max-height:25%;overflow:auto}
+.worldmap-footer p{margin:0 0 6px}.worldmap-sources summary{cursor:pointer;min-height:30px;display:list-item;padding:5px 0;font-weight:600;color:var(--map-ink)}
+.worldmap-sources p{margin:5px 0;line-height:1.5}
+@media(max-width:700px){
+  .worldmap-dialog{width:calc(100vw - 16px);height:calc(100dvh - 16px);border-radius:18px}
+  .worldmap-header{padding:17px 15px 10px;gap:10px}.worldmap-header h2{font-size:26px}
+  .worldmap-dialog #worldmap-close{padding:9px 10px;max-width:122px;font-size:13px}
+  .worldmap-intro{padding:0 15px;font-size:12px}.worldmap-toolbar{padding:12px 15px;gap:5px}.worldmap-toolbar button{padding:9px 11px;font-size:13px}
+  .worldmap-layout{display:block;overflow:auto}.worldmap-stage{height:clamp(280px,46dvh,420px)}
+  .worldmap-sidebar{overflow:visible;border-left:0;border-top:1px solid #dbe3ef;padding:17px}
+  .worldmap-missions{margin-bottom:15px}.worldmap-missions button{font-size:14px}.worldmap-mission-status{font-size:12px}
+  .worldmap-footer{padding:9px 15px;max-height:20%;font-size:11px}
+}
+@media(prefers-reduced-transparency:reduce){.worldmap-dialog{background:#f8fafc}.worldmap-dialog::backdrop{backdrop-filter:none;background:rgba(17,31,49,.7)}.worldmap-sidebar{background:#fff}}
+@media(prefers-reduced-motion:reduce){.worldmap-dialog *{scroll-behavior:auto}}

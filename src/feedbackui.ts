@@ -5,6 +5,7 @@ import { mountEffort } from './effortui.ts';
 import { renderProjectPlan } from './project-plan-ui.ts';
 import { mountVolunteerPanel } from './volunteersui.ts';
 import "./feedback.css";
+import "./menus.css";
 
 export function setupFeedbackPanel(onOpenChange: (open: boolean) => void) {
   const dialog = document.getElementById("feedback") as HTMLDialogElement;

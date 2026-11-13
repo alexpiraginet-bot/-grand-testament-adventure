@@ -8,23 +8,27 @@ import {fileURLToPath} from 'node:url';
 const repo=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const archiveRoot='D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario';
 const args=process.argv.slice(2);
-const usage='Use: node tools/archive_development.mjs [--commit R4_FULL_SHA] [--r5-commit R5_FULL_SHA]\n'
+const usage='Use: node tools/archive_development.mjs [--commit R4_FULL_SHA] [--r5-commit R5_FULL_SHA] [--r6-commit R6_FULL_SHA]\n'
  +'--commit applies only to R4; default: 08785fe50b9995b7712a24e2b53bcbbb575d1804.\n'
- +'--r5-commit applies only to R5; without it R5 remains working-tree.\n'
+ +'--r5-commit applies only to R5; default: 3d3f9c8f74e9aff0b74c32f86acce5327039ad22.\n'
+ +'--r6-commit applies only to R6; without it R6 remains working-tree.\n'
+ +'baselineR6Audit remains pinned to d6539ae58bec172b2ddd8e6bb50092e7bcc67244; it is not functional R6 evidence.\n'
  +'--help prints this message without reading or writing archive files.';
 if(args.length===1&&args[0]==='--help'){console.log(usage);process.exit(0);}
 const commits=new Map();
 for(let i=0;i<args.length;i+=2){
  const flag=args[i],value=args[i+1];
- if(!['--commit','--r5-commit'].includes(flag)||commits.has(flag)||!value||!/^[a-f0-9]{40}$/i.test(value))throw Error(usage);
+ if(!['--commit','--r5-commit','--r6-commit'].includes(flag)||commits.has(flag)||!value||!/^[a-f0-9]{40}$/i.test(value))throw Error(usage);
  commits.set(flag,value.toLowerCase());
 }
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const git=(...args)=>execFileSync('git',args,{cwd:repo,encoding:'utf8'}).trim();
 // Independent options never relabel earlier release sources as the newest revision.
 const r4Commit=commits.get('--commit')||'08785fe50b9995b7712a24e2b53bcbbb575d1804';
-const r5Commit=commits.get('--r5-commit')||'working-tree';
-for(const [revision,commit] of [['R4',r4Commit],['R5',r5Commit]]){
+const r5Commit=commits.get('--r5-commit')||'3d3f9c8f74e9aff0b74c32f86acce5327039ad22';
+const r6Commit=commits.get('--r6-commit')||'working-tree';
+const r6AuditCommit='d6539ae58bec172b2ddd8e6bb50092e7bcc67244';
+for(const [revision,commit] of [['R4',r4Commit],['R5',r5Commit],['R6',r6Commit],['R6 audit baseline',r6AuditCommit]]){
  if(commit!=='working-tree'&&git('rev-parse',`${commit}^{commit}`)!==commit)throw Error(`${revision} commit not found`);
 }
 const releases=[
@@ -34,6 +38,8 @@ const releases=[
  {id:'releaseR3',commit:'4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f',label:'Ruas, NPCs e orientação da jornada',sources:['shots/r3-final-integration','shots/r3-final-world','shots/r3-final-episode','shots/r3-final-build.log','shots/production-r3-integration','shots/production-r3-world','shots/production-r3-episode']},
  {id:'releaseR4',commit:r4Commit,label:'Água, Colabore e transparência; fauna reservada',sources:['shots/r4-final-build.log','shots/r4-final-support','shots/r4-final-feedback','shots/r4-world','shots/r4-integration','shots/production-r4-integration','shots/production-r4-support']},
  {id:'releaseR5',commit:r5Commit,label:'Comunidade, metas e planejamento do projeto',sources:['shots/r5-community','shots/r5-support','shots/production-r5-community','shots/production-r5-support','shots/r5-community-build.log']},
+ {id:'baselineR6Audit',commit:r6AuditCommit,label:'Auditoria anterior à R6; linha de base, não validação da R6 final',sources:['shots/r6-gameplay-audit']},
+ {id:'releaseR6',commit:r6Commit,label:'Menus cristalinos, gestos, mapa e comunidade',sources:['shots/r6-build.log','shots/r6-premium','shots/r6-gesture','shots/r6-worldmap-final','shots/r6-community','shots/r6-support','shots/r6-integration','shots/production-r6-premium','shots/production-r6-gesture','shots/production-r6-worldmap','shots/production-r6-community','shots/production-r6-support','shots/production-r6-integration']},
 ];
 const allowed=new Set(['.png','.jpg','.jpeg','.webp','.mp4','.webm','.json','.log']);
 async function list(relative){
@@ -85,6 +91,6 @@ for(const release of releases){
 const indexBytes=Buffer.from(JSON.stringify(index,null,2)+'\n'),indexId=sha(indexBytes).slice(0,12);
 const indexJson=path.join(archiveRoot,`INDEX-${indexId}.json`),indexMarkdown=path.join(archiveRoot,`INDEX-${indexId}.md`);
 await immutableWrite(indexJson,indexBytes);
-const md=['# Diário visual — Grand Testament Adventure','','Arquivo privado local. Fontes preservadas; cópias verificadas por SHA-256.','','| Etapa | Commit / data Git | Arquivos | Vídeos existentes | Manifesto |','|---|---|---:|---:|---|',...index.releases.map(r=>`| ${r.id} — ${r.label} | ${r.commit} / ${r.commitDate||'sem commit'} | ${r.files} | ${r.videoFiles} | [Manifesto](${r.manifest.replaceAll('\\','/')}) |`),'','## Fontes ainda ausentes','',...index.releases.flatMap(r=>r.pending.map(p=>`- ${r.id}: ${p}`)),'','## Limites','','- Índice não prova publicação, aprovação editorial ou desempenho em celular físico.','- Capturas com teleporte de depuração não são gravação de percurso contínuo.','- Não foram gerados vídeos nem feitas publicações sociais.','- R3 permanece vinculada ao commit publicado 4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f.','- --commit associa somente R4; seu padrão é o commit funcional 08785fe50b9995b7712a24e2b53bcbbb575d1804.','- R5 com working-tree deve ser arquivada novamente com --r5-commit SHA após a revisão final.',''];
+const md=['# Diário visual — Grand Testament Adventure','','Arquivo privado local. Fontes preservadas; cópias verificadas por SHA-256.','','| Etapa | Commit / data Git | Arquivos | Vídeos existentes | Manifesto |','|---|---|---:|---:|---|',...index.releases.map(r=>`| ${r.id} — ${r.label} | ${r.commit} / ${r.commitDate||'sem commit'} | ${r.files} | ${r.videoFiles} | [Manifesto](${r.manifest.replaceAll('\\','/')}) |`),'','## Fontes ainda ausentes','',...index.releases.flatMap(r=>r.pending.map(p=>`- ${r.id}: ${p}`)),'','## Limites','','- Índice não prova publicação, aprovação editorial ou desempenho em celular físico.','- Capturas com teleporte de depuração não são gravação de percurso contínuo.','- Não foram gerados vídeos nem feitas publicações sociais.','- R3 permanece vinculada ao commit publicado 4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f.','- --commit associa somente R4; seu padrão é o commit funcional 08785fe50b9995b7712a24e2b53bcbbb575d1804.','- --r5-commit associa somente R5; seu padrão é 3d3f9c8f74e9aff0b74c32f86acce5327039ad22.','- R6 com working-tree deve ser arquivada novamente com --r6-commit SHA após a revisão final.','- baselineR6Audit mantém d6539ae58bec172b2ddd8e6bb50092e7bcc67244; essa auditoria anterior não valida o commit funcional da R6.',''];
 await immutableWrite(indexMarkdown,Buffer.from(md.join('\n')));
 console.log(JSON.stringify({indexJson,indexMarkdown,releases:index.releases.map(({id,files,videoFiles,pending,folder})=>({id,files,videoFiles,pending,folder}))},null,2));

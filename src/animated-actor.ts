@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { createHeroPosture } from './hero-posture.ts';
 
 /** A held neutral pose derived from the complete supplied walk cycle.
  * This is explicitly not a separately authored idle animation. */
@@ -52,23 +53,28 @@ export function animatedActor(scene: THREE.Group, clips: THREE.AnimationClip[]) 
   root.updateMatrixWorld(true);
   const standingOffset=-new THREE.Box3().setFromObject(root,true).min.y;
   visual.position.y=standingOffset;
+  const posture=createHeroPosture(root,scene);
   return {
     root,
-    update(speed: number, dt: number) {
+    update(speed: number, dt: number, inviting=false) {
       if (dt <= 0) return;
       weight = THREE.MathUtils.damp(weight, speed > 0.06 ? 1 : 0, 12, dt);
       walkAction.setEffectiveWeight(weight);
       idleAction.setEffectiveWeight(1 - weight);
       visual.position.y=standingOffset*(1-weight);
       walkAction.setEffectiveTimeScale(THREE.MathUtils.clamp(speed / 2.5, 0.55, 2.1));
+      posture.restore();
       mixer.update(dt);
+      posture.apply(speed,dt,1-weight,inviting);
     },
     diagnostics() {
       const box = new THREE.Box3().setFromObject(root, true);
       const skeleton: number[] = [];
       scene.traverse(o => { if ((o as THREE.Bone).isBone) skeleton.push(...o.quaternion.toArray()); });
+      const pose=posture.diagnostics();
       return { bones, skinnedMeshes, clips: clips.map(c => c.name), walkTime: walkAction.time,
-        walkWeight: weight, idle: 'derived-standing-pose', bounds: { min: box.min.toArray(), max: box.max.toArray() }, skeleton };
+        walkWeight: weight, idle: 'derived-standing-pose', gestureWeight:pose.weight, gestureBones:pose.bones,
+        posture:pose, bounds: { min: box.min.toArray(), max: box.max.toArray() }, skeleton };
     },
   };
 }

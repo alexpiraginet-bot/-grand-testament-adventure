@@ -12,6 +12,8 @@ import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpis
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
 import { setupFeedbackPanel } from "./feedbackui.ts";
+import { setupWorldMap } from './worldmap.ts';
+import './worldmap.css';
 import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
@@ -84,6 +86,7 @@ async function main() {
   scene.add(sun, sun.target);
 
   const P = meta.points;
+  const movementMargin = 60;
   const pt = (p: [number, number]): Vec2 => ({ x: p[0], z: p[1] });
   const keep=missionRoutes(terrain);
   scene.add(groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures));
@@ -132,12 +135,22 @@ async function main() {
   const cam = { yaw: player.heading, pitch: 0.2, dist: touch && innerHeight > innerWidth ? 5.2 : 4.4, idle: 0 };
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
-  const feedback = setupFeedbackPanel((open) => input.setSuspended(open));
+  // Each modal owns its pause reason; closing one must not clear another panel's pause.
+  const panelPauses = new Set<'feedback'|'worldmap'>();
+  const setPanelPaused = (panel:'feedback'|'worldmap',open:boolean) => {
+    if(open)panelPauses.add(panel);else panelPauses.delete(panel);
+    input.setSuspended(panelPauses.size>0);
+  };
+  setupFeedbackPanel((open) => setPanelPaused('feedback',open));
   const sfx = new Sfx();
   const hud = new Hud(ep, meta, img, input.touch, keep);
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;
+  setupWorldMap({terrain,image:img,episode:ep,routes:keep,goals,buildings:town.boxes,movementMargin,
+    player:()=>player,state:()=>state,
+    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    onOpenChange:open=>setPanelPaused('worldmap',open),button:$("mapbtn") as HTMLButtonElement});
 
   addEventListener("resize", () => {
     renderer.setSize(innerWidth, innerHeight, false);
@@ -190,8 +203,9 @@ async function main() {
     ids.forEach((id, i) => {
       const n = npcList.find((x) => x.spec.id === id)!;
       n.following = already + i;
-      n.person.pose = "stand";
-      n.inBoat = false;
+      n.person.pose = n.inBoat && !near ? "sit" : "stand";
+      // Listeners stay where they are during the line, including the boat deck.
+      if (near) n.inBoat = false;
       if (near) { n.pos.x = player.pos.x + (i % 2 ? 1.6 : -1.6); n.pos.z = player.pos.z + 1.5 + already; n.y = terrain.heightAt(n.pos.x, n.pos.z); }
     });
   };
@@ -228,7 +242,7 @@ async function main() {
       const c = save.current;
       const k = state.mission;
       const checkpoint = k === 0 ? pt(P.start) : goals[k - 1].at;
-      const ok = c && c.episode === ep.id && c.mission === k && terrain.inside(c.pos.x, c.pos.z, 60) && !blocked(c.pos.x, c.pos.z);
+      const ok = c && c.episode === ep.id && c.mission === k && terrain.inside(c.pos.x, c.pos.z, movementMargin) && !blocked(c.pos.x, c.pos.z);
       player.pos.x = ok ? c.pos.x : checkpoint.x; player.pos.z = ok ? c.pos.z : checkpoint.z;
       player.heading = ok ? c.heading : Math.atan2(goals[k].at.x - player.pos.x, -(goals[k].at.z - player.pos.z));
       cam.yaw = player.heading;
@@ -301,7 +315,7 @@ async function main() {
 
   // ---- movement
   const blocked = (x: number, z: number, includePeople = true) => {
-    if (!terrain.inside(x, z, 60)) return true;
+    if (!terrain.inside(x, z, movementMargin)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
       const c = Math.cos(b.rot), s = Math.sin(b.rot), dx = x - b.x, dz = z - b.z;
@@ -322,8 +336,8 @@ async function main() {
   const frame = () => {
     const now = performance.now();
     const real = (now - last) / 1000; last = now;
-    const paused = feedback.isOpen();
-    const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // feedback pauses mission time as well as controls
+    const paused = panelPauses.size>0;
+    const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // modal panels pause mission time as well as controls
     fpsFrames++; fpsT += real;                           // the FPS counter uses real time
     if (fpsT >= 1) { fpsLog.push(fpsFrames / fpsT); if (fpsLog.length > 120) fpsLog.shift(); fpsEl.textContent = `${backend}\n${(fpsFrames / fpsT).toFixed(0)} fps`; fpsFrames = 0; fpsT = 0; }
 
@@ -361,10 +375,15 @@ async function main() {
     // Colliding with a wall must stop the walk cycle instead of walking in place.
     mv = dt>0 ? Math.hypot(player.pos.x-previousX,player.pos.z-previousZ)/dt : 0;
     player.speed = mv;
+    if (playing && state.phase === 'line' && mv < .06) {
+      const target = state.mission === 2 ? pt(P.barco) : goals[state.mission].at;
+      const dx=target.x-player.pos.x,dz=target.z-player.pos.z;
+      if(Math.hypot(dx,dz)>.1){const delta=Math.atan2(dx,-dz)-player.heading;player.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*7);}
+    }
     const gy = terrain.heightAt(player.pos.x, player.pos.z);
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
-    if (actor) actor.update(mv,dt); else animate(fallback!, mv, dt, t);
+    if (actor) actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17'); else animate(fallback!, mv, dt, t);
 
     // mission logic
     if (!paused && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
@@ -382,7 +401,11 @@ async function main() {
     const fwd = { x: Math.sin(player.heading), z: -Math.cos(player.heading) };
     for (const n of npcList) {
       let sp = 0;
-      if (n.following >= 0) {
+      if (n.following >= 0 && state.phase === 'line') {
+        const want=Math.atan2(player.pos.x-n.pos.x,-(player.pos.z-n.pos.z));
+        const turn=want-n.facing;n.facing+=Math.atan2(Math.sin(turn),Math.cos(turn))*Math.min(1,dt*5);
+      } else if (n.following >= 0) {
+        n.inBoat=false;n.person.pose='stand';
         const row = Math.floor(n.following / 2), side = n.following % 2 ? 1 : -1;
         const back = 1.3 + row * 1.6, wide = 1.7 + row * 0.5;      // flanking him, not between him and the camera
         const tx = player.pos.x - fwd.x * back + fwd.z * side * wide, tz = player.pos.z - fwd.z * back - fwd.x * side * wide;
@@ -456,6 +479,7 @@ async function main() {
         for (const n of npcList) if (n.following >= 0) { n.pos.x = x; n.pos.z = z; }
       },
       followers: () => npcList.filter((n) => n.following >= 0).map((n) => n.spec.id),
+      npcPositions: () => npcList.map(n=>({id:n.spec.id,pos:{...n.pos},inBoat:n.inBoat,following:n.following})),
       info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }

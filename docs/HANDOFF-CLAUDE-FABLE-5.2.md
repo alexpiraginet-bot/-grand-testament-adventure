@@ -21,6 +21,11 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
   `dpl_Bg7HYru687BvoPAgK7sKzkwbD8eb` READY, 92 testes, QA público de colaboração e
   apoio em 1280×800 e 390×844. Bundle `index-CSnHhZh8.js` conferido. Preservar as três
   abas do Colabore ao integrar a PR #1. Celular físico e envio de candidatura não foram testados.
+- **R6 local validada, publicação PENDENTE:** `shots/r6-build.log` registra 97/97
+  testes e build concluído. Entrada e Colabore em cristal claro, mapa de visão geral
+  e postura/convite no rig real do herói; discípulos param e olham para Jesus durante
+  a fala. Ainda não associar SHA/deploy público à R6. Evidências, recência dos testes
+  e limites estão na seção R6 do diário; produção precisa de verificação própria.
 - Base pública R4 desta transferência: `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
 - **R4 publicada**: água, Colabore/Pix, prestação de contas e instrumentação de esforço.
   Deployment `dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, `READY`, HTTP 200 e bundle
@@ -30,8 +35,9 @@ Esta transferência serve à sessão atual ou à próxima, sem exigir modelo esp
   de trabalhar. Não sobrescreva arquivos ativos, descarte diffs, execute `reset --hard` ou troque a
   branch deste checkout compartilhado.
 - Use um **worktree próprio** e branch `claude/fable52-<incremento>`, a partir da revisão compartilhada
-  já commitada. A R4 está publicada; combine a base das revisões posteriores e não copie
-  indiscriminadamente o working tree nem apresente R3 como se contivesse R4.
+  já commitada. R5 é a base pública registrada; R6 está em preparação de publicação.
+  Combine o SHA efetivamente disponível com o integrador e não copie indiscriminadamente
+  o working tree nem confunda evidência de revisões diferentes.
 
 Leia primeiro, nesta ordem: `CLAUDE.md`, este documento, `README.md`, `docs/DIARIO-DESENVOLVIMENTO.md`,
 `docs/CAFARNAUM-CENARIO.md`, `docs/NARRATIVA.md`, `ASSETS.md`, `docs/TRIPO-RUNTIME-R1.md`,
@@ -39,12 +45,21 @@ Leia primeiro, nesta ordem: `CLAUDE.md`, este documento, `README.md`, `docs/DIAR
 `HANDOFF-CODEX.md` como histórico: alguns estados, nomes e bloqueios antigos foram superados. A instrução
 mais recente de Alex e a evidência atual prevalecem.
 
+Para a R6, leia `docs/DIRECAO-VISUAL-R6.md`, `docs/POSTURA-HEROI-R6.md` e
+`docs/MAPA-E-JOGABILIDADE-AUDITORIA-R6.md`. Esta última é auditoria do baseline
+`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`, anterior às alterações R6; não é
+validação do mapa/gesto novo nem do futuro commit funcional R6.
+
 Leia também `docs/ESFORCO-E-CUSTOS.md`. O painel e o protocolo distinguem consumo
 registrado, horas estimadas, comparação de API e despesas realmente informadas.
 Alex ampliou a visão para um mundo aberto cobrindo a vida de Jesus: ler
 `docs/VISAO-MUNDO-ABERTO.md` como direção futura, sem confundir com regiões entregues.
 A série de Reels já tem sessão separada e fontes em
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/`.
+Novo briefing já entregue à sessão `01a1d480-3c37-74c2-93eb-9adff5607bc6`:
+gravar 3–5 segundos de gameplay real, congelar um quadro e gerar um conceito sobre
+esse mesmo frame. Preservar enquadramento/origem e identificar a parte conceitual;
+briefing não prova vídeo feito ou publicado. A sessão do jogo fornece a captura real.
 Escopo atualizado: dezenas de missões dos quatro Evangelhos e geografia dos
 locais por onde Jesus passou. Ler `docs/ESTIMATIVA-PROJETO.md` e
 `docs/VOLUNTARIOS.md`: R$300 mil é referência revisável de caixa, não gasto ou
@@ -59,12 +74,18 @@ Há código de joystick móvel, câmera das falas, seis cenas de benchmark e efe
 opcionais GTAO/bloom/TRAA. A própria PR declara teste gráfico por software e GPU
 real pendente. Isso não comprova gráficos máximos nem desempenho da combinação.
 
-Ela sobrepõe `index.html` e `docs/DIARIO-DESENVOLVIMENTO.md` da R4: preservar as
-seções Colabore/Pix/contas/esforço ao integrar o controle e combinar os diários.
-A água em `src/world.ts` foi alterada só na R4, mas precisa ser testada junto dos
-efeitos em `src/main.ts`. Conferir `fx=off/alto/master`, rastros do TRAA e contraste
-do GTAO, além de pausa/foco, retrato/paisagem e câmera nas falas. Não houve merge
-dessa PR nesta entrega. Reconsultar HEAD e comentários antes de integrar.
+Na integração atual, há sobreposição em **`src/main.ts` e `index.html`**, além do
+diário. Preservar as três abas e os dados Colabore/Pix/contas/esforço; o conjunto de
+pausas `panelPauses`/`setPanelPaused`; o mapa com seus controles, proteção de fases
+e retorno de foco; a postura do herói e os ouvintes parados durante a fala.
+Fechar um painel não deve retomar o jogo se outro motivo de pausa continuar ativo.
+Combinar os diários sem sobrescrever a evidência anterior.
+
+A água da R4 e o novo gesto precisam ser testados com os efeitos opcionais da PR
+em `src/main.ts`. Conferir `fx=off/alto/master`, rastros do TRAA e contraste do
+GTAO, pausa/foco, retrato/paisagem e câmera nas falas. Não houve merge dessa PR
+nesta entrega. O SHA acima é uma observação histórica: reconsultar HEAD,
+comentários e diffs antes de integrar; não presumir compatibilidade pelo build isolado.
 
 ```powershell
 Set-Location D:/BentoLabs/01-Projetos/grand-testament-adventure
@@ -122,11 +143,24 @@ mesma cena.
   `src/world-layout.ts`: distribuição e percurso; `src/people.ts`: personagens;
   `src/journey.ts`/`src/hud.ts`: jornada, radar e orientação. Conferir os nomes atuais antes de editar.
   Preservar os testes de caminho livre, fundações e objetivos.
+- R6: `src/worldmap.ts`/`src/worldmap.css` mostram o terreno atual, com zoom,
+  arrasto, posição/objetivo e escala. **3.072 × 3.072 m existentes**, sem expansão
+  geográfica, novas regiões ou natação. O horizonte de 30 km é cenário distante.
+  Focar objetivo no mapa não move o jogador. Interior vazio, limites pouco claros
+  e destinos adicionais continuam trabalho de level design, não problemas resolvidos
+  pelo mapa. Preservar DEM e endpoints atuais ao enriquecer essa área.
 - R3 tem herói com rig nativo e 13 modelos de cenário. Os seis NPCs Tripo ainda aguardam rig; as pessoas
   provisórias não são prova de personagens profissionais.
 - Herói: 65 ossos, 17.481 triângulos, `walk` in-place. Não há `idle`, `run` ou `beckon` próprios
   entregues. Transformar/clonar o ancestral comum da malha e esqueleto, nunca separar o SkinnedMesh.
   Verificar os ossos animando no browser.
+- R6 usa `src/hero-posture.ts` sobre oito ossos reais: repouso/convite procedural,
+  base restaurada por quadro, pausa e redução ao caminhar. Não é clipe exportado
+  nem nova geração Tripo. O convite acompanha Marcos 1:17; Marcos 1:20 permanece
+  narração, sem esse gesto de fala. Em `src/main.ts`, discípulos param e se voltam
+  para Jesus enquanto a fala está aberta; quem está no barco fica no convés.
+  **Desembarque após a fala ainda pendente:** seguidores podem atravessar a água
+  a pé. Corrigir a navegação/encenação antes de afirmar que o problema foi resolvido.
 - Fontes: `assets-src/tripo-r1/`; catálogo `src/data/tripo-assets.json`; manifesto
   `assets-src/tripo-r1/handoff/MANIFEST.json`. `tools/prepare_tripo.mjs` deriva; `tools/fetch_assets.mjs`
   baixa/confronta hashes. Host separado: https://grand-testament-assets.vercel.app/ . Preservar originais
@@ -212,7 +246,7 @@ Toda nova sessão Claude deve registrar seu próprio esforço e evidência:
 
 ## 7. Roadmap de execução: capacidade máxima com entregas finitas
 
-**P0 — continuidade e baseline.** Coordenar R4, reproduzir build/testes, registrar SHA e cenas
+**P0 — continuidade e baseline.** Coordenar a publicação R6 e a base real, reproduzir build/testes, registrar SHA e cenas
 equivalentes. Levantar os três maiores defeitos visuais e três de gameplay com evidência. Não chamar o
 screenshot-alvo de visual já alcançado.
 
@@ -242,6 +276,19 @@ benchmarks GPU simultaneamente. “Capacidade máxima” não autoriza despesas,
 limite.
 
 ## 8. Gates de qualidade, publicação e diário
+
+Estado local R6 desta transferência: 97 testes/build em `shots/r6-build.log`;
+gesto, comunidade, apoio e integração passaram após o refinamento final de
+NPCs/postura. Fontes: `shots/r6-gesture/`, `shots/r6-community/`,
+`shots/r6-support/`, `shots/r6-integration/`. Integração inclui WebGPU PC/móvel
+emulado e WebGL2 PC, herói real e 14 assets; não é gameplay contínuo nem telefone físico.
+
+`shots/r6-premium/` e `shots/r6-worldmap-final/` passaram em 1280×800, 390×844 e
+320×740 **antes desse último refinamento**; o CSS e o módulo de mapa não mudaram
+desde então. Preservar essa distinção de recência. A auditoria contínua por
+teclado/mouse em `shots/r6-gameplay-audit/` pertence somente ao baseline
+`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`. Publicação R6, QA no domínio público,
+telefones físicos e gravação contínua da R6 não estão comprovados neste handoff.
 
 ```powershell
 npm ci --ignore-scripts
@@ -280,7 +327,13 @@ Em **cada incremento**, atualizar `docs/DIARIO-DESENVOLVIMENTO.md`: problema, hi
 tentativa/falha, arquivos, fonte/licença, antes/depois, testes e limites, SHA/deploy e registro de
 esforço. Preservar evidências em `shots/`. O arquivador `tools/archive_development.mjs` fixa R0–R3
 nos respectivos commits e aplica `--commit` somente à R4, fixada por padrão em `08785fe`.
-R5 usa `--r5-commit SHA`; sem esse argumento, somente R5 fica working-tree.
+R5 usa `--r5-commit SHA`, fixada por padrão em
+`3d3f9c8f74e9aff0b74c32f86acce5327039ad22`. R6 usa `--r6-commit SHA`; sem esse
+argumento, somente R6 fica working-tree. `baselineR6Audit` fica separado e preso
+a `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`, nunca ao SHA funcional R6.
+Depois de verificar publicação e SHA, executar
+`node tools/archive_development.mjs --r6-commit SHA_COMPLETO_DA_R6`.
+Nesta atualização foram verificados sintaxe e ajuda, sem executar arquivamento R6.
 Para uma revisão Fable posterior, acrescentar seleção própria antes de usar outro SHA. Nunca rotular
 capturas históricas com um commit novo. Destino de arquivo:
 `D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Diario`. Referências existentes:
@@ -294,7 +347,7 @@ comentário de jogador, recebimento, autoria de agente ou conclusão de outra se
 ## 9. Primeira mensagem para colar no Claude Code
 
 > Leia CLAUDE.md e docs/HANDOFF-CLAUDE-FABLE-5.2.md. Assuma a evolução do Grand Testament Adventure com a
-> capacidade máxima do modelo realmente selecionado. Confira a base pública e coordene os diffs R4 antes
+> capacidade máxima do modelo realmente selecionado. Confira a base pública e coordene os diffs R6 antes
 > de criar seu worktree claude/fable52-*. Preserve o trabalho em andamento. Registre esforço com fonte e
 > atualize o diário por incremento. Faça baseline reproduzível e escolha uma melhoria concreta de grande
 > impacto visual e uma de jogabilidade, distribuindo arquivos entre agentes sem conflitos. Implemente,

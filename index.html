@@ -33,6 +33,7 @@
     <div class="plate" id="plate"></div>
   </div>
   <nav class="hud-links" aria-label="Comunidade e créditos">
+    <button class="credbtn" id="mapbtn" type="button" title="Mapa da região · M">Mapa</button>
     <button class="credbtn community-btn" data-feedback-open type="button">Colabore</button>
     <button class="credbtn" id="credbtn" type="button">Créditos</button>
   </nav>
@@ -41,6 +42,7 @@
 </div>
 
 <div class="card" id="start">
+  <p class="start-identity">GRAND TESTAMENT ADVENTURE</p>
   <p class="hook">E SE EXISTISSE UM JOGO COM AS<br>MISSÕES DA VIDA DE JESUS?</p>
   <h1 id="title"></h1>
   <i class="rule"></i>
@@ -96,15 +98,27 @@
 
 <div class="fps" id="fps" hidden></div>
 <dialog class="feedback" id="feedback" aria-labelledby="feedback-heading" aria-describedby="feedback-intro">
-  <p class="eyebrow">GRAND TESTAMENT ADVENTURE · COMUNIDADE</p>
-  <h2 id="feedback-heading" tabindex="-1">Colabore</h2>
-  <p class="intro" id="feedback-intro">Ajude a construir os próximos passos desta aventura.</p>
-  <div class="community-tabs" role="tablist" aria-label="Formas de colaborar">
-    <button id="community-ideas-tab" type="button" role="tab" aria-selected="true" aria-controls="community-ideas" tabindex="0">Ideias e melhorias</button>
-    <button id="community-support-tab" type="button" role="tab" aria-selected="false" aria-controls="community-support" tabindex="-1">Apoio e contas</button>
-    <button id="community-volunteer-tab" type="button" role="tab" aria-selected="false" aria-controls="community-volunteer" tabindex="-1">Participe da equipe</button>
+  <div class="community-topbar">
+    <span class="community-brand">GRAND TESTAMENT ADVENTURE</span>
+    <button id="feedback-close" type="button" class="community-return">Voltar ao jogo <kbd aria-hidden="true">Esc</kbd></button>
   </div>
+  <div class="community-shell">
+  <aside class="community-aside">
+    <p class="eyebrow">UM MUNDO EM CONSTRUÇÃO</p>
+    <h2 id="feedback-heading" tabindex="-1">Colabore.</h2>
+    <p class="intro" id="feedback-intro">Uma grande história.<br>Construída com você.</p>
+    <p class="community-manifesto">Sua ideia pode abrir um caminho. Seu talento pode dar vida a este mundo.</p>
+    <div class="community-signature"><span class="community-orbit" aria-hidden="true"></span><p>Código aberto.<br>Uma aventura compartilhada.</p></div>
+  </aside>
+  <div class="community-main">
+  <div class="community-tabs" role="tablist" aria-label="Formas de colaborar">
+    <button id="community-ideas-tab" type="button" role="tab" aria-selected="true" aria-controls="community-ideas" tabindex="0">Ideias</button>
+    <button id="community-support-tab" type="button" role="tab" aria-selected="false" aria-controls="community-support" tabindex="-1">Apoio e contas</button>
+    <button id="community-volunteer-tab" type="button" role="tab" aria-selected="false" aria-controls="community-volunteer" tabindex="-1">Participe</button>
+  </div>
+  <div class="community-content">
   <section id="community-ideas" role="tabpanel" aria-labelledby="community-ideas-tab">
+  <h3>Qual é a sua ideia?</h3>
   <p class="intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
   <form id="feedback-form">
     <label class="field" for="feedback-kind">Quero compartilhar
@@ -117,10 +131,10 @@
     <label class="field" for="feedback-title">Título
       <input id="feedback-title" type="text" minlength="4" required placeholder="Um resumo da sua contribuição">
     </label>
-    <label class="field" for="feedback-description">Conte um pouco mais
+    <label class="field field-wide" for="feedback-description">Conte um pouco mais
       <textarea id="feedback-description" rows="4" minlength="10" required placeholder="Se algo deu errado, conte o que fez e o que esperava acontecer."></textarea>
     </label>
-    <label class="field" for="feedback-nickname"><span>Seu apelido <span class="optional">(opcional)</span></span>
+    <label class="field field-wide" for="feedback-nickname"><span>Seu apelido <span class="optional">(opcional)</span></span>
       <input id="feedback-nickname" type="text" autocomplete="off" placeholder="Como quer ser chamado?">
     </label>
     <label class="consent" for="feedback-public">
@@ -153,11 +167,13 @@
     <section id="support-effort" aria-label="Horas e uso de IA no projeto"></section>
   </section>
   <section id="community-volunteer" role="tabpanel" aria-labelledby="community-volunteer-tab" hidden></section>
+  </div>
   <div class="community-footer">
     <a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a>
     <a id="community-diary" target="_blank" rel="noopener noreferrer">Acompanhar o diário de desenvolvimento ↗</a>
   </div>
-  <div class="actions community-close"><button id="feedback-close" type="button">Voltar ao jogo</button></div>
+  </div>
+  </div>
 </dialog>
 <script type="module" src="/src/main.ts"></script>
 </body>

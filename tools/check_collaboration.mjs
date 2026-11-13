@@ -64,7 +64,11 @@ async function inspectPlan(page,width) {
   assert.match(text,/Valor já incluído na meta completa/);
   assert.ok(text.includes(`${num.format(totals.volunteerTheoreticalHoursPerWeek)} horas brutas por semana`));
   assert.ok(text.includes(`${num.format(totals.volunteerReferenceTimeReductionPercent)}% menos tempo`));
-  for(const note of plan.volunteerScenario.notes)assert.ok(text.includes(note),'volunteer assumptions are visible');
+  const scenarioConditions=region.locator('.plan-scenario-conditions');
+  assert.equal(await scenarioConditions.getAttribute('open'),null,'extended conditions start collapsed');
+  await scenarioConditions.locator('summary').click();
+  for(const note of plan.volunteerScenario.notes)assert.ok((await scenarioConditions.innerText()).includes(note),'volunteer assumptions are available in explicit details');
+  await scenarioConditions.locator('summary').click();
   if(ledgerTotals.incomeCents===null){
     assert.equal(await region.locator('progress,[role="progressbar"]').count(),0,'unknown receipts cannot produce a funding-progress indicator');
     assert.match(await region.locator('.plan-raised').innerText(),/Nenhum percentual financiado/);
@@ -77,7 +81,7 @@ async function inspectPlan(page,width) {
   await page.screenshot({path:`${out}/${width}-plan.png`});
   await region.locator('.plan-volunteers').evaluate(el=>el.scrollIntoView({block:'start'}));
   await page.screenshot({path:`${out}/${width}-volunteer-scenario.png`});
-  const details=region.locator('details');await details.locator('summary').click();
+  const details=region.locator('.plan-budget-details');await details.locator('summary').click();
   const rows=region.locator('.plan-budget > div');assert.equal(await rows.count(),plan.lineItems.length);
   let displayedSum=0;
   for(let index=0;index<plan.lineItems.length;index++){

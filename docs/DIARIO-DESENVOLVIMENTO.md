@@ -156,6 +156,74 @@ da tela de rig nem gravação contínua da geração. Os prints brutos exigem re
 de informações pessoais. `PROPOSTA-PATROCINIO-TRIPO.md` é rascunho local não enviado,
 sem patrocínio confirmado e sem autorização implícita de postagem social.
 
+### R6 — validada localmente; publicação pendente
+
+Estado registrado em 13/11/2026: build local concluído com **97/97 testes**,
+sem atribuir ainda SHA funcional, deployment ou conferência pública à R6. O
+relatório de build é `shots/r6-build.log`. A publicação R5 acima continua sendo
+o marco público comprovado neste registro até o integrador acrescentar a prova R6.
+
+A entrada e o Colabore passaram ao material de cristal pérola claro, com azul-tinta,
+cobalto, contornos irisados discretos e o cenário real visível. O painel usa três
+abas, convite lateral no PC e composição compacta no celular; valores do plano,
+consentimento, rascunhos, Pix e limites das contas foram preservados. Código CSS
+nativo, sem biblioteca nova nem imagem conceitual substituindo o jogo. Fontes:
+`docs/DIRECAO-VISUAL-R6.md`, `src/menus.css`, `src/feedback.css`, `index.html`,
+`src/feedbackui.ts` e a organização de metas em `src/project-plan-ui.ts`.
+
+O mapa de visão geral em `src/worldmap.ts`/`src/worldmap.css` acrescenta zoom,
+arrasto, objetivo atual, escala e posição, com pausa e retorno de foco. Ele mostra
+o terreno existente de **3.072 × 3.072 m**: não amplia a região jogável, o DEM,
+as missões ou o horizonte distante. Focar uma missão no mapa não teletransporta
+o jogador. Os estados de fala e conclusão continuam protegidos.
+
+Jesus recebeu postura de repouso e convite aplicados sobre o **rig real do GLB**:
+oito ossos ajustados, preservando a hierarquia de 65 ossos e o clipe `walk`.
+É uma camada procedural, não um clipe novo do Tripo. O gesto acompanha a fala
+literal de Marcos 1:17; não é repetido na narração de Marcos 1:20. Durante a fala,
+Jesus se orienta para os chamados e os discípulos ficam parados, olhando para ele.
+Os que estão no barco permanecem no convés até terminar a fala. A saída posterior
+ainda usa seguidores que podem atravessar água a pé: **o desembarque não foi
+resolvido**. Fontes: `docs/POSTURA-HEROI-R6.md`, `src/hero-posture.ts`,
+`src/animated-actor.ts`, `src/main.ts` e testes correspondentes.
+
+| Evidência local | Resultado e escopo |
+|---|---|
+| `shots/r6-build.log` | 97 testes passaram e build concluído. |
+| `shots/r6-premium/report.json` | Entrada/abas em 1280×800, 390×844 e 320×740; campos de 16 px, alvos de 44 px, contraste forçado, sem cortes ou escritas de rede detectados. |
+| `shots/r6-worldmap-final/report.json` | Três viewports: escala de terreno real, zoom/arrasto, pausa, foco e proteção de fases. Endpoints de fala/conclusão preparados por debug. |
+| `shots/r6-gesture/report.json` | GLB real em 1280×800 e 390×844, gesto, ouvintes, pausa, retorno ao repouso e exclusão da narração; locais/câmeras preparados por debug. |
+| `shots/r6-community/report.json` | Dois viewports: plano real, abas, rascunhos, pausa e composição GitHub. Candidatura sintética interceptada; nenhuma issue enviada. |
+| `shots/r6-support/report.json` | Dois viewports: Pix, contas sem valores inventados e esforço observado. Clipboard simulado; nenhum pagamento ou upload. |
+| `shots/r6-integration/report.json` | Herói e 14 assets nos ensaios WebGPU PC/móvel emulado e WebGL2 PC; sem erros de página, avisos ou falhas HTTP nos casos registrados. |
+
+Premium e mapa passaram **antes do último refinamento de postura/NPCs em
+`src/main.ts`**; CSS e módulo do mapa não mudaram depois desses testes. Gesto,
+comunidade, apoio e integração foram verificados após o refinamento. Isso delimita
+a cobertura; não apresentar todos os relatórios como execução simultânea do último
+build. Os viewports continuam rodando no PC, sem Safari/iPhone/Android físicos.
+Os testes de gesto/endpoints não comprovam percurso contínuo da R6.
+
+Separadamente, a auditoria `shots/r6-gameplay-audit/` percorreu as três missões
+com teclado/mouse reais no baseline **`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`**.
+Seu relatório `docs/MAPA-E-JOGABILIDADE-AUDITORIA-R6.md` antecede o redesign, mapa
+e gesto. Essa prova não deve receber o SHA da R6 nem ser citada como travessia
+final dela. Registrou água no desembarque, borda invisível, interior com poucos
+destinos e acabamento desigual; ampliar quilômetros não corrige esses problemas.
+
+A PR #1 do Claude exige integração coordenada: há sobreposição em `src/main.ts`
+e `index.html`. Preservar o conjunto de motivos de pausa (`panelPauses`), abertura e
+fechamento do mapa, gestos do herói, ouvintes durante a fala, três abas e dados de
+Colabore; combinar os diários. Reconsultar o HEAD da PR e testar a combinação,
+sem presumir que seus efeitos gráficos já estão presentes nesta R6.
+
+Pedido editorial mais recente: **3–5 segundos de gameplay real, congelar o quadro
+e apresentar um conceito gerado sobre o mesmo enquadramento**. A sessão de Reels
+`01a1d480-3c37-74c2-93eb-9adff5607bc6` já recebeu esse briefing. Capturar movimento
+real e preservar o frame de origem; rotular claramente o conceito e manter a
+correspondência de câmera/composição. O briefing não equivale a vídeo produzido,
+aprovado ou publicado. Não houve demonstração de DLSS nesta revisão.
+
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
 1. **“Começamos com formas simples: o que já precisava funcionar?”** Mostrar a
@@ -207,13 +275,20 @@ permanecem no projeto; o destino é:
 
 ```powershell
 node tools/archive_development.mjs
-# Depois do commit da R5, informar seu SHA completo e verificado:
-node tools/archive_development.mjs --r5-commit SHA_COMPLETO_DA_R5
+# Depois da publicação R6, informar seu SHA completo e verificado:
+node tools/archive_development.mjs --r6-commit SHA_COMPLETO_DA_R6
 ```
 
 R3 permanece fixa em `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
 `--commit` associa somente a R4, fixada por padrão em `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
-`--r5-commit` associa somente a R5; sem esse argumento, R5 recebe `working-tree`.
+`--r5-commit` associa somente a R5, fixada por padrão em `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`.
+`--r6-commit` associa somente a R6; sem esse argumento, R6 recebe `working-tree`.
+A entrada separada `baselineR6Audit` contém somente `shots/r6-gameplay-audit`,
+fixada em `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`; nunca herda o SHA funcional R6.
+As fontes funcionais R6 incluem `shots/r6-build.log`, `r6-premium`, `r6-gesture`,
+`r6-worldmap-final`, `r6-community`, `r6-support`, `r6-integration` e as respectivas
+pastas `production-r6-*` (mapa: `production-r6-worldmap`). Nesta atualização, o
+arquivador foi conferido por sintaxe/ajuda, sem executar cópia ou registrar produção R6.
 Seleções de evidência de futuras revisões
 devem ser adicionadas separadamente, sem relabelar capturas históricas.
 Snapshots, manifests e índices recebem identificadores de conteúdo e são imutáveis:
