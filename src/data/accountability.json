@@ -1,0 +1,13 @@
+{
+  "currency": "BRL",
+  "status": "awaiting-records",
+  "openingBalanceCents": null,
+  "openingBalanceVerified": false,
+  "updatedAt": null,
+  "lastReviewedAt": null,
+  "entries": [],
+  "subscriptionCosts": [
+    {"id":"claude-monthly","name":"Claude","amountCents":79900,"period":"monthly","paymentDay":6,"source":"owner-reported","effectiveAt":"2026-11-13","allocationToGameCents":null},
+    {"id":"codex-monthly","name":"Codex","amountCents":99900,"period":"monthly","paymentDay":6,"source":"owner-reported","effectiveAt":"2026-11-13","allocationToGameCents":null}
+  ]
+}

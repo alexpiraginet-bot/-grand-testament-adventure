@@ -3,13 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#0e100e">
+<meta name="theme-color" content="#f7f0e5">
 <link rel="icon" href="data:,">
 <title>Grand Testament Adventure</title>
 <meta name="description" content="Fatia jogável: Pescadores de gente (Marcos 1:16–20), na margem do mar da Galileia em Cafarnaum. Recriação.">
 <link rel="preload" href="./fonts/SpaceGrotesk-VF.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="./fonts/SpaceMono-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/src/hud.css">
+<link rel="stylesheet" href="/src/ui-theme.css">
+<link rel="stylesheet" href="/src/loading.css">
 </head>
 <body>
 <canvas id="c" aria-label="Margem do mar da Galileia em Cafarnaum"></canvas>
@@ -33,7 +35,8 @@
     <div class="plate" id="plate"></div>
   </div>
   <nav class="hud-links" aria-label="Comunidade e créditos">
-    <button class="credbtn community-btn" data-feedback-open type="button">Construa conosco</button>
+    <button class="credbtn" id="mapbtn" type="button" title="Mapa da região · M">Mapa</button>
+    <button class="credbtn community-btn" data-feedback-open type="button">Colabore</button>
     <button class="credbtn" id="credbtn" type="button">Créditos</button>
   </nav>
   <div class="joy" id="joy" aria-hidden="true"><div class="knob" id="knob"></div></div>
@@ -52,20 +55,35 @@
   </button>
 </div>
 
-<div class="card" id="start">
-  <p class="hook">E SE EXISTISSE UM JOGO COM AS<br>MISSÕES DA VIDA DE JESUS?</p>
-  <h1 id="title"></h1>
-  <i class="rule"></i>
+<div class="card start-screen" id="start" data-state="loading">
+  <div class="loading-art">
+    <img src="/images/loading-concept.webp" alt="Conceito artístico: Jesus e pescadores à margem do mar da Galileia" width="900" height="1439" fetchpriority="high">
+    <div class="loading-art-brand">GRAND TESTAMENT<br>ADVENTURE</div>
+    <div class="loading-art-caption"><span class="loading-art-label">Conceito visual · nossa direção artística</span><strong>A história ganha<br>um novo caminho.</strong><p>Um mundo em construção. Uma jornada para explorar, descobrir e viver no navegador.</p></div>
+  </div>
+  <div class="loading-panel">
+  <p class="start-identity">GRAND TESTAMENT ADVENTURE</p>
+  <p class="hook">UMA JORNADA PELOS EVANGELHOS</p>
+  <h1 id="title">Pescadores<br>de gente</h1>
   <p class="ref" id="ref"></p>
+  <section id="loading-screen" data-state="loading" aria-busy="true" aria-label="Preparação do jogo">
+    <div class="loading-status-row">
+      <svg id="loading-cross" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="33" fill="none" stroke-width="1" class="loading-orbit"/><circle cx="36" cy="36" r="28" fill="none" stroke="#d8e4ec" stroke-width="2"/><circle cx="36" cy="36" r="28" fill="none" stroke-width="2.5" pathLength="100" class="loading-ring"/><path class="loading-cross-core" d="M36 19v34M24 30h24"/></svg>
+      <div><p id="loading-stage" role="status" aria-live="polite">Preparando sua jornada</p><p id="loading-count">Conectando aos recursos do jogo</p></div>
+    </div>
+    <div class="loading-meter-row"><div id="loading-progress" role="progressbar" aria-label="Etapas de preparação concluídas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div><span id="loading-percent" aria-hidden="true">0%</span></div>
+    <div id="loading-actions" hidden><button id="loading-retry" type="button">Tentar novamente</button><button id="loading-safe" type="button">Abrir modo compatível</button></div>
+  </section>
   <div class="startbtns">
     <button id="go" type="button" disabled>Carregando…</button>
     <button id="novo" class="sec" type="button" hidden>Começar do zero</button>
   </div>
   <p class="savenote" id="savenote" hidden></p>
   <button id="outro" class="link" type="button" hidden>Apelido e outro aparelho</button>
-  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
+  <button class="link community-link" data-feedback-open type="button">Colabore</button>
   <p class="how" id="how"></p>
   <p class="foot">Recriação em desenvolvimento. <a href="#" id="credlink">Créditos</a></p>
+  </div>
 </div>
 
 <div class="card end" id="end" hidden>
@@ -76,7 +94,7 @@
   <p class="endcount" id="endc"></p>
   <ul class="cred" id="endcred"></ul>
   <button id="again" type="button">Jogar de novo</button>
-  <button class="link community-link" data-feedback-open type="button">Construa conosco</button>
+  <button class="link community-link" data-feedback-open type="button">Colabore</button>
 </div>
 
 <div class="card credits nuvem" id="nuvem" hidden role="dialog" aria-labelledby="nuvemh">
@@ -108,9 +126,28 @@
 
 <div class="fps" id="fps" hidden></div>
 <dialog class="feedback" id="feedback" aria-labelledby="feedback-heading" aria-describedby="feedback-intro">
-  <p class="eyebrow">GRAND TESTAMENT ADVENTURE · COMUNIDADE</p>
-  <h2 id="feedback-heading" tabindex="-1">Construa conosco</h2>
-  <p class="intro" id="feedback-intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
+  <div class="community-topbar">
+    <span class="community-brand">GRAND TESTAMENT ADVENTURE</span>
+    <button id="feedback-close" type="button" class="community-return">Voltar ao jogo <kbd aria-hidden="true">Esc</kbd></button>
+  </div>
+  <div class="community-shell">
+  <aside class="community-aside">
+    <p class="eyebrow">UM MUNDO EM CONSTRUÇÃO</p>
+    <h2 id="feedback-heading" tabindex="-1">Colabore.</h2>
+    <p class="intro" id="feedback-intro">Uma grande história.<br>Construída com você.</p>
+    <p class="community-manifesto">Sua ideia pode abrir um caminho. Seu talento pode dar vida a este mundo.</p>
+    <div class="community-signature"><span class="community-orbit" aria-hidden="true"></span><p>Código aberto.<br>Uma aventura compartilhada.</p></div>
+  </aside>
+  <div class="community-main">
+  <div class="community-tabs" role="tablist" aria-label="Formas de colaborar">
+    <button id="community-ideas-tab" type="button" role="tab" aria-selected="true" aria-controls="community-ideas" tabindex="0">Ideias</button>
+    <button id="community-support-tab" type="button" role="tab" aria-selected="false" aria-controls="community-support" tabindex="-1">Apoio e contas</button>
+    <button id="community-volunteer-tab" type="button" role="tab" aria-selected="false" aria-controls="community-volunteer" tabindex="-1">Participe</button>
+  </div>
+  <div class="community-content">
+  <section id="community-ideas" role="tabpanel" aria-labelledby="community-ideas-tab">
+  <h3>Qual é a sua ideia?</h3>
+  <p class="intro">O que deixaria esta aventura melhor? Conte sua ideia, opinião ou um problema que encontrou.</p>
   <form id="feedback-form">
     <label class="field" for="feedback-kind">Quero compartilhar
       <select id="feedback-kind" required>
@@ -122,10 +159,10 @@
     <label class="field" for="feedback-title">Título
       <input id="feedback-title" type="text" minlength="4" required placeholder="Um resumo da sua contribuição">
     </label>
-    <label class="field" for="feedback-description">Conte um pouco mais
+    <label class="field field-wide" for="feedback-description">Conte um pouco mais
       <textarea id="feedback-description" rows="4" minlength="10" required placeholder="Se algo deu errado, conte o que fez e o que esperava acontecer."></textarea>
     </label>
-    <label class="field" for="feedback-nickname"><span>Seu apelido <span class="optional">(opcional)</span></span>
+    <label class="field field-wide" for="feedback-nickname"><span>Seu apelido <span class="optional">(opcional)</span></span>
       <input id="feedback-nickname" type="text" autocomplete="off" placeholder="Como quer ser chamado?">
     </label>
     <label class="consent" for="feedback-public">
@@ -136,11 +173,35 @@
     <p class="message" id="feedback-error" role="alert"></p>
     <p class="message" id="feedback-status" role="status"></p>
     <div class="actions">
-      <button id="feedback-close" type="button">Voltar ao jogo</button>
       <button type="submit">Abrir no GitHub ↗</button>
     </div>
   </form>
-  <p class="community-footer"><a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a></p>
+  </section>
+  <section id="community-support" role="tabpanel" aria-labelledby="community-support-tab" hidden>
+    <h3>Vamos construir juntos</h3>
+    <p>Seu apoio ajuda com créditos de IA, malhas 3D e desenvolvimento do jogo.</p>
+    <p class="support-principle">O jogo continua livre. Contribuir é voluntário e não oferece vantagens dentro da aventura.</p>
+    <section id="support-plan" aria-label="Meta de desenvolvimento"></section>
+    <div class="pix-card">
+      <label class="field" for="support-pix-key">Chave Pix · E-mail
+        <input id="support-pix-key" type="text" readonly spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="support-pix-help">
+      </label>
+      <button id="support-copy" type="button">Copiar chave Pix</button>
+      <p class="message" id="support-status" role="status" aria-live="polite"></p>
+      <p class="notice" id="support-pix-help">No app do seu banco, confira o recebedor antes de confirmar.</p>
+    </div>
+    <p class="notice">Este jogo não processa nem confirma transferências. Não é preciso enviar comprovante aqui.</p>
+    <section id="support-accountability"></section>
+    <section id="support-effort" aria-label="Horas e uso de IA no projeto"></section>
+  </section>
+  <section id="community-volunteer" role="tabpanel" aria-labelledby="community-volunteer-tab" hidden></section>
+  </div>
+  <div class="community-footer">
+    <a id="community-issues" target="_blank" rel="noopener noreferrer">Ver ideias da comunidade ↗</a>
+    <a id="community-diary" target="_blank" rel="noopener noreferrer">Acompanhar o diário de desenvolvimento ↗</a>
+  </div>
+  </div>
+  </div>
 </dialog>
 <script type="module" src="/src/main.ts"></script>
 </body>

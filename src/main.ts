@@ -12,12 +12,17 @@ import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpis
 import { Cloud, NICK_MESSAGE, newCode, syncOnce, type CloudConfig } from "./cloud.ts";
 import { setupCloudPanel } from "./cloudui.ts";
 import { setupFeedbackPanel } from "./feedbackui.ts";
+import { setupWorldMap } from './worldmap.ts';
+import './worldmap.css';
 import nuvem from "./data/nuvem.json";
 import { Input } from "./input.ts";
 import { Hud } from "./hud.ts";
 import { Sfx } from "./audio.ts";
 import { animatedActor } from './animated-actor.ts';
-import { loadTripoAssets } from './tripo-assets.ts';
+import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
+import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
+import { StartupLifecycle } from './startup-lifecycle.ts';
+import { abortable } from './asset-loading.ts';
 import { BenchRun, benchShots } from "./bench.ts";
 import { createPostFx, parseAo, parseFx } from "./postfx.ts";
 import { CAM_SPRING, parseCam, snap3, spring3, stepBoom, stepSpring3 } from "./camera.ts";
@@ -34,14 +39,38 @@ const DEBUG = params.has("debug");
 // tests on a software renderer (1-2 fps) let game time follow real time: ?debug&dtmax=0.5
 const DT_MAX = DEBUG && params.has("dtmax") ? Number(params.get("dtmax")) : 0.05;
 const $ = (id: string) => document.getElementById(id)!;
+const touchDevice=matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+const startupProfile=loadingProfile(touchDevice,navigator.userAgent,navigator.maxTouchPoints,params);
+const loading=new LoadingScreen(startupProfile);
+const startup=new StartupLifecycle();
+let stopRenderer:()=>void=()=>{};
+const failStartup=(error:unknown)=>{
+  if(!startup.cancel(error))return;
+  stopRenderer();
+  loading.fail(error instanceof Error?error.message:'Não foi possível abrir o jogo neste navegador.');
+};
+const disposeTexture=(texture:THREE.Texture)=>{(texture.image as {close?:()=>void}|undefined)?.close?.();texture.dispose();};
+const fetchJSON=async <T>(url:string):Promise<T>=>{
+  const request=fetch(url,{signal:startup.signal}).then(r=>{
+    if(!r.ok)throw new Error(`Recurso do mundo indisponível (${r.status}).`);
+    return r.json() as Promise<T>;
+  });
+  return withDeadline(abortable(request,startup.signal),20000,'Um recurso do mundo demorou a responder.');
+};
 
 async function load() {
   const base = import.meta.env.BASE_URL;
   const [meta, near, far, img] = await Promise.all([
-    fetch(`${base}world/cafarnaum.json`).then((r) => r.json() as Promise<WorldMeta & { far: { size: number; n: number } }>),
-    fetch(`${base}world/cafarnaum-heights.json`).then((r) => r.json() as Promise<HeightsFile>),
-    fetch(`${base}world/far-heights.json`).then((r) => r.json() as Promise<HeightsFile>),
-    new Promise<HTMLImageElement>((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = `${base}world/radar.png`; }),
+    fetchJSON<WorldMeta & {far:{size:number;n:number}}>(`${base}world/cafarnaum.json`),
+    fetchJSON<HeightsFile>(`${base}world/cafarnaum-heights.json`),
+    fetchJSON<HeightsFile>(`${base}world/far-heights.json`),
+    withDeadline(startup.track(new Promise<HTMLImageElement>((ok,no)=>{
+      const i=new Image(),abort=()=>{i.src='';i.onload=i.onerror=null;no(startup.signal.reason);};
+      startup.signal.addEventListener('abort',abort,{once:true});
+      const clear=()=>startup.signal.removeEventListener('abort',abort);
+      i.onload=()=>{clear();ok(i);};i.onerror=()=>{clear();no(new Error('O mapa não pôde ser carregado.'));};
+      if(startup.signal.aborted)abort();else i.src=`${base}world/radar.png`;
+    }),image=>{image.src='';}),20000,'O mapa demorou a responder.'),
   ]);
   return { meta, terrain: new Terrain(meta, decodeHeights(near)), far: decodeHeights(far), img };
 }
@@ -52,10 +81,10 @@ async function main() {
   if (slog.previous?.uncleanEnd) console.warn("Sessão anterior desta aba terminou sem fechamento limpo (recarga ou queda).");
   const canvas = $("c") as HTMLCanvasElement;
   canvas.addEventListener("webglcontextlost", () => slog.mark("context-lost", "webglcontextlost"));
-  const touch = matchMedia("(pointer: coarse)").matches || "ontouchstart" in window;
+  const touch = touchDevice;
   // the claude.ai page passes no query string, only a #name: #alta / #baixa choose the quality there, #fps shows the FPS
   const hash = location.hash.slice(1);
-  const quality = params.get("q") ?? (hash === "baixa" ? "low" : "high");
+  const quality = params.get("q") ?? (hash === "baixa" || startupProfile.compat ? "low" : "high");
   const q = quality === "low" ? 0.55 : 1;
   // ?fx=alto|master: post-processing under measurement (postfx.ts); without it the game renders exactly as before
   const fxLevel = parseFx(params.get("fx"));
@@ -63,27 +92,40 @@ async function main() {
   const visual = { tone: parseTone(params.get("tm")), exposure: parseExposure(params.get("exp")),
     atmo: parseAtmo(params.get("atmo")), shadow: parseShadow(params.get("shadow")) };
 
-  // WebGPU only on a real adapter: a software ("fallback") one, or none, goes to WebGL 2. If the WebGPU device is lost
-  // later (it happened with the software adapter of the test browser), the page reloads on WebGL 2.
-  let forceWebGL = params.get("gl") === "1";
+  // WebGPU only on a real adapter; iOS defaults to the bounded WebGL profile.
+  // Device/context loss is terminal with an explicit retry, never an automatic reload loop.
+  loading.stage('Preparando a imagem');
+  let forceWebGL = params.get("gl") === "1" || startupProfile.compat;
   type AdapterInfo = { isFallbackAdapter?: boolean; vendor?: string; architecture?: string; device?: string; description?: string };
   let adapterInfo: AdapterInfo | null = null;            // names the GPU in bench reports (build-info.ts)
   if (!forceWebGL) {
     const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ isFallbackAdapter?: boolean; info?: AdapterInfo } | null> } }).gpu;
-    const ad = gpu ? await gpu.requestAdapter().catch(() => null) : null;
+    const ad = gpu ? await withDeadline(abortable(gpu.requestAdapter(),startup.signal),8000,'O dispositivo gráfico demorou a responder.').catch(() => null) : null;
     adapterInfo = ad?.info ?? null;
     forceWebGL = !ad || !!ad.isFallbackAdapter || !!ad.info?.isFallbackAdapter;
   }
+  startup.check();
   // GPU timestamps only while benchmarking (bench.ts): they cost queries every frame
   const renderer = new THREE.WebGPURenderer({ canvas, antialias: quality !== "low" && fxLevel === "off", forceWebGL, logarithmicDepthBuffer: true,
     trackTimestamp: params.has("bench") });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, quality === "low" ? 1.5 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio,startupProfile.mobile?1.25:quality === "low" ? 1.5 : 2));
   renderer.setSize(innerWidth, innerHeight, false);
   renderer.toneMapping = TONE_MAPPING[visual.tone];
   renderer.toneMappingExposure = visual.exposure;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;
-  await renderer.init();
+  let rendererReady=false,rendererDisposed=false;
+  stopRenderer=()=>{
+    // three's dispose/setAnimationLoop may initialise an uninitialised renderer. Wait for its real init.
+    if(!rendererReady||rendererDisposed)return;rendererDisposed=true;
+    void renderer.setAnimationLoop(null).then(()=>renderer.dispose()).catch(error=>console.warn('Renderer cleanup failed',error));
+  };
+  const lost=()=>failStartup(new Error('O navegador interrompeu a imagem. Abra no modo compatível para tentar novamente.'));
+  canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();lost();});
+  const initialising=renderer.init().then(()=>{rendererReady=true;if(startup.signal.aborted)stopRenderer();});
+  await withDeadline(abortable(initialising,startup.signal),20000,'Não foi possível iniciar a imagem neste navegador.');
+  startup.check();
+  loading.complete('renderer','Recebendo o mundo');
   const be = renderer.backend as unknown as { isWebGPUBackend?: boolean; device?: { lost: Promise<unknown> } };
   const backend = be.isWebGPUBackend ? "WebGPU" : "WebGL2";
   const gl = (renderer.backend as unknown as { gl?: WebGL2RenderingContext | null }).gl ?? null;
@@ -93,10 +135,18 @@ async function main() {
   slog.setBackend(backend);
   be.device?.lost.then((info) => {
     slog.mark("device-lost", (info as { message?: string } | undefined)?.message ?? "device lost");
-    const u = new URL(location.href); u.searchParams.set("gl", "1"); location.replace(u);
+    lost();
   });
 
-  const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([load(), loadTripoAssets(),loadGroundTextures(),loadSkyTextures()]);
+  const [{ meta, terrain, far, img }, assets, groundTextures, skyTextures] = await Promise.all([
+    load().then(value=>{loading.complete('world','Mapa da Galileia preparado');return value;}),
+    startup.track(loadTripoAssets({mobile:startupProfile.mobile,onProgress:p=>loading.updateAssets(p),signal:startup.signal}),disposeTripoAssets),
+    withDeadline(startup.track(loadGroundTextures(),maps=>Object.values(maps).forEach(disposeTexture)),25000,'As texturas do terreno demoraram a responder.').then(value=>{loading.complete('ground','Terreno preparado');return value;}),
+    withDeadline(startup.track(loadSkyTextures(),maps=>Object.values(maps).forEach(disposeTexture)),25000,'O céu demorou a responder.').then(value=>{loading.complete('sky','Iluminação preparada');return value;}),
+  ]);
+  startup.check();
+  if(loading.diagnostics().failed>0)throw new Error('Alguns modelos não chegaram. Confira a conexão e tente novamente.');
+  loading.stage('Montando sua jornada');
 
   const scene = new THREE.Scene();
   const sunDir = new THREE.Vector3(0.45, 0.92, 0.7).normalize();
@@ -111,7 +161,8 @@ async function main() {
   const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
   sun.castShadow = true;
   // three cascades each clone this shadow, so ?shadow=csm keeps their total near the single box's (3 x 2048² vs 4096²)
-  const shadowSize = visual.shadow === "csm" ? (quality === "low" || touch ? 1024 : 2048) : quality === "low" ? 1024 : touch ? 2048 : 4096;
+  const shadowSize = visual.shadow === "csm" ? (startupProfile.mobile || quality === "low" ? 1024 : 2048)
+    : startupProfile.mobile || quality === "low" ? 1024 : 4096;
   sun.shadow.mapSize.set(shadowSize, shadowSize);
   const sc = sun.shadow.camera; sc.left = -28; sc.right = 28; sc.top = 28; sc.bottom = -28; sc.near = 1; sc.far = 220;
   sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.03;
@@ -119,6 +170,7 @@ async function main() {
   if (visual.shadow === "csm") cascadedShadows(sun);
 
   const P = meta.points;
+  const movementMargin = 60;
   const pt = (p: [number, number]): Vec2 => ({ x: p[0], z: p[1] });
   const keep=missionRoutes(terrain);
   scene.add(groundMesh(terrain, quality === "low" ? 192 : 256,keep,groundTextures));
@@ -170,19 +222,30 @@ async function main() {
   const pivot = spring3(player.pos.x, 0, player.pos.z), boom = { x: cam.dist, v: 0 };
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
-  const feedback = setupFeedbackPanel((open) => input.setSuspended(open));
+  // Each modal owns its pause reason; closing one must not clear another panel's pause.
+  const panelPauses = new Set<'feedback'|'worldmap'>();
+  const setPanelPaused = (panel:'feedback'|'worldmap',open:boolean) => {
+    if(open)panelPauses.add(panel);else panelPauses.delete(panel);
+    input.setSuspended(panelPauses.size>0);
+  };
+  setupFeedbackPanel((open) => setPanelPaused('feedback',open));
   const sfx = new Sfx();
   const hud = new Hud(ep, meta, img, input.touch, keep);
   const goals = makeGoals(meta);
   const state = initialState();
   let ended = false;
+  setupWorldMap({terrain,image:img,episode:ep,routes:keep,goals,buildings:town.boxes,movementMargin,
+    player:()=>player,state:()=>state,
+    canOpen:()=>!$("hud").hidden && (state.phase==='play'||state.phase==='line') && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
+    onOpenChange:open=>setPanelPaused('worldmap',open),button:$("mapbtn") as HTMLButtonElement});
 
-  addEventListener("resize", () => {
+  let resizeTimer:ReturnType<typeof setTimeout>;
+  addEventListener("resize", () => { clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{
     renderer.setSize(innerWidth, innerHeight, false);
     camera.aspect = innerWidth / innerHeight;
     camera.fov = touch && innerHeight > innerWidth ? 62 : 52;
     camera.updateProjectionMatrix();
-  });
+  },150); });
 
   // ---- saved progress (save.ts): this browser's copy, autosaved
   const store = new LocalSaveStore();
@@ -228,8 +291,9 @@ async function main() {
     ids.forEach((id, i) => {
       const n = npcList.find((x) => x.spec.id === id)!;
       n.following = already + i;
-      n.person.pose = "stand";
-      n.inBoat = false;
+      n.person.pose = n.inBoat && !near ? "sit" : "stand";
+      // Listeners stay where they are during the line, including the boat deck.
+      if (near) n.inBoat = false;
       if (near) { n.pos.x = player.pos.x + (i % 2 ? 1.6 : -1.6); n.pos.z = player.pos.z + 1.5 + already; n.y = terrain.heightAt(n.pos.x, n.pos.z); }
     });
   };
@@ -266,7 +330,7 @@ async function main() {
       const c = save.current;
       const k = state.mission;
       const checkpoint = k === 0 ? pt(P.start) : goals[k - 1].at;
-      const ok = c && c.episode === ep.id && c.mission === k && terrain.inside(c.pos.x, c.pos.z, 60) && !blocked(c.pos.x, c.pos.z);
+      const ok = c && c.episode === ep.id && c.mission === k && terrain.inside(c.pos.x, c.pos.z, movementMargin) && !blocked(c.pos.x, c.pos.z);
       player.pos.x = ok ? c.pos.x : checkpoint.x; player.pos.z = ok ? c.pos.z : checkpoint.z;
       player.heading = ok ? c.heading : Math.atan2(goals[k].at.x - player.pos.x, -(goals[k].at.z - player.pos.z));
       cam.yaw = player.heading;
@@ -290,7 +354,6 @@ async function main() {
     else if (prog.completions > 0) hud.startCard({ primary: "Jogar de novo", note: `Episódio concluído ${prog.completions === 1 ? "1 vez" : `${prog.completions} vezes`}. ${note}` });
     else hud.startCard({ primary: "Começar", note });
   };
-  showStartCard();
   // ---- same-scene benchmark (bench.ts, tools/bench.mjs): ?bench flies the fixed shots, no HUD, and times every frame
   const num = (k: string, d: number) => { const v = Number(params.get(k)); return Number.isInteger(v) && v > 0 ? v : d; };
   const bench = params.has("bench") ? new BenchRun(benchShots(P, (x, z) => terrain.heightAt(x, z)), num("warmup", 30), num("frames", 180)) : null;
@@ -302,6 +365,7 @@ async function main() {
   let benchLoadMs = NaN, benchHold = -1;             // after the timed route, hold(i) re-shows a shot for its picture
   if (bench) $("start").hidden = true;
   const fx = createPostFx(renderer, scene, camera, fxLevel, parseAo(params.get("ao")));
+  // Enable the start button only after the first scene has actually rendered.
   if (cloud.enabled) setupCloudPanel({
     ensureCode: async () => {
       let code = readCode();
@@ -350,7 +414,7 @@ async function main() {
 
   // ---- movement
   const blocked = (x: number, z: number, includePeople = true) => {
-    if (!terrain.inside(x, z, 60)) return true;
+    if (!terrain.inside(x, z, movementMargin)) return true;
     if (terrain.heightAt(x, z) < -0.55) return true;                       // no swimming: wading only
     for (const b of town.boxes) {
       const c = Math.cos(b.rot), s = Math.sin(b.rot), dx = x - b.x, dz = z - b.z;
@@ -379,11 +443,14 @@ async function main() {
   let t = 0;
   let frozen = false;                                    // ?debug only (__gta.freeze): the story's clock held; camera and controls run
 
+  const waitingToStart=()=>state.phase==='intro';
   const frame = () => {
+    if(startup.signal.aborted)return;
+    if(document.hidden || waitingToStart()){last=performance.now();return;}
     const now = performance.now();
     const real = (now - last) / 1000; last = now;
-    const paused = feedback.isOpen();
-    const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // feedback pauses mission time as well as controls
+    const paused = panelPauses.size>0;
+    const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // modal panels pause mission time as well as controls
     const shot = bench ? bench.shot ?? bench.shots[benchHold] ?? null : null;
     if (shot) {
       // stand him 4.5 m ahead of the shot's eye, facing its way, so shadows and vegetation detail follow as in play
@@ -428,10 +495,15 @@ async function main() {
     // Colliding with a wall must stop the walk cycle instead of walking in place.
     mv = dt>0 ? Math.hypot(player.pos.x-previousX,player.pos.z-previousZ)/dt : 0;
     player.speed = mv;
+    if (playing && state.phase === 'line' && mv < .06) {
+      const target = state.mission === 2 ? pt(P.barco) : goals[state.mission].at;
+      const dx=target.x-player.pos.x,dz=target.z-player.pos.z;
+      if(Math.hypot(dx,dz)>.1){const delta=Math.atan2(dx,-dz)-player.heading;player.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*7);}
+    }
     const gy = terrain.heightAt(player.pos.x, player.pos.z);
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
-    if (actor) actor.update(mv,dt); else animate(fallback!, mv, dt, t);
+    if (actor) actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17'); else animate(fallback!, mv, dt, t);
 
     // mission logic
     if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
@@ -449,7 +521,11 @@ async function main() {
     const fwd = { x: Math.sin(player.heading), z: -Math.cos(player.heading) };
     for (const n of npcList) {
       let sp = 0;
-      if (n.following >= 0) {
+      if (n.following >= 0 && state.phase === 'line') {
+        const want=Math.atan2(player.pos.x-n.pos.x,-(player.pos.z-n.pos.z));
+        const turn=want-n.facing;n.facing+=Math.atan2(Math.sin(turn),Math.cos(turn))*Math.min(1,dt*5);
+      } else if (n.following >= 0) {
+        n.inBoat=false;n.person.pose='stand';
         const row = Math.floor(n.following / 2), side = n.following % 2 ? 1 : -1;
         const back = 1.3 + row * 1.6, wide = 1.7 + row * 0.5;      // flanking him, not between him and the camera
         const tx = player.pos.x - fwd.x * back + fwd.z * side * wide, tz = player.pos.z - fwd.z * back - fwd.x * side * wide;
@@ -558,7 +634,21 @@ async function main() {
       bench.record(real * 1000, renderer.info.render.drawCalls, renderer.info.render.triangles, { gpuMs: gpuLast, cpuMs });
     }
   };
-  renderer.setAnimationLoop(frame);
+  hero.root.position.set(player.pos.x,terrain.heightAt(player.pos.x,player.pos.z),player.pos.z);
+  camera.position.set(player.pos.x,hero.root.position.y+3,player.pos.z+5);
+  camera.lookAt(player.pos.x,hero.root.position.y+1.5,player.pos.z);
+  vegetation.userData.update(player.pos.x,player.pos.z);
+  loading.complete('scene','Preparando luz e materiais');
+  startup.check();
+  await withDeadline(abortable(renderer.compileAsync(scene,camera),startup.signal),45000,'A preparação da imagem demorou. Experimente o modo compatível.');
+  startup.check();
+  await withDeadline(abortable(renderer.renderAsync(scene,camera),startup.signal),20000,'O primeiro quadro não ficou pronto. Experimente o modo compatível.');
+  startup.check();
+  loading.complete('frame','Imagem pronta');
+  if(!loading.ready())throw new Error('A inicialização foi interrompida.');
+  showStartCard();
+  await renderer.setAnimationLoop(frame);
+  startup.check();
   if (bench) (window as unknown as Record<string, unknown>).__gtaBench = {
     get done() { return bench.done; },
     hold: (i: number) => { benchHold = i; },
@@ -581,6 +671,7 @@ async function main() {
       routes:keep,
       blocked,
       quality,
+      loading:()=>({...loading.diagnostics(),assetProfiles:Object.entries(assets).map(([id,asset])=>({id,...asset?.userData?.loadingProfile})),maxTextureDimension:Math.max(0,...Object.values(assets).flatMap(asset=>(asset?.userData?.loadingProfile?.images??[]).flatMap((i:{width:number;height:number})=>[i.width,i.height])))}),
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
       freeze: (on: boolean) => { frozen = on; },
@@ -599,6 +690,7 @@ async function main() {
       // the camera this frame and whether it is inside a building's footprint (no margin), for tools/check_camera.mjs
       camera: () => { const c = camera.position;
         return { pos: c.toArray(), mode: camMode, inside: town.boxes.some((b) => c.y > (b.bottom ?? -Infinity) && c.y < (b.top ?? Infinity) && insideObstacle(c.x, c.z, b, 0)) }; },
+      npcPositions: () => npcList.map(n=>({id:n.spec.id,pos:{...n.pos},inBoat:n.inBoat,following:n.following})),
       info: () => ({ calls: renderer.info.render.drawCalls, triangles: renderer.info.render.triangles, textureBytes: renderer.info.memory.texturesSize }),
     };
   }
@@ -606,6 +698,5 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
-  const go = document.getElementById("go") as HTMLButtonElement | null;
-  if (go) { go.textContent = "Não foi possível abrir o jogo neste navegador"; go.disabled = true; }
+  failStartup(e);
 });

@@ -1,0 +1,79 @@
+{
+  "planVersion": 1,
+  "status": "estimate",
+  "currency": "BRL",
+  "updatedAt": "2026-11-13",
+  "scope": "Uma jornada pelo Evangelho, com dezenas de missões e regiões associadas aos lugares por onde Jesus passou.",
+  "targetCents": 30000000,
+  "range": {"minCents": 20000000, "maxCents": 50000000},
+  "timeframeMonths": {"min": 36, "max": 60, "reference": 48},
+  "subscriptionMonthlyCents": 179800,
+  "lineItems": [
+    {
+      "id": "subscriptions",
+      "label": "Assinaturas da estrutura de desenvolvimento",
+      "amountCents": 8630400,
+      "basis": "Projeção de R$ 1.798 por mês durante 48 meses, mantendo os valores mensais informados por Alex. Reserva hipotética de 100% da estrutura; a parcela efetivamente atribuível ao jogo ainda não foi definida. Não é despesa realizada do projeto."
+    },
+    {
+      "id": "assets-ai",
+      "label": "Arte, malhas, animações e produção com IA",
+      "amountCents": 8000000,
+      "basis": "Reserva de planejamento para produção e acabamento visual ao longo da jornada. Serviços adicionais e produção de conteúdo não cobertos pelas assinaturas devem ser discriminados para evitar dupla contagem. Sem cotações ou contratação."
+    },
+    {
+      "id": "infrastructure",
+      "label": "Hospedagem e infraestrutura",
+      "amountCents": 2400000,
+      "basis": "Reserva para hospedagem, armazenamento, distribuição de assets e serviços de operação durante o desenvolvimento. Depende do uso e da arquitetura; não é cobrança confirmada."
+    },
+    {
+      "id": "audio",
+      "label": "Áudio, vozes e ambientação sonora",
+      "amountCents": 4000000,
+      "basis": "Reserva para produção, edição, integração e direitos de uso de áudio quando necessários. Sem fornecedores escolhidos, cotações ou contratação."
+    },
+    {
+      "id": "qa",
+      "label": "Testes, acessibilidade e revisão",
+      "amountCents": 3000000,
+      "basis": "Reserva para testes em aparelhos reais, acessibilidade, revisão de conteúdo e correções de integração. Escopo e fornecedores ainda não definidos."
+    },
+    {
+      "id": "contingency",
+      "label": "Contingência e ajustes de escopo",
+      "amountCents": 3969600,
+      "basis": "Reserva para incertezas, retrabalho e diferenças entre estimativas e cotações futuras. Não representa contratação nem gasto já realizado."
+    }
+  ],
+  "initialPhase": {
+    "label": "Primeira etapa: Cafarnaum polida",
+    "amountCents": 1500000,
+    "includedInTarget": true,
+    "timeframeWeeks": {"min": 8, "max": 12},
+    "scope": "Polir o trecho de Cafarnaum e suas três missões, com controles, narrativa, acabamento visual e testes em PC e celular."
+  },
+  "volunteerScenario": {
+    "people": 200,
+    "assumedHoursPerPersonWeekly": 5,
+    "timeframeMonths": {"min": 12, "max": 24, "reference": 18},
+    "baselineReferenceMonths": 48,
+    "notes": [
+      "Cenário hipotético com 200 colaboradores ativos e participação regular, não apenas 200 cadastros ou interessados. A disponibilidade de cinco horas por pessoa por semana é uma premissa, não uma medição.",
+      "O prazo de 12 a 24 meses, com referência de 18 meses, é uma estimativa condicionada à capacidade real de integrar entregas. Não é compromisso ou garantia.",
+      "As horas teóricas não se convertem linearmente em velocidade. Lideranças técnicas, integração inicial dos participantes, revisão, testes e coordenação continuam necessários.",
+      "A comparação percentual usa os prazos de referência dos dois cenários. Não representa progresso do projeto nem redução comprovada no prazo.",
+      "A participação voluntária não reduz automaticamente a meta de caixa. Infraestrutura, ferramentas, conteúdo especializado, coordenação e testes ainda precisam ser orçados."
+    ]
+  },
+  "notes": [
+    "Estimativa preliminar para discussão, não orçamento contratado nem promessa de entrega. O alvo de referência é R$ 300 mil, dentro de uma faixa de R$ 200 mil a R$ 500 mil.",
+    "Cenário de planejamento: cerca de 60 missões e 10 a 15 áreas regionais. São hipóteses de escala para estimar o trabalho, não uma quantidade fechada ou prometida de conteúdo.",
+    "Horizonte de 36 a 60 meses, com referência de 48 meses, condicionado a um pequeno núcleo dedicado trabalhando com apoio de IAs. Capacidade real, pesquisa, qualidade dos assets e testes podem alterar o prazo.",
+    "A primeira etapa tem alvo preliminar de 8 a 12 semanas e R$ 15 mil. Esse valor já faz parte do alvo integral; não deve ser somado novamente. O prazo é uma meta, não garantia.",
+    "A projeção de assinaturas reserva hipoteticamente 100% das mensalidades da estrutura. Não comprova alocação integral ao jogo; não deve ser lançada como despesa realizada ou descontada do saldo de apoios.",
+    "Não há cotações, contratos ou desembolsos comprovados neste plano. Os valores são reservas propostas, sujeitas a pesquisa e revisão.",
+    "O trabalho não remunerado do núcleo principal está excluído. Portanto, este alvo de caixa não é o custo econômico completo do jogo.",
+    "Apoios recebidos, despesas verificadas e saldo pertencem à prestação de contas separada. Este plano não informa quanto já foi arrecadado ou gasto."
+  ]
+}

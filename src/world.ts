@@ -1,7 +1,7 @@
 // The 3D world: ground from the real relief, the lake, the far hills, sky, plants, Capernaum's houses, the boat.
 // Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
-import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float, step, color } from 'three/tsl';
+import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, min, float, step, color, uniform, normalMap, cameraPosition } from 'three/tsl';
 import { settlementDetails } from './settlement-details.ts';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
@@ -163,7 +163,9 @@ export function farMesh(far: Int16Array, size: number, n: number): THREE.Mesh {
 
 export function water(size: number, terrain: Terrain): { mesh: THREE.Mesh; update: (t: number) => void } {
   const nrm = waveNormals();
-  nrm.repeat.set(size / 3.5, size / 3.5);
+  nrm.anisotropy=4;
+  // Explicit game time: opening a paused panel freezes waves as well as actors.
+  const clock=uniform(0);
   // Depth comes from the same authored lake bed used by the existing height field.
   // Keep the actual surface at y=0; transparent shallows reveal the real rendered floor.
   const pixels=new Uint8Array(terrain.h.length*4);
@@ -173,22 +175,45 @@ export function water(size: number, terrain: Terrain): { mesh: THREE.Mesh; updat
   }
   const depthMap=new THREE.DataTexture(pixels,terrain.n,terrain.n);
   depthMap.minFilter=depthMap.magFilter=THREE.LinearFilter;depthMap.needsUpdate=true;
-  const m = new THREE.MeshStandardNodeMaterial({
-    color: 0x3f747c, roughness: 0.11, metalness: 0.0, normalMap: nrm, normalScale: new THREE.Vector2(0.32, 0.32),
+  const m = new THREE.MeshPhysicalNodeMaterial({
+    color: 0x3f747c, roughness: 0.12, metalness: 0.0, ior:1.333,
+    // Sky reflections use the existing small environment map, not an extra scene render.
+    envMapIntensity:1.25,
     transparent: true, depthWrite:false,
   });
   const near=step(positionWorld.x.abs(),float(terrain.size/2)).mul(step(positionWorld.z.abs(),float(terrain.size/2)));
   // Height samples occupy texel centres, including both terrain endpoints.
   const depthUV=positionWorld.xz.add(terrain.size/2).div(terrain.step).add(.5).div(terrain.n);
   const depth=mix(float(9),texture(depthMap,depthUV).r.mul(9),near);
-  m.opacityNode=mix(.18,.96,smoothstep(0,1.6,depth));
-  m.colorNode=mix(color(0x7aaca0),color(0x315f7a),smoothstep(0,6,depth));
+
+  // Broad wind ripples plus smaller cross-ripples; shared tiled texture, two samples.
+  // Rotate the second normal's xy back into the first tangent basis before blending.
+  const planeUV=vec2(positionWorld.x,positionWorld.z.negate());
+  const broadUV=planeUV.div(7.2).add(vec2(clock.mul(.012),clock.mul(.008)));
+  const crossUV=vec2(planeUV.x.mul(.85).add(planeUV.y.mul(.53)),planeUV.y.mul(.85).sub(planeUV.x.mul(.53)))
+    .div(1.8).add(vec2(clock.mul(-.023),clock.mul(.016)));
+  const broad=texture(nrm,broadUV).xyz.mul(2).sub(1),fine=texture(nrm,crossUV).xyz.mul(2).sub(1);
+  const fineXY=vec2(fine.x.mul(.85).sub(fine.y.mul(.53)),fine.x.mul(.53).add(fine.y.mul(.85)));
+  const combined=vec3(broad.xy.mul(.95).add(fineXY.mul(.48)),broad.z.mul(fine.z)).normalize();
+  m.normalNode=normalMap(combined.mul(.5).add(.5));
+  m.roughnessNode=fine.x.abs().mul(.16).add(.09);
+
+  // Preserve visibility into the shallow band used by fish. Grazing angles favour
+  // the reflected sky; this alpha approximation is not screen-space refraction.
+  const viewUp=clamp(cameraPosition.sub(positionWorld).normalize().y,0,1);
+  const grazing=viewUp.oneMinus().pow(5);
+  const shallowOpacity=mix(.16,.96,smoothstep(0,3.2,depth));
+  m.opacityNode=mix(shallowOpacity,float(.98),grazing.mul(.72));
+  const shore=smoothstep(.05,.25,depth).mul(smoothstep(.75,1.2,depth).oneMinus());
+  const ripple=depth.mul(19).sub(clock.mul(1.2)).add(broad.x.mul(3)).sin().smoothstep(.65,.96).mul(shore);
+  const waterColor=mix(color(0x639b93),color(0x23536c),smoothstep(0,8,depth));
+  m.colorNode=mix(waterColor,color(0xa4bcb0),ripple.mul(.065));
   const geo = new THREE.PlaneGeometry(size, size, 1, 1);
   geo.rotateX(-Math.PI / 2);
   const mesh = new THREE.Mesh(geo, m);
   mesh.receiveShadow = true;
   mesh.renderOrder = 2;
-  return { mesh, update: (t) => { nrm.offset.set(t * 0.004, t * 0.0027); } };
+  return { mesh, update: (t) => { clock.value = Number.isFinite(t) ? t : clock.value; } };
 }
 
 /** Sky dome: CC0 photographic panorama; gradient retained for an explicit fallback. */

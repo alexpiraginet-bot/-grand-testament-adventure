@@ -7,6 +7,20 @@ são etapas diferentes.
 
 ## Linha do tempo comprovável
 
+### 13/11/2026 — abertura e urgência Safari
+
+Relato: iPhone 17 Pro Max/Safari encerrando repetidamente a página. Worktree
+isolada `codex/ios-startup-r7`, base `016079d`, preservando R7 de seguidores/cais
+e a PR paralela do Claude. Início da prioridade por volta de 13:00 UTC (estimado).
+Arte HTML com cruz/progresso real, limites de textura antes do upload, fila móvel,
+cancelamento de falhas e recuperação manual. Após visualizar, Alex mudou e
+aprovou a identidade marfim/bordô/dourado em toda a interface fora do gameplay.
+Build 109/109; sete cenários de carregamento Chrome e três tamanhos de painel
+passaram. Medições e limites em [ABERTURA-SAFARI-R7.md](ABERTURA-SAFARI-R7.md).
+Teste no iPhone real ainda depende do proprietário; imagens-conceito não são
+captura de gameplay. Registros/tokens continuam pelo coletor da sessão autorizada,
+sem inferir consumo das outras sessões. Publicação solicitada explicitamente.
+
 As datas abaixo são as datas de autoria armazenadas no Git, com seu fuso original.
 Não representam duração do trabalho, hora de cada captura nem comprovação nova de
 um teste antigo. Handoffs históricos são relatos daquela entrega.
@@ -21,7 +35,10 @@ um teste antigo. Handoffs históricos são relatos daquela entrega.
 | 2026-11-12 20:09:01−03:00 | `917a69d` — evidência da publicação | Build/testes, acesso anônimo e limitações registrados | `docs/PUBLICACAO.md`; separar viewport móvel de telefone físico. |
 | 2026-11-12 21:25:18−03:00 | `6e35ff1` — visual R1 | Herói Tripo com rig nativo, 13 malhas de cenário, vila e caminhos | `docs/TRIPO-RUNTIME-R1.md`; `shots/production-r1-{integration,world,episode}/`. 14 assets e três missões verificados naquela versão; NPCs provisórios. |
 | 2026-11-12 21:41:08−03:00 | `424a096` — visual R2 | Céu fotográfico CC0, água rasa, reflexos e exposição | `docs/CAFARNAUM-CENARIO.md`; `shots/production-r2-integration/`, incluindo `PUBLICACAO-VERIFICADA.json`. 34 testes no build daquela revisão. |
-| R3 — data de commit pendente | Revisão em andamento | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `src/world-layout.ts`, `src/people.ts`, `src/journey.ts`, `src/hud.ts`; capturas `shots/r3-final-*`. Atualizar commit/deploy após a validação final; não presumir publicação. |
+| 2026-11-13 06:48:33−03:00 | `4d7cf86` — visual e jornada R3 | Rua menos regular, decoração orientada pela fachada, tecido/pregas dos NPCs e dicas contextuais de jornada | `shots/r3-final-*` e `shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`; deploy público conferido READY. Sem NPCs Tripo rigados ou teste em telefone físico. |
+| 2026-11-13 07:35:41−03:00 | `08785fe` — R4 publicada | Água, Colabore/Pix, prestação de contas e medição de esforço; fauna própria em preparação | 81 testes no build, QA público em WebGPU/WebGL2 e apoio nos dois viewports. Malhas Quaternius rejeitadas, sem fauna ativa entregue. |
+| 2026-11-13 08:08:53−03:00 | `3d3f9c8` — R5 publicada | Metas revisáveis, candidatura voluntária e plano público | 92 testes e QA público de comunidade/apoio; rascunhos interceptados, sem candidatura ou pagamento enviados. |
+| 2026-11-13 08:54:42−03:00 | `3ac7854` — R6 publicada | Entrada/Colabore cristalinos, mapa de visão geral e convite no rig real | 97 testes e seis suítes públicas; mapa sobre os mesmos 3.072 m. Desembarque posterior dos discípulos ainda pendente. |
 
 Os instantes UTC das duas primeiras linhas antecedem a continuidade local
 (18:26 e 18:36 em UTC−3). A diferença de fuso não deve virar uma falsa ordem na edição.
@@ -124,6 +141,230 @@ fatura: a sessão roda no plano da conta claude.ai, cobrado pelo plano. Convers�
 uma cotação com fonte). Reproduzir: `python3 -I tools/session_usage.py <pasta-do-transcrito-da-sessão>`.
 O workflow do plano de qualidade AAA ainda estava rodando neste retrato; o total final entra no fechamento da sessão.
 
+### Publicação R3 registrada
+
+O commit completo é `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`, com data de autoria
+Git `2026-11-13T06:48:33-03:00`. O registro
+`shots/production-r3-integration/PUBLICACAO-VERIFICADA.json`, observado em
+`2026-11-13T09:54:56.3260697Z`, associa esse SHA ao deployment
+`dpl_8FxdsULHRteALFo2zGBNg6TKevHQ`, estado `READY`, HTTP 200 no domínio público.
+
+O registro público lista 14 assets e zero erros de página, avisos ou falhas HTTP
+nas execuções desktop WebGPU, viewport móvel WebGPU e desktop WebGL2; cada uma
+registrou 16.730.339 bytes transferidos. As três missões completaram nos dois
+viewports, com quatro seguidores. Isso preserva a evidência daquela execução,
+não uma nova conferência de produção feita ao escrever este diário. O teste de
+episódio usa teleporte/ações de debug; viewport móvel usa a GPU do PC.
+
+### R4 publicada — água, colaboração e transparência
+
+O problema visual observado motivou ondulações em duas escalas na água, normal
+combinada, rugosidade variável, reflexo do céu e transparência conforme profundidade
+e ângulo da câmera. A animação passa a seguir o tempo do jogo e pausa com ele.
+O nível da superfície e os dados de terreno foram preservados. É uma aproximação
+com material físico e transparência; não é refração em screen space, ray tracing
+ou DLSS. Alteração em `src/world.ts`; comparar imagens e movimento reais antes de
+concluir que o acabamento melhorou sem regressão de desempenho.
+
+A investigação de fauna encontrou modelos genéricos, mas Alex rejeitou sua
+qualidade visual: **Quaternius e derivados não integram a entrega**. A simulação
+determinística em `src/fauna-simulation.ts` fica reservada para malhas próprias;
+os testes cobrem terreno/água, pausa, estabilidade inicial e separação durante
+60 segundos. Os três PNGs próprios de burro, galinha e peixe são referências
+para o Tripo, não modelos rigados nem animais presentes no jogo. Fontes e limites
+estão em `docs/FAUNA-GALILEIA.md`; não usar contagens do simulador como população
+entregue ou reconstrução histórica.
+
+Colabore preserva a composição de issue no GitHub e acrescenta, na mesma página,
+apoio voluntário pela chave de e-mail autorizada. Copiar Pix não comprova pagamento.
+A prestação de contas usa registros públicos revisados, valores em centavos,
+recebimentos anônimos e links de comprovantes reais quando disponíveis. Ainda não
+foram informados recebimentos, gastos do jogo ou abertura conferida: os totais
+começam como **—**. Claude R$ 799/mês e Codex R$ 999/mês, pagos dia 6 segundo Alex,
+ficam como assinaturas gerais; a parcela do jogo não foi definida nem debitada dos
+apoios. Detalhes em `docs/APOIE.md`, `src/data/accountability.json` e testes próprios.
+
+A medição de esforço lê apenas metadados autorizados, com cobertura parcial,
+intervalos estimados sem dupla contagem e tokens observados com origem. Equivalente
+hipotético de API não é despesa paga nem custo da assinatura. Fontes:
+`tools/collect_project_usage.mjs`, `tools/project-usage-core.mjs`,
+`src/effort.ts`/`src/effortui.ts`; snapshot real em
+`public/metrics/development.json`. A branch pública `metrics/development` foi
+publicada e lida por HTTP 200; o navegador consultou a fonte remota. O serviço
+recebe snapshots e pode ter atraso de cache; não há coleta permanente instalada.
+Sem atualização recente, a UI informa desatualização e não extrapola valores.
+
+Ensaios anteriores estão em `shots/r4-world/` e `shots/r4-integration/`. Evidência
+final: `shots/r4-final-build.log` (81/81), `shots/r4-final-support/` (abas, Pix,
+contas e telemetria, incluindo refresh/fallback sintético separado dos dados reais).
+Produção: `shots/production-r4-integration/PUBLICACAO-VERIFICADA.json` associa
+`08785fe50b9995b7712a24e2b53bcbbb575d1804` ao deployment
+`dpl_BnhY9vLRZA6CPErsZeZeX2b2aZ8r`, READY, HTTP 200 e bundle `index-BKHkIuyv.js`.
+`shots/production-r4-support/report.json` confirma apoio nos dois viewports, fonte
+remota, zero erros e nenhuma escrita de pagamento. Clipboard foi simulado.
+
+Nessa amostra pública: PC WebGPU 89,1–95,5 FPS; viewport móvel no PC 49,6–94,8;
+WebGL2 88,3–96,0. Cada caso carregou 14 assets e 16.739.661 bytes, com zero erros,
+avisos ou falhas HTTP. São amostras curtas do script, não percentis de benchmark
+contínuo ou teste em telefone físico. A PR #1 do Claude permanece separada,
+incluindo seus efeitos opcionais; estes números não medem a PR combinada com R4.
+
+### Série de Reels e expansão do mundo
+
+Alex pediu uma sessão separada para produzir os bastidores desde os primeiros
+vídeos e os conceitos até o jogo real, sempre com link para jogar. Handoff local:
+`D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/HANDOFF-SERIE.md`.
+As quatro referências recebidas em 13/11 incluem uma captura e conceitos de
+deserto, pesca e Caná; não anunciar essas regiões ou “24 capítulos” como entregues.
+A visão de mundo completo foi registrada em `docs/VISAO-MUNDO-ABERTO.md` como
+expansão por etapas. A criação de sessão não equivale a Reel renderizado ou postado.
+
+### R5 — metas revisáveis e colaboração voluntária
+
+Alex ampliou o escopo para dezenas de missões nos quatro Evangelhos e pediu uma
+estimativa para a campanha e para 200 voluntários. O plano usa uma referência de
+caixa de R$300 mil, faixa de R$200–500 mil, com trabalho principal não remunerado
+excluído. Primeiro marco de R$15 mil incluído, sem somar ao total. São hipóteses
+de planejamento sem cotações ou gastos. Prazo com núcleo pequeno: 36–60 meses;
+com 200 pessoas ativas e coordenação suficiente: 12–24 meses. Não são garantias
+nem contagem de colaboradores existentes. As premissas estão em
+`docs/ESTIMATIVA-PROJETO.md`, com dados validados em `src/data/project-plan.json`.
+
+Colabore ganhou a aba Participe da equipe: nove frentes, disponibilidade e portfólio
+opcional. O envio abre um rascunho GitHub com consentimento público; o candidato
+confirma lá e os mantenedores analisam. Não há inscrição/contratação automática,
+coleta de telefone/e-mail nem concessão de permissão. O template direto do GitHub
+e o fluxo estão em `docs/VOLUNTARIOS.md`.
+
+Build local: 92 testes. `shots/r5-community/` verifica os valores reais do plano,
+navegação de três abas, pausa/foco e composição de candidatura nos dois viewports.
+O rascunho de QA é sintético, window.open foi interceptado e nenhuma candidatura
+foi enviada. `shots/r5-support/` cobre a regressão de Pix, contas e uso observado.
+Publicada em `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`, deployment
+`dpl_Bg7HYru687BvoPAgK7sKzkwbD8eb` READY. Conferidos no domínio público os bundles
+`index-CSnHhZh8.js` e `index-CZGO82_i.css`. QA público de colaboração e apoio passou
+em 1280×800 e 390×844: `shots/production-r5-community/` e
+`shots/production-r5-support/`, sem publicação de issue ou pagamento.
+São viewports no PC, não testes em telefone físico. Prova completa:
+`shots/production-r5-community/PUBLICACAO-VERIFICADA.json`.
+
+Arquivo privado do diário: `INDEX-1b9aab97db4d.md`, com 42 arquivos R5 verificados
+por hash, sem vídeos novos. O conjunto R5 tem SHA próprio e não relabela R4.
+
+Por novo pedido de Alex, foram separados 13 arquivos de imagem para a série e
+uma eventual proposta ao Tripo: oito capturas da ferramenta, uma referência de
+entrada, duas capturas do GLB e duas do jogo. Fontes e cópias foram comparadas
+por SHA-256. A pasta privada `Serie-Reels-R1/Fontes-Tripo` contém manifesto e
+limites de uso; a sessão de Reels recebeu o caminho. Não há captura dedicada
+da tela de rig nem gravação contínua da geração. Os prints brutos exigem recorte
+de informações pessoais. `PROPOSTA-PATROCINIO-TRIPO.md` é rascunho local não enviado,
+sem patrocínio confirmado e sem autorização implícita de postagem social.
+
+### R6 — publicada e verificada
+
+Publicada em **`3ac7854649a83183748bd61161d74d4e75fdc87a`**, deployment
+`dpl_GJC9ZKJKEDjx1DFGruB972cwvPGo` **READY**, com os bundles públicos
+`index-Dnf5SMyV.js` e `index-itFozVSF.css` conferidos. O registro
+`shots/production-r6-community/PUBLICACAO-VERIFICADA.json`, observado em
+`2026-11-13T12:02:54.736Z`, relaciona commit, deployment, hashes dos relatórios
+e limites. Build local: **97/97 testes**, em `shots/r6-build.log`.
+
+A entrada e o Colabore passaram ao material de cristal pérola claro, com azul-tinta,
+cobalto, contornos irisados discretos e o cenário real visível. O painel usa três
+abas, convite lateral no PC e composição compacta no celular; valores do plano,
+consentimento, rascunhos, Pix e limites das contas foram preservados. Código CSS
+nativo, sem biblioteca nova nem imagem conceitual substituindo o jogo. Fontes:
+`docs/DIRECAO-VISUAL-R6.md`, `src/menus.css`, `src/feedback.css`, `index.html`,
+`src/feedbackui.ts` e a organização de metas em `src/project-plan-ui.ts`.
+
+O mapa de visão geral em `src/worldmap.ts`/`src/worldmap.css` acrescenta zoom,
+arrasto, objetivo atual, escala e posição, com pausa e retorno de foco. Ele mostra
+o terreno existente de **3.072 × 3.072 m**: não amplia a região jogável, o DEM,
+as missões ou o horizonte distante. Focar uma missão no mapa não teletransporta
+o jogador. Os estados de fala e conclusão continuam protegidos.
+
+Jesus recebeu postura de repouso e convite aplicados sobre o **rig real do GLB**:
+oito ossos ajustados, preservando a hierarquia de 65 ossos e o clipe `walk`.
+É uma camada procedural, não um clipe novo do Tripo. O gesto acompanha a fala
+literal de Marcos 1:17; não é repetido na narração de Marcos 1:20. Durante a fala,
+Jesus se orienta para os chamados e os discípulos ficam parados, olhando para ele.
+Os que estão no barco permanecem no convés até terminar a fala. A saída posterior
+ainda usa seguidores que podem atravessar água a pé: **o desembarque não foi
+resolvido**. Fontes: `docs/POSTURA-HEROI-R6.md`, `src/hero-posture.ts`,
+`src/animated-actor.ts`, `src/main.ts` e testes correspondentes.
+
+| Evidência local | Resultado e escopo |
+|---|---|
+| `shots/r6-build.log` | 97 testes passaram e build concluído. |
+| `shots/r6-premium/report.json` | Entrada/abas em 1280×800, 390×844 e 320×740; campos de 16 px, alvos de 44 px, contraste forçado, sem cortes ou escritas de rede detectados. |
+| `shots/r6-worldmap-final/report.json` | Três viewports: escala de terreno real, zoom/arrasto, pausa, foco e proteção de fases. Endpoints de fala/conclusão preparados por debug. |
+| `shots/r6-gesture/report.json` | GLB real em 1280×800 e 390×844, gesto, ouvintes, pausa, retorno ao repouso e exclusão da narração; locais/câmeras preparados por debug. |
+| `shots/r6-community/report.json` | Dois viewports: plano real, abas, rascunhos, pausa e composição GitHub. Candidatura sintética interceptada; nenhuma issue enviada. |
+| `shots/r6-support/report.json` | Dois viewports: Pix, contas sem valores inventados e esforço observado. Clipboard simulado; nenhum pagamento ou upload. |
+| `shots/r6-integration/report.json` | Herói e 14 assets nos ensaios WebGPU PC/móvel emulado e WebGL2 PC; sem erros de página, avisos ou falhas HTTP nos casos registrados. |
+
+Premium e mapa passaram **antes do último refinamento de postura/NPCs em
+`src/main.ts`**; CSS e módulo do mapa não mudaram depois desses testes. Gesto,
+comunidade, apoio e integração foram verificados após o refinamento. Isso delimita
+a cobertura; não apresentar todos os relatórios como execução simultânea do último
+build. Os viewports continuam rodando no PC, sem Safari/iPhone/Android físicos.
+Os testes de gesto/endpoints não comprovam percurso contínuo da R6.
+
+Depois do deploy, **as seis suítes públicas passaram**, sem erros registrados:
+premium e mapa em 1280×800, 390×844 e 320×740; gesto, comunidade e apoio em
+1280×800 e 390×844; integração em WebGPU PC/móvel emulado e WebGL2 PC. Fontes:
+`shots/production-r6-premium/`, `production-r6-worldmap/`,
+`production-r6-gesture/`, `production-r6-community/`, `production-r6-support/`
+e `production-r6-integration/`, todas sob `shots/`. Essa conferência pública inclui
+o build final; preserva as limitações de teleporte preparatório, emulação móvel,
+clipboard/rascunhos interceptados e ausência de pagamento/candidatura real.
+
+Separadamente, a auditoria `shots/r6-gameplay-audit/` percorreu as três missões
+com teclado/mouse reais no baseline **`d6539ae58bec172b2ddd8e6bb50092e7bcc67244`**.
+Seu relatório `docs/MAPA-E-JOGABILIDADE-AUDITORIA-R6.md` antecede o redesign, mapa
+e gesto. Essa prova não deve receber o SHA da R6 nem ser citada como travessia
+final dela. Registrou água no desembarque, borda invisível, interior com poucos
+destinos e acabamento desigual; ampliar quilômetros não corrige esses problemas.
+
+A PR #1 do Claude exige integração coordenada: há sobreposição em `src/main.ts`
+e `index.html`. Preservar o conjunto de motivos de pausa (`panelPauses`), abertura e
+fechamento do mapa, gestos do herói, ouvintes durante a fala, três abas e dados de
+Colabore; combinar os diários. Reconsultar o HEAD da PR e testar a combinação,
+sem presumir que seus efeitos gráficos já estão presentes nesta R6.
+
+Pedido editorial mais recente: **3–5 segundos de gameplay real, congelar o quadro
+e apresentar um conceito gerado sobre o mesmo enquadramento**. A sessão de Reels
+`01a1d480-3c37-74c2-93eb-9adff5607bc6` já recebeu esse briefing. Capturar movimento
+real e preservar o frame de origem; rotular claramente o conceito e manter a
+correspondência de câmera/composição. A pasta privada
+`D:/BentoLabs/04-Fotos-e-videos/Grand-Testament-Adventure/Serie-Reels-R1/Fontes-R6/`
+agora contém dois artefatos distintos:
+
+- `Video-Convite-R1/convite-marcos-1-17-gameplay-R6-4s.mp4`: quatro segundos
+  contínuos do jogo real local, H.264, 390×844, 25 fps, 100 quadros, sem áudio.
+  Foi capturado no Chrome do PC com viewport móvel emulado; posição/câmera foram
+  preparadas por debug **antes** da tomada, a tecla E acionou a missão real e não
+  houve edição de estado durante os quatro segundos. Não é caminhada completa,
+  captura de telefone nem demonstração de 25 fps de desempenho do renderer.
+  `metadata.json`/`ffprobe.json` guardam origem e verificação. SHA-256 do MP4:
+  `c40d1a826ea959f97bc68d5fdc8f5fb07c10c797ba466bbf7300e1dd7d4dec4b`.
+- `Conceito-Convite-R1/meta-grafica-convite-r1.png`: imagem de conceito gerada
+  por `image_gen`, 992×1586, com quadro real de origem e prompt/proveniência
+  preservados. SHA-256:
+  `EBEB0DD9D579A0886A9244F2358A38805E1C245574905BA6661DEE50DC9C016B`.
+  Não representa pixels entregues pelo jogo nem processamento DLSS.
+
+A prévia comparativa foi concluída em `Fontes-R6/Previa-Comparativo-R1.mp4`:
+8,466667 s, 720 × 1280, sem áudio. Quatro segundos reais, 0,7 s de congelamento,
+0,6 s de dissolução e o conceito estático. SHA-256:
+`116cfc14203045687e67e82cd8d9a6b4dbb41b437bc8bb54a8904151fa6de194`.
+FFprobe e decode completo passaram; cinco quadros de controle foram inspecionados,
+com leitura adicional do começo, transição e fim pelo integrador. A imagem gerada
+não corresponde pixel a pixel ao cenário; o rótulo conceitual permanece legível.
+Fontes e prévia foram encaminhadas à sessão da série. Narração/trilha e montagem
+do Reel completo continuam naquela sessão; nenhuma publicação social ou
+demonstração de DLSS decorre desses arquivos.
+
 ## Seis possíveis episódios, ainda sem roteiro ou publicação
 
 1. **“Começamos com formas simples: o que já precisava funcionar?”** Mostrar a
@@ -152,7 +393,7 @@ O workflow do plano de qualidade AAA ainda estava rodando neste retrato; o total
 - Gravação contínua de gameplay nas mesmas posições antes/depois; screenshots são
   quadros reais, mas não substituem vídeo de movimento. O arquivador só copia vídeos
   existentes e informa quando a contagem é zero.
-- R3: commit e deployment final, mais confirmação no link público quando concluídos.
+- Gravação contínua da R4 publicada; build, commit, deploy e QA público já estão registrados acima.
 - Performance em iPhone/Android físicos. Os números atuais vêm do PC e seus viewports.
 - NPCs Tripo rigados, acabamento final de vegetação/arquitetura e animações adicionais.
 - Contribuição do Claude identificada por branch/commit/arquivo real antes de atribuir autoria.
@@ -175,11 +416,26 @@ permanecem no projeto; o destino é:
 
 ```powershell
 node tools/archive_development.mjs
-# Depois do commit da R3, informar o SHA completo e verificado:
-node tools/archive_development.mjs --commit SHA_COMPLETO_DA_REVISAO
+# Comando da revisão R6 publicada e verificada:
+node tools/archive_development.mjs --r6-commit 3ac7854649a83183748bd61161d74d4e75fdc87a
 ```
 
-Sem `--commit`, a R3 recebe `working-tree`, nunca o SHA anterior por suposição.
+R3 permanece fixa em `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`.
+`--commit` associa somente a R4, fixada por padrão em `08785fe50b9995b7712a24e2b53bcbbb575d1804`.
+`--r5-commit` associa somente a R5, fixada por padrão em `3d3f9c8f74e9aff0b74c32f86acce5327039ad22`.
+`--r6-commit` associa somente a R6; sem esse argumento, R6 recebe `working-tree`.
+A entrada separada `baselineR6Audit` contém somente `shots/r6-gameplay-audit`,
+fixada em `d6539ae58bec172b2ddd8e6bb50092e7bcc67244`; nunca herda o SHA funcional R6.
+As fontes funcionais R6 incluem `shots/r6-build.log`, `r6-premium`, `r6-gesture`,
+`r6-worldmap-final`, `r6-community`, `r6-support`, `r6-integration` e as respectivas
+pastas `production-r6-*` (mapa: `production-r6-worldmap`). Nesta atualização, o
+arquivador já foi executado com o SHA funcional R6. O índice privado
+`INDEX-bd171721607b.md` preserva **122 arquivos R6** e **26 da auditoria anterior**,
+com origem/cópia conferidas por SHA-256. Não há vídeos nesse conjunto arquivado;
+os novos materiais de `Serie-Reels-R1/Fontes-R6` estão separados e não devem ser
+inferidos a partir da contagem zero de vídeos do índice.
+Seleções de evidência de futuras revisões
+devem ser adicionadas separadamente, sem relabelar capturas históricas.
 Snapshots, manifests e índices recebem identificadores de conteúdo e são imutáveis:
 uma cópia divergente causa erro, não sobrescrita. Fontes ausentes ficam como pendência.
 O programa imprime o caminho do índice mais recente. Não faz upload, não publica

@@ -1,0 +1,71 @@
+/* Auxiliary panels only. Start is loading.css; gameplay/end/map retain their own art direction. */
+:is(#credits, #nuvem).card {
+  align-items: stretch; justify-content: flex-start; text-align: left;
+  padding: max(30px, env(safe-area-inset-top)) clamp(20px, 6vw, 80px) max(28px, env(safe-area-inset-bottom));
+  gap: 20px; overflow-y: auto; overscroll-behavior: contain;
+  color: var(--ui-ink); background: var(--ui-ground); color-scheme: light;
+  font: 400 15px/1.6 "Space Grotesk", system-ui, sans-serif; text-shadow: none;
+  scrollbar-color: var(--ui-line-strong) var(--ui-raised);
+}
+:is(#credits, #nuvem) > * { width: min(720px, 100%); margin-inline: auto; box-sizing: border-box; }
+:is(#credits, #nuvem) h2 {
+  margin-block: 8px 0; color: var(--ui-ink); font-size: clamp(30px, 4vw, 44px);
+  font-weight: 600; line-height: 1.12; letter-spacing: -1px; text-wrap: balance;
+}
+#credits #credbody, #nuvem .nbody {
+  max-width: 720px; padding: clamp(20px, 4vw, 32px); border: 1px solid var(--ui-line);
+  border-radius: 20px; background: var(--ui-surface); box-shadow: var(--ui-shadow);
+  font: inherit; text-align: left; overflow-wrap: anywhere;
+}
+#credits #credbody h4, #nuvem h4 {
+  margin: 24px 0 8px; color: var(--ui-accent); font: 700 11px/1.5 "Space Mono", monospace;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+#credits #credbody h4:first-child, #nuvem h4:first-child { margin-top: 0; }
+#credits #credbody p { margin: 0 0 12px; color: var(--ui-secondary); }
+#credits #credbody blockquote {
+  margin: 12px 0 18px; padding: 12px 16px; border-left: 3px solid var(--ui-gold);
+  border-radius: 0 10px 10px 0; color: var(--ui-ink); background: var(--ui-ground);
+}
+:is(#credits, #nuvem) a { color: var(--ui-accent); text-underline-offset: 4px; text-decoration-thickness: 1px; }
+:is(#credits, #nuvem) a:hover { color: var(--ui-accent-strong); text-decoration-thickness: 2px; }
+:is(#credits, #nuvem) button {
+  min-height: 48px; width: auto; max-width: 100%; margin-top: 12px; padding: 12px 24px;
+  border: 1px solid var(--ui-action); border-radius: 11px; background: var(--ui-action); color: var(--ui-on-action);
+  font: 600 15px/1.35 "Space Grotesk", system-ui, sans-serif; letter-spacing: 0; text-transform: none;
+  box-shadow: 0 3px 10px rgba(75, 30, 49, .12); cursor: pointer;
+}
+:is(#credits, #nuvem) > button { align-self: center; margin: 0 auto; min-width: 130px; }
+:is(#credits, #nuvem) button:hover:not(:disabled) { background: var(--ui-action-hover); border-color: var(--ui-action-hover); }
+:is(#credits, #nuvem) button.sec { background: var(--ui-surface); color: var(--ui-action); border-color: var(--ui-line-strong); box-shadow: none; }
+:is(#credits, #nuvem) button.sec:hover:not(:disabled) { background: var(--ui-raised); }
+:is(#credits, #nuvem) button:disabled { opacity: 1; color: var(--ui-muted); background: var(--ui-raised); border-color: var(--ui-line); box-shadow: none; cursor: progress; }
+#nuvem .lbl { display: block; margin: 0 0 8px; color: var(--ui-secondary); opacity: 1; font: 400 13px/1.55 "Space Grotesk", system-ui, sans-serif; }
+#nuvem input {
+  box-sizing: border-box; width: 100%; min-height: 48px; padding: 12px 14px;
+  border: 1px solid var(--ui-line-strong); border-radius: 10px; background: var(--ui-overlay); color: var(--ui-ink);
+  font: 400 16px/1.4 "Space Grotesk", system-ui, sans-serif;
+}
+#nuvem input::placeholder { color: var(--ui-muted); opacity: 1; }
+#nuvem .code {
+  margin: 14px 0; padding: 16px; border: 1px dashed var(--ui-line-strong); border-radius: 10px;
+  background: var(--ui-ground); color: var(--ui-ink); font: 600 clamp(13px, 3.2vw, 17px)/1.7 "Space Mono", monospace;
+  overflow-wrap: anywhere; user-select: text;
+}
+#nuvem .nmsg { color: var(--ui-secondary); font: 400 13px/1.55 "Space Grotesk", system-ui, sans-serif; }
+:is(#credits, #nuvem) :is(button, a, input):focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
+@media (max-width: 600px) {
+  :is(#credits, #nuvem).card { padding-inline: 16px; gap: 18px; }
+  #credits #credbody, #nuvem .nbody { padding: 20px 18px; border-radius: 16px; }
+  #nuvem .nbody button { width: 100%; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  :is(#credits, #nuvem).card { background: var(--ui-ground); }
+  #credits #credbody, #nuvem .nbody { background: var(--ui-surface); box-shadow: none; }
+}
+@media (forced-colors: active) {
+  :is(#credits, #nuvem).card, #credits #credbody, #nuvem .nbody { background: Canvas; color: CanvasText; box-shadow: none; }
+  :is(#credits, #nuvem) button, :is(#credits, #nuvem) button.sec, #nuvem input { background: ButtonFace; color: ButtonText; border-color: ButtonText; box-shadow: none; }
+  :is(#credits, #nuvem) a { color: LinkText; }
+  :is(#credits, #nuvem) :is(button, a, input):focus-visible { outline-color: Highlight; }
+}
