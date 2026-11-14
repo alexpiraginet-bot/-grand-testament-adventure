@@ -1,7 +1,7 @@
 // What the player changed in the world, saved apart from the progress save: which encounters were accepted, whose
 // object was put in its place, which were completed. It is a record of its own on purpose (the plan,
 // docs/INTERACOES-E-ENCONTROS.md): the progress save (save.ts, v1) is shared with the cloud copy and is not touched.
-// One record per save id, versioned, validated on every read, never overwritten by an older build, the previous good
+// One record per save id, versioned, validated on every read, observed future versions preserved, the previous good
 // copy kept aside. Only facts are stored: stable stages and when; no pose, timer or position. Local only: nothing
 // here syncs between devices. Pure parts and the store are tested in test/world-state.test.ts; main.ts does not use
 // it yet (docs/ENCONTROS-BASE.md).
@@ -28,6 +28,7 @@ export type WorldRead =
 
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 const isStage = (v: unknown): v is StableStage => typeof v === "string" && (STABLE_ORDER as readonly string[]).includes(v);
+const has = (record: object, id: string) => Object.prototype.hasOwnProperty.call(record, id);
 
 export const newWorldState = (saveId: string, contentRevision: string): WorldState => ({ v: WORLD_STATE_VERSION, saveId, contentRevision, encounters: {} });
 
@@ -35,11 +36,12 @@ export const newWorldState = (saveId: string, contentRevision: string): WorldSta
 export function parseWorldState(text: string | null, saveId: string): WorldRead {
   if (text === null || text === "") return { kind: "empty" };
   const bad = (reason: string): WorldRead => ({ kind: "corrupt", reason });
-  if (text.length > WORLD_STATE_LIMITS.bytes) return bad("too large");
+  if (text.length > WORLD_STATE_LIMITS.bytes || new TextEncoder().encode(text).byteLength > WORLD_STATE_LIMITS.bytes) return bad("too large");
   let raw: unknown;
   try { raw = JSON.parse(text); } catch { return bad("not JSON"); }
   if (!isObj(raw) || !Number.isInteger(raw.v) || (raw.v as number) < 1) return bad("no version");
   if ((raw.v as number) > WORLD_STATE_VERSION) return { kind: "newer", version: raw.v as number };
+  if (typeof raw.saveId !== "string" || !raw.saveId || raw.saveId.length > WORLD_STATE_LIMITS.idLength) return bad("saveId");
   if (raw.saveId !== saveId) return bad("another save's record");
   if (typeof raw.contentRevision !== "string" || !raw.contentRevision || raw.contentRevision.length > WORLD_STATE_LIMITS.idLength) return bad("contentRevision");
   if (!isObj(raw.encounters)) return bad("encounters");
@@ -49,19 +51,21 @@ export function parseWorldState(text: string | null, saveId: string): WorldRead 
   for (const [id, e] of entries) {
     if (!id || id.length > WORLD_STATE_LIMITS.idLength) return bad("encounter id");
     if (!isObj(e) || !isStage(e.stage) || typeof e.at !== "number" || !Number.isFinite(e.at)) return bad(`encounter ${id}`);
-    encounters[id] = { stage: e.stage, at: e.at };
+    // Arbitrary content IDs remain data, including __proto__, constructor and toString.
+    // Assignment to __proto__ on {} would otherwise replace the record's prototype.
+    Object.defineProperty(encounters, id, { value: { stage: e.stage, at: e.at }, enumerable: true, writable: true, configurable: true });
   }
   return { kind: "ok", state: { v: WORLD_STATE_VERSION, saveId, contentRevision: raw.contentRevision, encounters } };
 }
 
 /** The encounter's saved stage (null when it was never accepted). */
-export const savedStage = (s: WorldState, id: string): StableStage | null => s.encounters[id]?.stage ?? null;
+export const savedStage = (s: WorldState, id: string): StableStage | null => has(s.encounters, id) ? s.encounters[id]?.stage ?? null : null;
 
 /** Records that an encounter reached a stage. Stages only go forward (accepted, returned, completed): recording the
  * stage it already has, or an earlier one, changes nothing and returns the same object, so a repeated event can never
  * undo a completion or move its date. */
 export function recordStage(s: WorldState, id: string, stage: StableStage, now: number): WorldState {
-  const had = s.encounters[id];
+  const had = has(s.encounters, id) ? s.encounters[id] : undefined;
   if (had && STABLE_ORDER.indexOf(stage) <= STABLE_ORDER.indexOf(had.stage)) return s;
   return { ...s, encounters: { ...s.encounters, [id]: { stage, at: now } } };
 }
@@ -96,15 +100,34 @@ export class WorldStateStore {
     return newWorldState(saveId, contentRevision);
   }
 
-  /** Writes the record under the content revision in use, keeping the last good copy aside. False when it could not be
-   * written (and then the status says why). */
-  write(s: WorldState, contentRevision: string = s.contentRevision): boolean {
+  /** Writes validated stable facts under the content revision in use, retaining newer facts already observed on disk.
+   * This read/merge/write is not an atomic cross-tab transaction. Invalid payload returns false without changing
+   * storage/status; operational failures set unavailable and an observed future version sets newer. */
+  write(s: WorldState, contentRevision?: string): boolean {
     if (!this.kv || this.status !== "ok") return false;
-    const key = worldStateKey(s.saveId);
+    let incoming: WorldState;
+    try {
+      const revision = contentRevision === undefined ? s.contentRevision : contentRevision;
+      const checked = parseWorldState(JSON.stringify({ ...s, contentRevision: revision }), s.saveId);
+      if (checked.kind !== "ok") return false;
+      incoming = checked.state;
+    } catch { return false; }
+    const key = worldStateKey(incoming.saveId);
     try {
       const old = this.kv.getItem(key);
-      if (old && parseWorldState(old, s.saveId).kind === "ok") this.kv.setItem(`${key}:prev`, old);
-      this.kv.setItem(key, JSON.stringify({ ...s, contentRevision }));
+      const previous = parseWorldState(old, incoming.saveId);
+      // A newer tab may have written after this instance loaded. Do not even replace its backup.
+      if (previous.kind === "newer") { this.status = "newer"; return false; }
+      let merged = incoming;
+      if (previous.kind === "ok") {
+        merged = { ...incoming, encounters: { ...previous.state.encounters } };
+        for (const [id, fact] of Object.entries(incoming.encounters)) merged = recordStage(merged, id, fact.stage, fact.at);
+      }
+      // The union may exceed the record limits even when each input fits individually.
+      const text = JSON.stringify(merged);
+      if (parseWorldState(text, incoming.saveId).kind !== "ok") return false;
+      if (old && previous.kind === "ok") this.kv.setItem(`${key}:prev`, old);
+      this.kv.setItem(key, text);
     } catch {
       this.status = "unavailable";
       return false;

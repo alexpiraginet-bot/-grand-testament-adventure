@@ -8,6 +8,7 @@ export class Input {
   run = false;
   look = { dx: 0, dy: 0 };        // accumulated pixels since the last read
   private actionQueued = false;
+  private focusQueued = false;
   readonly touch: boolean;
   private keys = new Set<string>();
   private joyId: number | null = null;
@@ -27,12 +28,13 @@ export class Input {
       knob.style.transform = ""; joy.style.transform = ""; joy.classList.remove("on");
     };
     this.resetControls = () => {
-      this.keys.clear(); this.actionQueued = false; this.dragging = false;
+      this.keys.clear(); this.actionQueued = false; this.focusQueued = false; this.dragging = false;
       this.lookId = null; this.look = { dx: 0, dy: 0 }; releaseStick();
     };
     addEventListener("keydown", (e) => {
       if (this.suspended || e.repeat || (e.target instanceof Element && e.target.closest("input, textarea, select, [contenteditable]"))) return;
       this.keys.add(e.code);
+      if(e.code==='KeyQ' && !(e.target instanceof Element && e.target.closest('button, a')))this.focusQueued=true;
       if ((e.code === "KeyE" || e.code === "Enter") && !(e.target instanceof Element && e.target.closest("button, a"))) this.actionQueued = true;
     });
     addEventListener("keyup", (e) => this.keys.delete(e.code));
@@ -79,6 +81,16 @@ export class Input {
     };
     for (const ev of ["touchstart", "touchmove", "touchend", "touchcancel"] as const) canvas.addEventListener(ev, t, { passive: false });
     actionBtn.addEventListener("pointerdown", (e) => { e.preventDefault(); this.queueAction(); });
+    const actionKey=(e:KeyboardEvent)=>e.key==='Enter'||e.key===' '||e.code==='Enter'||e.code==='NumpadEnter'||e.code==='Space';
+    // Prevent the button's native click on every repeated Enter keydown (and Space
+    // keyup). One physical key press queues once, even after a frame consumed it.
+    actionBtn.addEventListener('keydown',e=>{
+      if(!actionKey(e))return;e.preventDefault();if(!e.repeat)this.queueAction();
+    });
+    actionBtn.addEventListener('keyup',e=>{if(actionKey(e))e.preventDefault();});
+    // Assistive technology can activate without pointer/keyboard events. Keep that
+    // click path; native pointer clicks already queued on pointerdown are ignored.
+    actionBtn.addEventListener('click',e=>{if(e.detail===0)this.queueAction();});
   }
 
   /** The joystick writes move/run directly, and draws the knob where the thumb is (clamped to the rim). */
@@ -105,6 +117,8 @@ export class Input {
   }
 
   queueAction() { if (!this.suspended) this.actionQueued = true; }
+  queueFocus(){if(!this.suspended)this.focusQueued=true;}
+  takeFocus(){const value=this.focusQueued;this.focusQueued=false;return value;}
 
   setSuspended(suspended: boolean) { this.suspended = suspended; this.resetControls(); }
 

@@ -1,7 +1,9 @@
 import * as THREE from 'three/webgpu';
 import type { Terrain } from './terrain.ts';
 import { buildingPoint, distanceToSegment, insideObstacle, type Obstacle, type Segment } from './world-layout.ts';
-import { footprintHeightRange, renderedGroundHeight } from './village-house-placement.ts';
+import { renderedGroundHeight } from './village-house-placement.ts';
+import { supportGroundProp } from './prop-grounding.ts';
+import { settleRockIslands } from './rock-grounding.ts';
 import type { FacadeHouse } from './village-facade-layout.ts';
 
 export type FacadeWood = { map: THREE.Texture; normalMap: THREE.Texture; roughnessMap: THREE.Texture };
@@ -69,7 +71,14 @@ export function villageDetailsR13(t: Terrain, houses: readonly FacadeHouse[], ro
   const boxes: Obstacle[] = [], timber = new TimberGeometry(), nets: Prop[] = [], rocks: Prop[] = [];
   const counts = { doors: 0, porches: 0, timberPieces: 0, nets: 0, rocks: 0, batches: 0 };
   if (!wood) { props.net?.geometry.dispose(); props.rocks?.geometry.dispose(); return { group, boxes, counts }; }
+  if (props.rocks) settleRockIslands(props.rocks.geometry);
   const foot = (x: number, z: number) => renderedGroundHeight(t, x, z, groundSegments);
+  const support = (model: THREE.Mesh, q: {x: number; z: number}, rot: number, s: number) => {
+    if (!model.geometry.boundingBox) model.geometry.computeBoundingBox();
+    const b = model.geometry.boundingBox!;
+    return supportGroundProp(t, { min: b.min.toArray(), max: b.max.toArray() },
+      { ...q, rot, sx: s, sy: s, sz: s }, groundSegments);
+  };
   const safe = (x: number, z: number, radius: number, own: number) => t.heightAt(x, z) > .06 &&
     routes.every(s => distanceToSegment(x, z, s) >= s.r + radius + FACADE_DETAIL_LIMITS.pathMargin) &&
     buildingBoxes.every((b, i) => i === own || !insideObstacle(x, z, b, radius + .1)) &&
@@ -136,17 +145,20 @@ export function villageDetailsR13(t: Terrain, houses: readonly FacadeHouse[], ro
     if (props.net && house.lotIndex % 3 !== 1) {
       const side = doorX > 0 ? -1 : 1, q = buildingPoint(p, side * p.w * .30, front + .62), s = .65;
       if (safe(q.x, q.z, .55, index)) {
-        const y = foot(q.x, q.z); nets.push({ ...q, y: y - .025, rot: p.rot + .16, scale: s });
-        boxes.push({ ...q, hx: .75 * s, hz: .5 * s, rot: p.rot + .16, bottom: y - .025, top: y + .3 * s });
+        const contact = support(props.net, q, p.rot + .16, s);
+        if (contact) {
+          nets.push({ ...q, y: contact.y, rot: p.rot + .16, scale: s });
+          boxes.push(contact);
+        }
       }
     }
     if (props.rocks) {
       const q = buildingPoint(p, (house.lotIndex % 2 ? -1 : 1) * (p.w / 2 + .34), front - .35), s = .21;
       if (safe(q.x, q.z, .39, index)) {
-        const range = footprintHeightRange(t, { ...q, w: 3 * s, d: 2 * s, rot: p.rot }, groundSegments);
-        if (range.max - range.min < .13) {
-          rocks.push({ ...q, y: range.min - .035, rot: p.rot, scale: s });
-          boxes.push({ ...q, hx: 1.5 * s, hz: s, rot: p.rot, bottom: range.min - .035, top: range.min + 1.2 * s });
+        const contact = support(props.rocks, q, p.rot, s);
+        if (contact) {
+          rocks.push({ ...q, y: contact.y, rot: p.rot, scale: s });
+          boxes.push(contact);
         }
       }
     }

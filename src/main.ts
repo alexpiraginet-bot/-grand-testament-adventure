@@ -2,12 +2,19 @@
 // Capernaum. three.js with its WebGPU renderer (WebGPU when the browser has it, WebGL 2 otherwise).
 import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
+import teachingData from './data/mc-ensino.json';
+import {beginTeaching,restoreTeaching,stepTeaching,teachingLines,teachingView,recordTeaching,TEACHING_ID,type TeachingStep} from './teaching-journey.ts';
+import {WorldStateStore,savedStage} from './world-state.ts';
+import {townLife} from './town-life-layout.ts';
+import {teachingReading} from './teaching-bible.ts';
+import {findCastNetWaterPlacement} from './cast-net-water-placement.ts';
+import {CAST_NET_ROOT_Y} from './cast-net-placement.ts';
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "./terrain.ts";
 import { boat as makeBoat, castNet, farMesh, groundMesh, loadGroundTextures, loadSkyTextures, houses, props, sky, water } from "./world.ts";
 import { missionRoutes, insideObstacle, distanceToSegment, type Obstacle } from './world-layout.ts';
 import { countVisits } from './analytics.ts';
 import { goals as makeGoals, npcs as makeNpcs, shoreDir } from "./episode.ts";
-import { distanceToGoal, initialState, restoreState, start as startEpisode, step, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
+import { distanceToGoal, initialState, restoreState, start as startEpisode, step, readingTime, type EpisodeData, type Event, type Vec2 } from "./missions.ts";
 import { EPILOGUE_RADIUS_M, epilogueLine, finishedState, initialRoam, roamDistance, startFree, startRoam, stepRoam } from "./freeroam.ts";
 import { discover, distanceToEdge, EDGE_NOTICE_M, nearestUnfound, parseFound, PLACES_KEY, regionPlaces, serializeFound, windName } from "./places.ts";
 import { episodeProgress, LocalSaveStore, mergeSaves, recordMission, restartEpisode } from "./save.ts";
@@ -18,7 +25,7 @@ import { setupWorldMap } from './worldmap.ts';
 import './worldmap.css';
 import nuvem from "./data/nuvem.json";
 import bibleData from "./data/biblia-cronologica.json";
-import { currentStep, episodeSteps, readingOrder, type BibleData } from "./bible.ts";
+import { currentStep, type BibleData } from "./bible.ts";
 import { setupBible } from "./bibleui.ts";
 import { BLIVRE_NOTICE } from "./credits.ts";
 import { Input } from "./input.ts";
@@ -35,6 +42,8 @@ import npcCatalog from './data/npc-assets.json';
 import {npcManifest,type NpcCatalog} from './npc-assets.ts';
 import {loadNpcActor,type NpcActor} from './npc-actor.ts';
 import {NpcNavigation,npcSpawn,npcCrossesBox,NPC_MOTION,type NpcGround} from './npc-navigation.ts';
+import {candidates,receiver,switchFocus,type Target,type Receiver} from './interactions.ts';
+import {ContextAction,beginConversation,advanceConversation,conversationLabel,type Conversation} from './context-action.ts';
 import { loadTripoAssets, disposeTripoAssets } from './tripo-assets.ts';
 import { LoadingScreen, loadingProfile, withDeadline } from './loading.ts';
 import { StartupLifecycle } from './startup-lifecycle.ts';
@@ -207,7 +216,8 @@ async function main() {
     facadeWood,
   });
   scene.add(town.group);
-  const vegetation=props(terrain,keep,q,assets,town.boxes); scene.add(vegetation);
+  const life=townLife({terrain,start:pt(P.start),beach:pt(P.beach),routes:keep,plans:town.plans,boxes:town.boxes,margin:movementMargin});
+  const vegetation=props(terrain,[...keep,...life?.keepClear??[]],q,assets,town.boxes); scene.add(vegetation);
 
   // Attach ambience to actual tree positions and the mapped shore, not a global sound bed.
   // props()' first three pools are oliveira-a, oliveira-b and arvore-espinhosa. Read before LOD compaction.
@@ -246,8 +256,12 @@ async function main() {
   const net = castNet(assets);
   {
     const s = specs[0].pos, a = specs[0].facing;
-    net.position.set(s.x + Math.sin(a) * 3.2 + (specs[1].pos.x - s.x) / 2, 0.07, s.z - Math.cos(a) * 3.2 + (specs[1].pos.z - s.z) / 2);
-    scene.add(net);
+    const x=s.x + Math.sin(a) * 3.2 + (specs[1].pos.x - s.x) / 2,z=s.z - Math.cos(a) * 3.2 + (specs[1].pos.z - s.z) / 2;
+    net.geometry.computeBoundingBox();const bounds=net.geometry.boundingBox!;
+    const placement=findCastNetWaterPlacement(terrain,{min:bounds.min.toArray(),max:bounds.max.toArray()},{x,z,rot:net.rotation.y},{rootY:CAST_NET_ROOT_Y});
+    net.userData.waterPlacement=placement;
+    net.visible=!!placement;
+    if(placement){net.position.set(placement.x,placement.y,placement.z);scene.add(net);}
   }
 
   // Preserve the delivered skin, skeleton and shared normalization ancestor.
@@ -269,8 +283,8 @@ async function main() {
 
   const input = new Input(canvas, $("joy"), $("knob"), $("act"));
   // Each modal owns its pause reason; closing one must not clear another panel's pause.
-  const panelPauses = new Set<'feedback'|'worldmap'|'biblia'>();
-  const setPanelPaused = (panel:'feedback'|'worldmap'|'biblia',open:boolean) => {
+  const panelPauses = new Set<'feedback'|'worldmap'|'biblia'|'overlay'>();
+  const setPanelPaused = (panel:'feedback'|'worldmap'|'biblia'|'overlay',open:boolean) => {
     if(open)panelPauses.add(panel);else panelPauses.delete(panel);
     input.setSuspended(panelPauses.size>0);
     syncAudio();
@@ -280,6 +294,13 @@ async function main() {
   const hud = new Hud(ep, meta, img, input.touch, keep);
   const goals = makeGoals(meta);
   const state = initialState();
+  const contextAction=new ContextAction();
+  let actionFocus:string|null=null,activeTalk:Conversation|null=null;
+  let actionReceiver:Receiver={to:'none'},nearActions:Target[]=[],hasMissionAction=false;
+  const focusButton=document.createElement('button');focusButton.type='button';focusButton.id='switch-action';
+  focusButton.className='action-switch';focusButton.hidden=true;focusButton.textContent=input.touch?'Trocar ação':'Trocar ação · Q';
+  focusButton.setAttribute('aria-label','Trocar alvo da ação');$('hud').append(focusButton);
+  focusButton.addEventListener('click',()=>input.queueFocus());
   let ended = false;
   // after the episode (freeroam.ts): keep exploring, the way back to the village and the clause of Mark 1:21
   const roam = initialRoam();
@@ -294,13 +315,12 @@ async function main() {
   hud.setFoundPlaces(regionList.filter((p) => foundPlaces.has(p.id)));
   // the Bible (bible.ts, bibleui.ts): the passage verse by verse, in its place in the chronological reading. Opening it
   // is how the player learns the next step: until then the mission line asks for it and the radar shows no goal.
-  const bibleSteps = episodeSteps(ep, goals, epilogue && homeName ? `Volte a ${homeName}` : null);
-  const bibleOrder = readingOrder(bibleData as BibleData, ep);
-  const stepNow = () => currentStep(bibleSteps, state.phase, state.mission, roam.phase);
+  const {steps:bibleSteps,episode:bibleEpisode,order:bibleOrder,teachingIndex:teachingBibleIndex}=teachingReading(ep,goals,homeName,!!life,bibleData as BibleData);
+  const stepNow = () => roam.phase==='free'&&life?teachingBibleIndex+(teaching.phase==='done'?1:0):currentStep(bibleSteps, state.phase, state.mission, roam.phase);
   let bibleRead = -1;                                   // the furthest step whose verses were opened
   const sealedStep = () => { const k = stepNow(); return k < bibleSteps.length && bibleRead < k ? bibleSteps[k] : null; };
   const bible = setupBible({
-    episode: ep, steps: bibleSteps, entries: bibleOrder.entries, after: bibleOrder.after, gospelName: bibleOrder.gospelName,
+    episode: bibleEpisode, steps: bibleSteps, entries: bibleOrder.entries, after: bibleOrder.after, gospelName: bibleOrder.gospelName,
     current: stepNow,
     canOpen: () => !$("hud").hidden && state.phase !== "intro" && Boolean($("credits").hidden && $("nuvem").hidden && $("end").hidden),
     onOpenChange: (open) => setPanelPaused("biblia", open),
@@ -341,7 +361,9 @@ async function main() {
   addEventListener('keydown',resumeAudioFromGesture,{capture:true});
   document.addEventListener('visibilitychange',syncAudio);
   addEventListener('pagehide',()=>{natureAudio?.stop();natureRunning=false;sfx.setPaused(true);});
-  const audioPanels=new MutationObserver(syncAudio);
+  const overlayIsOpen=()=>!$('credits').hidden||!$('nuvem').hidden||!$('end').hidden;
+  const syncOverlay=()=>setPanelPaused('overlay',overlayIsOpen());
+  const audioPanels=new MutationObserver(syncOverlay);
   for(const id of ['credits','nuvem','end'])audioPanels.observe($(id),{attributes:true,attributeFilter:['hidden']});
   startup.signal.addEventListener('abort',()=>{
     natureAudio?.dispose();natureRunning=false;sfx.setPaused(true);audioPanels.disconnect();
@@ -442,6 +464,21 @@ async function main() {
   }
   addEventListener("pagehide", () => { persist(false); pushCloud(true); });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") persist(false); });
+
+  const worldStore=new WorldStateStore();
+  let worldRecord=worldStore.load(save.id,'cafarnaum-r15',Date.now());
+  let teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID)),teachingAnnounceLeft=0;
+  const teachingText=teachingLines(teachingData);
+  const applyTeaching=(result:TeachingStep)=>{
+    teaching=result.next;
+    const next=recordTeaching(worldRecord,result.events,Date.now());
+    if(next!==worldRecord){worldRecord=next;worldStore.write(worldRecord);}
+    for(const event of result.events){
+      if(event.type==='line')sfx.line();
+      if(event.type==='done'){sfx.done();teachingAnnounceLeft=readingTime(teachingData.depois.texto);}
+    }
+  };
+  const currentTeaching=()=>life&&roam.phase==='free'?teachingView(teaching,life.teaching,teachingData,teachingText,player.pos,input.touch):null;
 
   const handle = (evs: Event[]) => {
     for (const e of evs) {
@@ -663,7 +700,7 @@ async function main() {
     if(document.hidden || waitingToStart()){last=performance.now();return;}
     const now = performance.now();
     const real = (now - last) / 1000; last = now;
-    const paused = panelPauses.size>0;
+    const paused = panelPauses.size>0||overlayIsOpen();
     const dt = paused ? 0 : Math.min(DT_MAX, real); t += dt;  // modal panels pause mission time as well as controls
     const shot = bench ? bench.shot ?? bench.shots[benchHold] ?? null : null;
     if (shot) {
@@ -704,7 +741,9 @@ async function main() {
         else if (!blocked(player.pos.x, nz)) player.pos.z = nz;
         mv = sp * wade;
         // the camera drifts back behind him while he walks, as in the reels
-        if (cam.idle > 1.2) { let e = player.heading - cam.yaw; e = Math.atan2(Math.sin(e), Math.cos(e)); cam.yaw += e * Math.min(1, dt * 1.6); }
+        // Recentring while S/the stick points backwards turns the reference frame
+        // into a feedback loop: backing away starts orbiting the NPC instead.
+        if (cam.idle > 1.2 && input.move.y > .08) { let e = player.heading - cam.yaw; e = Math.atan2(Math.sin(e), Math.cos(e)); cam.yaw += e * Math.min(1, dt * 1.6); }
       }
     }
     // Colliding with a wall must stop the walk cycle instead of walking in place.
@@ -718,23 +757,60 @@ async function main() {
     const gy = terrain.heightAt(player.pos.x, player.pos.z);
     hero.root.position.set(player.pos.x, Math.max(gy, -0.6), player.pos.z);
     hero.root.rotation.y = -player.heading;
-    actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17');
+    actor.update(mv,dt,state.phase==='line' && state.line?.ref==='Marcos 1:17'||roam.phase==='free'&&teaching.phase==='line'&&teaching.index===0);
 
     if(simao&&simNav){
       const allowed=audioAllowed()&&!frozen&&!shot;
-      simNav.update(dt,player.pos,state.followers.includes('simao'),!allowed||state.phase==='line'||roam.phase==='line');
-      if(allowed&&state.phase==='line'&&state.mission===1){const desired=Math.atan2(player.pos.x-simNav.pos.x,-(player.pos.z-simNav.pos.z)),delta=desired-simNav.heading;simNav.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*4);}
+      simNav.update(dt,player.pos,state.followers.includes('simao'),!allowed||state.phase==='line'||roam.phase==='line'||teaching.phase==='line'||!!activeTalk);
+      if(allowed&&(state.phase==='line'&&state.mission===1||activeTalk)){const desired=Math.atan2(player.pos.x-simNav.pos.x,-(player.pos.z-simNav.pos.z)),delta=desired-simNav.heading;simNav.heading+=Math.atan2(Math.sin(delta),Math.cos(delta))*Math.min(1,dt*4);}
       simao.place(simNav.pos,terrain.heightAt(simNav.pos.x,simNav.pos.z),simNav.heading);
       const visible=Math.hypot(player.pos.x-simNav.pos.x,player.pos.z-simNav.pos.z)<=100;
       simao.update(dt,simNav.speed,visible,!allowed);
     }
 
-    // mission logic
-    if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action: input.takeAction() }, dt));
-    else input.takeAction();
+    // Exactly one read and one destination. Revalidate the painted label after
+    // movement: a disappearing actor never redirects E to its neighbour.
+    if(worldRecord.saveId!==save.id){worldRecord=worldStore.load(save.id,'cafarnaum-r15',Date.now());teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID));}
+    if(life&&roam.phase==='free'&&!paused&&!frozen&&!shot)applyTeaching(beginTeaching(teaching));
+    const actionPressed=input.takeAction(),changeFocus=input.takeFocus();
+    const actionAllowed=!paused&&!frozen&&!shot&&playing&&(!ended||roaming)&&state.phase!=='line'&&roam.phase!=='line'&&teaching.phase!=='line'&&teachingAnnounceLeft<=0;
+    const chooseAction=():Receiver=>{
+      const nav=actualNpc();
+      const targets:Target[]=nav&&simao?.root.visible?[{id:'talk:simao',kind:'talk',label:'Conversar com Simão',
+        anchor:{...nav.pos},height:terrain.heightAt(nav.pos.x,nav.pos.z),available:true}]:[];
+      nearActions=actionAllowed?candidates(targets,{pos:player.pos,heading:player.heading,height:gy},{
+        clearLine:(a,b)=>!npcGround.segmentBlocked!(a,b,.04),deepWater:p=>terrain.heightAt(p.x,p.z)<0,
+      }):[];
+      if(activeTalk && !paused && !frozen && (!nav || !simao?.root.visible || state.phase==='line'||roam.phase==='line'||teaching.phase==='line'||Math.hypot(nav.pos.x-player.pos.x,nav.pos.z-player.pos.z)>3.2
+        ||gy<0||Math.abs(gy-terrain.heightAt(nav.pos.x,nav.pos.z))>.5||npcGround.segmentBlocked!(player.pos,nav.pos,.04)))activeTalk=null;
+      if(actionFocus&&!nearActions.some(target=>target.id===actionFocus))actionFocus=null;
+      const goal=goals[state.mission];
+      const lesson=currentTeaching();
+      const teachingReach=life&&gy>=0&&Math.abs(gy-terrain.heightAt(life.teaching.court.x,life.teaching.court.z))<1.5&&!npcGround.segmentBlocked!(player.pos,life.teaching.court,.3);
+      const mission=!actionAllowed?null:state.phase==='play'&&goal?.kind==='call'&&Math.hypot(goal.at.x-player.pos.x,goal.at.z-player.pos.z)<=goal.radius
+        ?{label:ep.missoes[state.mission].acao??'Chamar'}:lesson?.action&&teachingReach?{label:lesson.action}:null;
+      hasMissionAction=!!mission;
+      return actionAllowed&&state.phase!=='line'&&roam.phase!=='line'&&teaching.phase!=='line'?receiver({ongoing:activeTalk?{label:conversationLabel(activeTalk)}:null,candidates:nearActions,chosen:actionFocus,mission}):{to:'none'};
+    };
+    actionReceiver=chooseAction();
+    if(changeFocus && nearActions.length && !activeTalk){
+      actionFocus=actionFocus===nearActions.at(-1)?.id?null:switchFocus(nearActions,actionFocus);
+      actionReceiver=chooseAction();contextAction.clear();
+    }
+    const selected=contextAction.take(actionPressed,actionReceiver);
+    if(selected.to==='target'&&selected.id==='talk:simao')activeTalk=beginConversation(state.followers.includes('simao'));
+    else if(selected.to==='ongoing'&&activeTalk)activeTalk=advanceConversation(activeTalk);
+    if (!paused && !frozen && state.phase !== "intro") handle(step(state, ep, goals, { pos: player.pos, groundHeight: gy, action:selected.to==='mission' }, dt));
+    actionReceiver=chooseAction();
     if (!paused && !frozen && roaming) for (const e of stepRoam(roam, roamGoal, epilogue, player.pos, dt)) {
       if (e.type === "line") sfx.line();
       if (e.type === "epilogue-done") sfx.done();
+    }
+    if(life&&roam.phase==='free'&&!paused&&!frozen&&!shot){
+      applyTeaching(beginTeaching(teaching));
+      applyTeaching(stepTeaching(teaching,life.teaching,teachingText,{pos:player.pos,action:selected.to==='mission'},dt));
+      teachingAnnounceLeft=Math.max(0,teachingAnnounceLeft-dt);
+      actionReceiver=chooseAction();
     }
     // the region's places, found on foot at any time (not while the bench flies its shots)
     if (!paused && !shot && state.phase !== "intro") {
@@ -852,7 +928,10 @@ async function main() {
       const edge = distanceToEdge(meta.size, movementMargin, player.pos.x, player.pos.z);
       const notice = edge <= EDGE_NOTICE_M ? `Aqui termina a região desta versão.${homeName ? ` Volte em direção a ${homeName}.` : ""}` : null;
       const closed = sealedStep();                                 // the step still unread in the Bible, if any
-      if (roaming) {
+      const lesson=currentTeaching();
+      if(lesson)hud.teaching(lesson,state,player.pos,player.heading,followers,dt,input.touch,teachingAnnounceLeft>0,
+        worldStore.status==='ok'?'':'O progresso deste encontro vale só nesta visita.');
+      else if (roaming) {
         const back = roam.phase === "return";
         // free: the radar points to the nearest place not yet found, so the open region has somewhere to go
         const next = roam.phase === "free" ? nearestUnfound(regionList, foundPlaces, player.pos) : null;
@@ -871,6 +950,11 @@ async function main() {
           input.touch, closed ? { ref: closed.ref } : null);
       } else hud.update(state, player.pos, player.heading, closed ? null : g, distanceToGoal(state, goals, player.pos), followers, input.touch, dt, notice,
         closed ? { ref: closed.ref } : null);
+      const actionLabel=actionReceiver.to==='none'?null:actionReceiver.label;
+      hud.contextAction(actionLabel,input.touch);
+      focusButton.hidden=!actionAllowed||!!activeTalk||nearActions.length+(hasMissionAction?1:0)<2||actionReceiver.to==='none';
+      hud.conversation(!paused && activeTalk && !state.line && !roam.line&&teaching.phase!=='line'?activeTalk.lines[activeTalk.index]:null);
+      contextAction.present(actionReceiver);
     }
     vegetation.userData.update(player.pos.x,player.pos.z);
     if (shot) { camera.position.set(...shot.eye); camera.lookAt(...shot.target); }
@@ -934,13 +1018,16 @@ async function main() {
       assets: Object.keys(assets),
       world: {...town.group.userData.counts,...vegetation.userData.counts},
       worldQuality:()=>({houses:town.diagnostics,ground:(ground.material as THREE.Material).userData.groundSurface,
-        lake:lake.mesh.userData.lakeSurface}),
+        lake:lake.mesh.userData.lakeSurface,castNet:{visible:net.visible,waterPlacement:net.userData.waterPlacement,contact:net.userData.castNetContact}}),
       routes:keep,
       blocked,
       quality,
       loading:()=>({...loading.diagnostics(),assetProfiles:Object.entries(assets).map(([id,asset])=>({id,...asset?.userData?.loadingProfile})),maxTextureDimension:Math.max(0,...Object.values(assets).flatMap(asset=>(asset?.userData?.loadingProfile?.images??[]).flatMap((i:{width:number;height:number})=>[i.width,i.height])))}),
       start: () => beginPlay(resumable), save: () => save, persist: () => persist(false), cloudState: () => cloudState,
       act: () => input.queueAction(),
+      actions:()=>({receiver:{...actionReceiver},shown:contextAction.snapshot(),focus:actionFocus,candidates:nearActions.map(t=>({...t})),
+        conversation:activeTalk?{actorId:activeTalk.actorId,index:activeTalk.index,text:activeTalk.lines[activeTalk.index],kind:'narrative'}:null}),
+      teaching:()=>({state:{...teaching},view:currentTeaching(),layout:life,storage:worldStore.status,record:worldRecord}),
       freeze: (on: boolean) => { frozen = on; },
       // exploring after the episode (freeroam.ts) and the region's places (places.ts)
       roam: () => ({ phase: roam.phase, line: roam.line, goal: roamGoal, places: regionList, found: [...foundPlaces],

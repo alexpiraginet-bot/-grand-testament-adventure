@@ -5,6 +5,9 @@ export {water} from './lake-surface.ts';
 import { createGroundSurface, type GroundTextures } from './ground-surface.ts';
 import {loadGroundMaterialsR13} from './ground-materials.ts';
 import {shoreDetails} from './shore-detail-r13.ts';
+import {supportGroundProp} from './prop-grounding.ts';
+import {settleRockIslands} from './rock-grounding.ts';
+import {restCastNetOnWater} from './cast-net-placement.ts';
 import {abortable} from './asset-loading.ts';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
@@ -149,17 +152,29 @@ function scatter(t: Terrain, count: number, seed: number, ok: (x: number, z: num
   return out;
 }
 
-function instanced(geo: THREE.BufferGeometry, m: THREE.Material, spots: Spot[], seed: number, scale: (r: () => number) => [number, number, number], shadow = true) {
+type PropGround = { terrain: Terrain; segments: number };
+function groundMatrix(matrix: THREE.Matrix4, geometry: THREE.BufferGeometry, ground: PropGround): boolean {
+  if (!geometry.boundingBox) geometry.computeBoundingBox();
+  const bounds = geometry.boundingBox!, e = matrix.elements;
+  const scale = new THREE.Vector3().setFromMatrixScale(matrix);
+  const support = supportGroundProp(ground.terrain, { min: bounds.min.toArray(), max: bounds.max.toArray() },
+    { x: e[12], z: e[14], rot: Math.atan2(e[8], e[10]), sx: scale.x, sy: scale.y, sz: scale.z }, ground.segments);
+  if (!support) return false;
+  e[13] = support.y; return true;
+}
+
+function instanced(geo: THREE.BufferGeometry, m: THREE.Material, spots: Spot[], seed: number, scale: (r: () => number) => [number, number, number], shadow = true, ground?: PropGround) {
   const im = new THREE.InstancedMesh(geo, m, spots.length);
-  const r = rng(seed), o = new THREE.Object3D();
-  spots.forEach((s, i) => {
+  const r = rng(seed), o = new THREE.Object3D(); let count = 0;
+  spots.forEach((s) => {
     const [sx, sy, sz] = scale(r);
     o.position.set(s.x, s.y, s.z);
     o.rotation.set(0, r() * Math.PI * 2, 0);
     o.scale.set(sx, sy, sz);
     o.updateMatrix();
-    im.setMatrixAt(i, o.matrix);
+    if (!ground || groundMatrix(o.matrix, geo, ground)) im.setMatrixAt(count++, o.matrix);
   });
+  im.count = count;
   im.castShadow = shadow;
   im.receiveShadow = true;
   return im;
@@ -167,11 +182,17 @@ function instanced(geo: THREE.BufferGeometry, m: THREE.Material, spots: Spot[], 
 
 /** Two instanced pools per asset: retain detail nearby without hundreds of cell draw calls. */
 function sceneryInstances(asset: THREE.Mesh, fallback: THREE.BufferGeometry, material: THREE.Material,
-  spots: Spot[], seed: number, scale: (r: () => number) => [number, number, number], near = 140) {
+  spots: Spot[], seed: number, scale: (r: () => number) => [number, number, number], near = 140, ground?: PropGround) {
   const group = new THREE.Group();
   const detailed=instanced(asset.geometry,asset.material as THREE.Material,spots,seed,scale);
   const distant=instanced(fallback,material,spots,seed,scale,false);
-  const matrices=spots.map((_,i)=>{const m=new THREE.Matrix4();detailed.getMatrixAt(i,m);return m;});
+  const matrices=spots.map((_,i)=>{
+    const high=new THREE.Matrix4(),low=new THREE.Matrix4(); detailed.getMatrixAt(i,high); distant.getMatrixAt(i,low);
+    // Each LOD has its own base. Reusing the detailed matrix made the other mesh hover/sink.
+    const valid=!ground || (groundMatrix(high,asset.geometry,ground) && groundMatrix(low,fallback,ground));
+    return { high, low, valid };
+  });
+  group.userData.grounding = { considered: spots.length, accepted: matrices.filter(m=>m.valid).length };
   detailed.instanceMatrix.setUsage(THREE.DynamicDrawUsage); distant.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   group.add(detailed,distant);
   let lastX=Infinity,lastZ=Infinity;
@@ -180,9 +201,10 @@ function sceneryInstances(asset: THREE.Mesh, fallback: THREE.BufferGeometry, mat
     lastX=x;lastZ=z;
     let high=0,low=0;
     spots.forEach((s,i)=>{
+      if (!matrices[i].valid) return;
       const distance=Math.hypot(x-s.x,z-s.z);
-      if(distance<near) detailed.setMatrixAt(high++,matrices[i]);
-      else if(distance<650) distant.setMatrixAt(low++,matrices[i]);
+      if(distance<near) detailed.setMatrixAt(high++,matrices[i].high);
+      else if(distance<650) distant.setMatrixAt(low++,matrices[i].low);
     });
     detailed.count=high;distant.count=low;
     for(const m of [detailed,distant]){m.visible=m.count>0;m.instanceMatrix.needsUpdate=true;m.computeBoundingSphere();}
@@ -273,7 +295,11 @@ export function props(t: Terrain, keepClear: Segment[], q: number, assets: Asset
     ...alongRoutes(t,keepClear,Math.round(420*q),43,55,(x,z,y)=>y>-.15&&clear(x,z))];
   const rockScale = (r: () => number): [number,number,number] => { const k=0.22+r()*r()*1.05; return [k,k*.85,k]; };
   const realRock = sceneryMesh(assets['pedras-basalto']);
-  g.add(realRock ? sceneryInstances(realRock,rock,vc,rocks,42,rockScale,110) : instanced(rock,vc,rocks,42,rockScale));
+  if (realRock) settleRockIslands(realRock.geometry);
+  const rockGround = { terrain: t, segments: q < 1 ? 192 : 256 };
+  const rockPool = realRock ? sceneryInstances(realRock,rock,vc,rocks,42,rockScale,110,rockGround)
+    : instanced(rock,vc,rocks,42,rockScale,true,rockGround);
+  g.add(rockPool);
 
   // reeds at the water's edge
   const reed = mergeGeos([tinted(new THREE.ConeGeometry(0.25, 1.4, 5), 0x8d8c55, 0.7, 1, 1, 1)]);
@@ -292,7 +318,7 @@ export function props(t: Terrain, keepClear: Segment[], q: number, assets: Asset
   const grasses=alongRoutes(t,keepClear,Math.round(8500*q),35,90,(x,z,y)=>y>.55&&clear(x,z)&&noise2(x*.18,z*.18)>.43);
   g.add(instanced(mergeGeos(bladeParts),vc,grasses,36,r=>{const s=.55+r()*.85;return[s,s,s];},false));
   g.add(shoreDetails(t,keepClear,assets,buildings,q<1));
-  g.userData.counts={trees:trees.length,bushes:bushes.length,rocks:rocks.length,reeds:reeds.length,grassTufts:grasses.length};
+  g.userData.counts={trees:trees.length,bushes:bushes.length,rocks:realRock ? rockPool.userData.grounding.accepted : (rockPool as THREE.InstancedMesh).count,reeds:reeds.length,grassTufts:grasses.length};
   g.userData.update=(x:number,z:number)=>{for(const child of g.children) child.userData.update?.(x,z);};
   return g;
 }
@@ -339,10 +365,13 @@ export function boat(assets: AssetLibrary = {}): { group: THREE.Group; deck: num
   return { group, deck: 0.69 };
 }
 
-/** The cast net in the water in front of Simão and André (Mark 1:16): a disc of netting. */
+/** A static open net resting in the water, not a frozen frame of a throwing animation. */
 export function castNet(assets: AssetLibrary = {}): THREE.Mesh {
   const real = sceneryMesh(assets['rede-lancada']);
-  if (real) return real;
+  if (real) {
+    real.userData.castNetContact = restCastNetOnWater(real.geometry);
+    return real;
+  }
   const c = document.createElement("canvas"); c.width = c.height = 128;
   const g = c.getContext("2d")!;
   g.strokeStyle = "rgba(225,215,190,0.95)"; g.lineWidth = 1.4;
@@ -350,7 +379,8 @@ export function castNet(assets: AssetLibrary = {}): THREE.Mesh {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3);
   const m = new THREE.MeshStandardMaterial({ map: t, transparent: true, alphaTest: 0.4, side: THREE.DoubleSide, roughness: 1 });
-  const net = new THREE.Mesh(new THREE.CircleGeometry(1.8, 24), m);
-  net.rotation.x = -Math.PI / 2;
+  const geometry = new THREE.CircleGeometry(1.8, 24).rotateX(-Math.PI / 2);
+  const net = new THREE.Mesh(geometry, m);
+  net.userData.castNetContact = restCastNetOnWater(geometry);
   return net;
 }

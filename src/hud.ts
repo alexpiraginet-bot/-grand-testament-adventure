@@ -6,6 +6,7 @@ import { SECTIONS, SHORT } from "./credits.ts";
 import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice, SCENE_DEVELOPMENT_NOTICE } from './journey.ts';
 import type { Segment } from './world-layout.ts';
 import { ORIGIN_LABEL, PLACE_NOTICE, placeNoticeOpacity, type Place } from "./places.ts";
+import type {TeachingView} from './teaching-journey.ts';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -43,6 +44,8 @@ export class Hud {
   private journeyBody: HTMLSpanElement;
   private journeyLabel: HTMLSpanElement;
   private sceneNotice: HTMLParagraphElement;
+  private actionAnnouncement: HTMLParagraphElement;
+  private teachingPhase = '';
   private routes: readonly Segment[];
   private journeyMission = -1;
   private narrativeLeft = 0;
@@ -63,6 +66,9 @@ export class Hud {
     this.journey.append(this.journeyLabel,this.journeyBody);$('counter').after(this.journey);
     this.sceneNotice=document.createElement('p');this.sceneNotice.id='scene-development';this.sceneNotice.className='journey';
     this.sceneNotice.hidden=true;this.sceneNotice.setAttribute('role','status');this.journey.after(this.sceneNotice);
+    this.actionAnnouncement=document.createElement('p');this.actionAnnouncement.className='action-announcement';
+    this.actionAnnouncement.setAttribute('role','status');this.actionAnnouncement.setAttribute('aria-live','polite');
+    this.actionAnnouncement.setAttribute('aria-atomic','true');$('hud').append(this.actionAnnouncement);
     $("title").textContent = ep.titulo;
     $("ref").textContent = ep.ref_pt;
     $("how").innerHTML = touch
@@ -88,6 +94,37 @@ export class Hud {
   }
 
   show() { this.journeyMission=-1;this.narrativeLeft=0;$("hud").hidden = false; $("start").hidden = true; }
+
+  /** Called after the mission/roam draw. The same receiver is used by main's dispatcher. */
+  contextAction(label:string|null,touch:boolean){
+    $('prompt').hidden=!label||touch;
+    $('promptt').textContent=label??'';
+    const button=$('act') as HTMLButtonElement;
+    button.hidden=!label;button.disabled=!label;
+    button.setAttribute('aria-label',label??'Ação');
+    $('actt').textContent=label??'';
+  }
+  conversation(text:string|null){
+    const spoken=text?`Simão. Narrativa do jogo. ${text}`:'';
+    if(this.actionAnnouncement.textContent!==spoken)this.actionAnnouncement.textContent=spoken;
+    if(!text)return;
+    $('sub').hidden=false;
+    if($('subt').textContent!==text)$('subt').textContent=text;
+    if($('subr').textContent!=='SIMÃO · NARRATIVA DO JOGO')$('subr').textContent='SIMÃO · NARRATIVA DO JOGO';
+  }
+
+  teaching(v:TeachingView,s:State,pos:Vec2,heading:number,followers:RadarMark[],dt:number,touch:boolean,announce:boolean,storageNotice:string){
+    if(this.teachingPhase!==v.phase){this.teachingPhase=v.phase;this.narrativeLeft=7;}
+    const routes=v.route.slice(1).map((point,i)=>({ax:v.route[i].x,az:v.route[i].z,bx:point.x,bz:point.z,r:1.5}));
+    this.roam({kind:v.line?'line':'free',objective:v.objective,dist:v.dist,line:v.line??(announce?v.announce:null),
+      narrative:v.narrative,guidance:[v.guidance,storageNotice].filter(Boolean).join(' '),routes},s,pos,heading,v.goal,followers,null,dt,touch);
+    $('mk').textContent='CAFARNAUM · ENSINAMENTOS';
+    $('ref').textContent=v.ref;
+    const plateReference=$('plate').querySelector('.r');
+    if(plateReference&&plateReference.textContent!==v.ref)plateReference.textContent=v.ref;
+    this.sceneNotice.hidden=!v.scene;
+    if(this.sceneNotice.textContent!==v.scene)this.sceneNotice.textContent=v.scene;
+  }
 
   /** The start card's buttons and the line about saving. */
   startCard(o: { primary: string; secondary?: string; note: string }) {
