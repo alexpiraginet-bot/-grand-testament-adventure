@@ -1,0 +1,26 @@
+{
+ "id": "mc-ensino",
+ "ref": "Mark.1.21-22",
+ "ref_pt": "Marcos 1:21–22",
+ "versiculos": {
+  "Mark.1.21": "Eles entraram em Cafarnaum; e assim que chegou o sábado, Jesus entrou na sinagoga e começou a ensinar.",
+  "Mark.1.22": "E ficavam admirados com o seu ensinamento, pois, diferentemente dos escribas, ele os ensinava como quem temautoridade."
+ },
+ "a_seguir": {
+  "de": "Mark.1.23",
+  "ate": "Mark.1.28",
+  "ref_pt": "Marcos 1:23–28"
+ },
+ "depois": {
+  "versiculo": "Mark.1.29",
+  "ref_pt": "Marcos 1:29",
+  "texto": "Logo depois de saírem da sinagoga, vieram à casa de Simão e de André, com Tiago e João."
+ },
+ "fonte_texto": "Bíblia Livre (BLIVRE), CC BY 4.0 BR",
+ "alteracao": "colchetes da BLIVRE retirados; as palavras ficam",
+ "origem": {
+  "texto": "biblia-conectada, fontes/blivre/porbr2018_vpl.zip",
+  "texto_sha256": "99b62593c3cc6387bbd4aa6aff11103a5c3f5bda87d6257155bdb6576e3e1231",
+  "commit": "f0dce71971e0597482f4ba7cb852fb91e2bf531c"
+ }
+}
