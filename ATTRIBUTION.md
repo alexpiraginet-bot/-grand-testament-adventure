@@ -7,8 +7,10 @@ O jogo mostra estes créditos no botão "Créditos" (sempre visível) e no cart�
 > Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE), Copyright © Diego Santos, Mario Sérgio, e Marco Teles, http://sites.google.com/site/biblialivre/ - fevereiro de 2018. Licença Creative Commons Atribuição 4.0 Brasil (http://creativecommons.org/licenses/by/4.0/br/). Reprodução permitida desde que devidamente mencionados fonte e autores.
 
 Alteração indicada: os colchetes da BLIVRE (palavras acrescentadas pelos tradutores) são retirados no texto guardado em
-`src/data/mc-pescadores.json` (ex.: "Tiago [filho] de Zebedeu" vira "Tiago filho de Zebedeu"). Nenhuma fala mostrada
-na tela tem colchete.
+`src/data/mc-pescadores.json` (ex.: "Tiago [filho] de Zebedeu" vira "Tiago filho de Zebedeu") e em
+`src/data/mc-ensino.json` (Marcos 1:21, 1:22 e 1:29, gerado por `tools/build_teaching.py` com o SHA-256 da fonte
+conferido). Nenhuma fala mostrada na tela tem colchete. A grafia do arquivo de origem é mantida mesmo onde parece um
+descuido dele (Marcos 1:22 traz "temautoridade"): o jogo cita desse versículo só a oração anterior, sem corrigir o texto.
 
 Na Bíblia do jogo (`src/data/biblia-cronologica.json`, gerado por `tools/build_bible.py`), os versículos dos outros
 momentos da leitura são copiados da BLIVRE **sem alteração**, com os colchetes e a pontuação do arquivo de origem

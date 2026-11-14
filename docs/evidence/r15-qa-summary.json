@@ -1,0 +1,609 @@
+{
+  "revision": "cafarnaum-r15",
+  "startedAt": "2026-11-14T22:23:17.923Z",
+  "finishedAt": "2026-11-14T22:25:03.359Z",
+  "basedOnCommit": "5ec789e4baf39f2648defd16fe70d9f15f521c0f",
+  "branch": "codex/cafarnaum-interacoes-r15",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "testCount": 418,
+    "log": "shots/r15-build-release.log",
+    "sha256": "0712dd4b0b7f1c4018d415546f075b5bbf778f9f3991a5eff754838314fdb8b3"
+  },
+  "gameplay": {
+    "passed": true,
+    "checks": 28,
+    "sourceStable": true,
+    "scope": "Real Go, keyboard/touch, context actions, staged mission completion and teaching/persistence; encounter placement uses explicitly logged DEBUG TELEPORTS. Not a walked full mission, Safari device test or new graphics/FPS improvement.",
+    "measurement": "RAF interval sample for at least 5000ms plus game fpsLog. Resource Timing byte totals are browser-reported, not packet capture; zero-size entries may be cached or restricted.",
+    "report": "shots/context-game-r15-release/report.json",
+    "sha256": "f9dabdffba4bee2c5c2834441a887ddd8090a1f846e5d9e399370044387ed816",
+    "sources": {
+      "tools/check_context_game_r15.mjs": {
+        "sha256": "b821092d5bb7d7aec7e527ef8ed967346a4d6e12b9a5a97856ab857c2d935e22",
+        "bytes": 31643
+      },
+      "src/input.ts": {
+        "sha256": "61858917fd6d9d3460746d8fe052455216431ebcd327ac31ed19801e80278547",
+        "bytes": 7104
+      },
+      "src/context-action.ts": {
+        "sha256": "b5e9cbdfa631092d3892335d6c3826a19ea5aa6b5dc752a727a9c3150bccb543",
+        "bytes": 1886
+      },
+      "src/main.ts": {
+        "sha256": "232ea064f8ab30d0f3dcaa88a8f9298ecb3762afcd6a7d5a7e1222db93bb4b37",
+        "bytes": 75441
+      },
+      "src/hud.ts": {
+        "sha256": "4b044b60f981d3c1984d86dd4eb9cb7f08b8460c18984cfe6c3bca1f005a49d3",
+        "bytes": 21582
+      },
+      "src/hud.css": {
+        "sha256": "f9537a995b2b3ddfb5ef5412f2165dd2118ecdec112102dfa3ea9d8f3b2a2e78",
+        "bytes": 19503
+      },
+      "src/teaching-journey.ts": {
+        "sha256": "934da68be6dda869c01f90369c91cb4e0003ec2837eae00b96ad0cf15bf69506",
+        "bytes": 14829
+      },
+      "src/data/mc-ensino.json": {
+        "sha256": "885940fd67eaa1a8734d1da17e13ce5e159b82d2a17a2b953639c9ab7e4c9b9d",
+        "bytes": 999
+      },
+      "src/town-life-layout.ts": {
+        "sha256": "2dab9531f941f91e5352f2b68898c26901e1b5de0773543c94938615620057c0",
+        "bytes": 16771
+      },
+      "src/world-state.ts": {
+        "sha256": "da19645ac1a9c0d4a03dfce40390d8b5e8782c36e06dd78fadb70595d38de9a0",
+        "bytes": 8585
+      },
+      "src/bibleui.ts": {
+        "sha256": "b15a7501fce0a47709a699f2f83007dbed74af0877de56b26a57b026736e5608",
+        "bytes": 8058
+      },
+      "src/teaching-bible.ts": {
+        "sha256": "d3d8e6ad6932ba76ac029c79def31a3593784bc095d403a9ee15e466b8c2a8e6",
+        "bytes": 2316
+      },
+      "src/world.ts": {
+        "sha256": "803678261df4f39c2cb535290bd968cf4b3072cad4e98a1e34d6fab076eb7cfb",
+        "bytes": 21403
+      },
+      "src/rock-grounding.ts": {
+        "sha256": "89b8a2507fd40f90ec7ecc07b65d508d044a05a527d62f23cf4ff9e0482486de",
+        "bytes": 2452
+      },
+      "src/prop-grounding.ts": {
+        "sha256": "35d9e78785d2e599a1e58cac9f261d94f79cfa05c853deaa253a60de684e0104",
+        "bytes": 2396
+      },
+      "src/cast-net-placement.ts": {
+        "sha256": "f8f94acb05196b45875430404c2730b338bc2d79316e22c6ec775d072184fe62",
+        "bytes": 2396
+      },
+      "src/cast-net-water-placement.ts": {
+        "sha256": "24974a5d9d0f8d6f04e99c9edf6697b3831321da1085ddb8422c7cbe9f4680c5",
+        "bytes": 2976
+      },
+      "src/mount-controller.ts": {
+        "sha256": "c56a0914aa1d99944ffe96ac38d4adcf7c09b61a31b2c30284d0e657c9e43162",
+        "bytes": 9618
+      }
+    },
+    "profiles": {
+      "desktop": {
+        "passed": true,
+        "viewport": {
+          "width": 1280,
+          "height": 800
+        },
+        "touchEmulated": false,
+        "browser": "156.0.8078.80",
+        "backend": "WebGPU",
+        "checks": [
+          {
+            "name": "startup and real Go",
+            "passed": true
+          },
+          {
+            "name": "W movement smoke",
+            "passed": true
+          },
+          {
+            "name": "stage mission and physical Simão; mission has default priority",
+            "passed": true
+          },
+          {
+            "name": "Q selects dialogue instead of mission",
+            "passed": true
+          },
+          {
+            "name": "Credits pauses dialogue and E; closing preserves the same line",
+            "passed": true
+          },
+          {
+            "name": "continue then end uses real input without advancing the mission",
+            "passed": true
+          },
+          {
+            "name": "real movement away dismisses optional conversation",
+            "passed": true
+          },
+          {
+            "name": "return to default mission and E/tap triggers Scripture only",
+            "passed": true
+          },
+          {
+            "name": "last mission with real action, exploration button and staged return to town",
+            "passed": true
+          },
+          {
+            "name": "teaching uses actual layout and Scripture without prior Bible gate",
+            "passed": true
+          },
+          {
+            "name": "Bible pauses teaching time; B closes and same clause resumes",
+            "passed": true
+          },
+          {
+            "name": "teaching finishes, saves completion and points at an actual chosen house",
+            "passed": true
+          },
+          {
+            "name": "five-second renderer frame sample",
+            "passed": true
+          },
+          {
+            "name": "reload and real Explore button preserve completed teaching",
+            "passed": true
+          }
+        ],
+        "errors": [],
+        "httpErrors": [],
+        "requestsFailed": [],
+        "measurement": {
+          "method": "RAF intervals while the actual game renders; idle at teaching courtyard after staged completion",
+          "elapsedMs": 5001.900000023845,
+          "frames": 501,
+          "fps": 100.16193846290643,
+          "frameMsP50": 10,
+          "frameMsP95": 10.10000000000582,
+          "frameMsMax": 10.30000000000291,
+          "gameFpsLog": [
+            100.00990197285319,
+            99.98020193549063,
+            99.98000399443374,
+            100.00000000000004,
+            100.00990197285321,
+            100.00990197285326,
+            99.99000099751635,
+            99.99000099751638
+          ],
+          "rendererInfo": {
+            "calls": 240,
+            "triangles": 8154027,
+            "textureBytes": 1237166686
+          },
+          "camera": {
+            "pos": [
+              -39,
+              7.359353366181835,
+              89.31229294250146
+            ],
+            "mode": "fixa",
+            "inside": false
+          },
+          "backend": "WebGPU"
+        },
+        "downloads": [
+          {
+            "transferBytes": 29174598,
+            "encodedBodyBytes": 29161698,
+            "decodedBodyBytes": 30260731,
+            "count": 43,
+            "zeroTransferEntries": 0
+          },
+          {
+            "transferBytes": 28609678,
+            "encodedBodyBytes": 28598278,
+            "decodedBodyBytes": 29697311,
+            "count": 38,
+            "zeroTransferEntries": 0
+          }
+        ],
+        "screenshots": [
+          {
+            "file": "desktop/01-started.png",
+            "sha256": "53fa88f23255ab9161c575f30ca06b96ac98f1f625feb8421f997765a2866dd7",
+            "bytes": 1166359
+          },
+          {
+            "file": "desktop/02-movement.png",
+            "sha256": "114069dd40c06e99debd1d2f99a7a5f3a0e998eb5d6f06945e03161e7c955d5d",
+            "bytes": 1159832
+          },
+          {
+            "file": "desktop/03-mission-priority.png",
+            "sha256": "1d0b37600c8f4dc851e8db5d0686ae0c2f87240d315a47a6693c7caae39cd04f",
+            "bytes": 899649
+          },
+          {
+            "file": "desktop/04-conversation.png",
+            "sha256": "685af4b25517c4dcc0feb4be19853af9e949ae7dbb45c328fda37e9300f93bf3",
+            "bytes": 919787
+          },
+          {
+            "file": "desktop/05-credits-paused.png",
+            "sha256": "72280cb80bdcdad8b718e9087f30bb87f278b558ee4114b2aefd043fbf2be98d",
+            "bytes": 123043
+          },
+          {
+            "file": "desktop/06-second-line.png",
+            "sha256": "87e9b3fe5f4bc1effe30903aae6d0021243d846188ba6f68caf7bdaa7427dff5",
+            "bytes": 917431
+          },
+          {
+            "file": "desktop/07-left-conversation.png",
+            "sha256": "89dd3a3fc88df76a2a622da4cdf2cf95d0cea2301195b0426544c62ec2455a4d",
+            "bytes": 892675
+          },
+          {
+            "file": "desktop/08-scripture.png",
+            "sha256": "ccb0a4e9cb1f9f48a29732fcc9745973ea84bdf8569072ca1c46d8d4009f11ac",
+            "bytes": 910598
+          },
+          {
+            "file": "desktop/09-episode-completed.png",
+            "sha256": "b0a867e33430ac361129c2e2cfd87e4285ef2cbc1dc65fe1556c155a1783e697",
+            "bytes": 723966
+          },
+          {
+            "file": "desktop/10-teaching-walk.png",
+            "sha256": "3e7d921bd62cef8b9bc81d0c8c8885d39caf6c8fd0addd5cd9c8925560b98813",
+            "bytes": 994043
+          },
+          {
+            "file": "desktop/11-teaching-ready.png",
+            "sha256": "a4e2bc39706ba1be924b67dfcb712c48c977a497a758b90e541bc30a61bc6e25",
+            "bytes": 1388995
+          },
+          {
+            "file": "desktop/12-teaching-scripture.png",
+            "sha256": "7092f44de2a1c35787c1674ed8c8025149155b5d5e79f524192b18dfc5cb077b",
+            "bytes": 1649791
+          },
+          {
+            "file": "desktop/13-bible-paused-teaching.png",
+            "sha256": "7c5f17f6fb6380bc9870fdf2f6564857ed721f23e680fc396aadd4a90fb8c08f",
+            "bytes": 278614
+          },
+          {
+            "file": "desktop/14-teaching-response.png",
+            "sha256": "08a4645fc8580e91ebe628b544d17dcbfbfe72b524495f8600dde664f6f5fcef",
+            "bytes": 1448887
+          },
+          {
+            "file": "desktop/15-teaching-completed.png",
+            "sha256": "ecb058ebfdd4b47e145eaf3da90d8cbd9251aa261e0857c74d2016ac3362488f",
+            "bytes": 1444868
+          },
+          {
+            "file": "desktop/16-reloaded-completion.png",
+            "sha256": "74b6b1e53b74366a27d5d3b189946d6ef0942a92e753b81fac889c4646c45e8d",
+            "bytes": 1165884
+          }
+        ],
+        "bundleHashes": [
+          {
+            "url": "http://127.0.0.1:4175/assets/index-kL8ohHmH.js",
+            "status": 200,
+            "bytes": 1305159,
+            "sha256": "ef5cc13abbb19301e860e085b39b2f779272b97d601b475cc53bb31d8c674fb8"
+          },
+          {
+            "url": "http://127.0.0.1:4175/assets/index-kL8ohHmH.js",
+            "status": 200,
+            "bytes": 1305159,
+            "sha256": "ef5cc13abbb19301e860e085b39b2f779272b97d601b475cc53bb31d8c674fb8"
+          }
+        ]
+      },
+      "touch": {
+        "passed": true,
+        "viewport": {
+          "width": 390,
+          "height": 844
+        },
+        "touchEmulated": true,
+        "browser": "156.0.8078.80",
+        "backend": "WebGPU",
+        "checks": [
+          {
+            "name": "startup and real Go",
+            "passed": true
+          },
+          {
+            "name": "joystick movement smoke",
+            "passed": true
+          },
+          {
+            "name": "stage mission and physical Simão; mission has default priority",
+            "passed": true
+          },
+          {
+            "name": "touch selects dialogue instead of mission",
+            "passed": true
+          },
+          {
+            "name": "Credits pauses dialogue and E; closing preserves the same line",
+            "passed": true
+          },
+          {
+            "name": "continue then end uses real input without advancing the mission",
+            "passed": true
+          },
+          {
+            "name": "real movement away dismisses optional conversation",
+            "passed": true
+          },
+          {
+            "name": "return to default mission and E/tap triggers Scripture only",
+            "passed": true
+          },
+          {
+            "name": "last mission with real action, exploration button and staged return to town",
+            "passed": true
+          },
+          {
+            "name": "teaching uses actual layout and Scripture without prior Bible gate",
+            "passed": true
+          },
+          {
+            "name": "Bible pauses teaching time; B closes and same clause resumes",
+            "passed": true
+          },
+          {
+            "name": "teaching finishes, saves completion and points at an actual chosen house",
+            "passed": true
+          },
+          {
+            "name": "five-second renderer frame sample",
+            "passed": true
+          },
+          {
+            "name": "reload and real Explore button preserve completed teaching",
+            "passed": true
+          }
+        ],
+        "errors": [],
+        "httpErrors": [],
+        "requestsFailed": [],
+        "measurement": {
+          "method": "RAF intervals while the actual game renders; idle at teaching courtyard after staged completion",
+          "elapsedMs": 5004.599999928476,
+          "frames": 500,
+          "fps": 99.90808456363062,
+          "frameMsP50": 10,
+          "frameMsP95": 10.10000000000582,
+          "frameMsMax": 19.89999999999418,
+          "gameFpsLog": [
+            100.00000000000009,
+            99.98020194728888,
+            99.96001598407346,
+            99.05894006934123,
+            99.9900010094348,
+            99.99009998773991,
+            100.00990197285321,
+            99.98000399443374
+          ],
+          "rendererInfo": {
+            "calls": 92,
+            "triangles": 3796481,
+            "textureBytes": 229607872
+          },
+          "camera": {
+            "pos": [
+              -39,
+              7.518288830817884,
+              90.09634620477446
+            ],
+            "mode": "fixa",
+            "inside": false
+          },
+          "backend": "WebGPU"
+        },
+        "downloads": [
+          {
+            "transferBytes": 22721838,
+            "encodedBodyBytes": 22708938,
+            "decodedBodyBytes": 23807971,
+            "count": 43,
+            "zeroTransferEntries": 0
+          },
+          {
+            "transferBytes": 21231706,
+            "encodedBodyBytes": 21220606,
+            "decodedBodyBytes": 22319639,
+            "count": 37,
+            "zeroTransferEntries": 0
+          }
+        ],
+        "screenshots": [
+          {
+            "file": "touch/01-started.png",
+            "sha256": "9c6a5f604704584c098c1e8b0e75a47819b43d41c0e6ecbf56b6ea317af47c67",
+            "bytes": 380833
+          },
+          {
+            "file": "touch/02-movement.png",
+            "sha256": "26ec86bc3cf113ebd83c8d3e2982c65a85b77484fe0852b2005e0fdd0f999d53",
+            "bytes": 382730
+          },
+          {
+            "file": "touch/03-mission-priority.png",
+            "sha256": "d93a8506bce88979a5293b42fd0084e92a24f6c54ef9e875507c55f17dae73cc",
+            "bytes": 321603
+          },
+          {
+            "file": "touch/04-conversation.png",
+            "sha256": "a51b7387a35ccd1b421160db9e384077d662541df648aaa34d302722431d0634",
+            "bytes": 336376
+          },
+          {
+            "file": "touch/05-credits-paused.png",
+            "sha256": "6eeb28284eae100a39a20ab3f082e2b524e9907e30851ece2080f9fe587a693e",
+            "bytes": 77121
+          },
+          {
+            "file": "touch/06-second-line.png",
+            "sha256": "9dde0220e671ffd874f55f7338b2e2d5dff9fe691471d9ad6f68482ff2914613",
+            "bytes": 333444
+          },
+          {
+            "file": "touch/07-left-conversation.png",
+            "sha256": "bcc3b766965c0e95d8d1024b0c0d852034b3da1a7898a1ffad302083253367c8",
+            "bytes": 310083
+          },
+          {
+            "file": "touch/08-scripture.png",
+            "sha256": "e34953815227d778993bb3a7f110889855a724a2f364080bfbc31691ed1b2ec6",
+            "bytes": 330211
+          },
+          {
+            "file": "touch/09-episode-completed.png",
+            "sha256": "002d3d47bbcdab859833b7c7e26590a47353fefcbaeac98848b1ddb8998a3b74",
+            "bytes": 262546
+          },
+          {
+            "file": "touch/10-teaching-walk.png",
+            "sha256": "517468eda509dd95baa2523f7a985be574b2f18dc9698af4161a3f3e746f7e5b",
+            "bytes": 304895
+          },
+          {
+            "file": "touch/11-teaching-ready.png",
+            "sha256": "2819c199f4f674d1a1a3394e180dee6951e378668551f98cb7c67c403e013375",
+            "bytes": 319733
+          },
+          {
+            "file": "touch/12-teaching-scripture.png",
+            "sha256": "340e14c49d0d6e6791cf326f0b5a738827ed3112eff13f70aef622261a066f0a",
+            "bytes": 323991
+          },
+          {
+            "file": "touch/13-bible-paused-teaching.png",
+            "sha256": "15f46bbf70375b28a89f7c1349a1a85a2bf40f07076fa7faecbc6a52ac3df45d",
+            "bytes": 96139
+          },
+          {
+            "file": "touch/14-teaching-response.png",
+            "sha256": "45dbea45ed79d468ee6103a0160bc0e6a6dcade37f55509f2c4075e67e9f7157",
+            "bytes": 478108
+          },
+          {
+            "file": "touch/15-teaching-completed.png",
+            "sha256": "de4dff17a32df5bcbbef652536c6031fe96bc2f082cf518243107823f4f68b71",
+            "bytes": 480229
+          },
+          {
+            "file": "touch/16-reloaded-completion.png",
+            "sha256": "7132e47efc7cdd0cc07ceb349ca4815daf40ddf9c6205f09d7339ab998ec08e9",
+            "bytes": 381128
+          }
+        ],
+        "bundleHashes": [
+          {
+            "url": "http://127.0.0.1:4175/assets/index-kL8ohHmH.js",
+            "status": 200,
+            "bytes": 1305159,
+            "sha256": "ef5cc13abbb19301e860e085b39b2f779272b97d601b475cc53bb31d8c674fb8"
+          },
+          {
+            "url": "http://127.0.0.1:4175/assets/index-kL8ohHmH.js",
+            "status": 200,
+            "bytes": 1305159,
+            "sha256": "ef5cc13abbb19301e860e085b39b2f779272b97d601b475cc53bb31d8c674fb8"
+          }
+        ]
+      }
+    }
+  },
+  "input": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "focused button: Enter once, repeated down, release, fresh press",
+        "passed": true
+      },
+      {
+        "name": "focused button: Space once, repeated down, release, fresh press",
+        "passed": true
+      },
+      {
+        "name": "focused button: NumpadEnter once, repeated down, release, fresh press",
+        "passed": true
+      },
+      {
+        "name": "world shortcut: KeyE rejects autorepeat",
+        "passed": true
+      },
+      {
+        "name": "world shortcut: Enter rejects autorepeat",
+        "passed": true
+      },
+      {
+        "name": "pointerdown and its later native click consume once",
+        "passed": true
+      },
+      {
+        "name": "standalone detail-zero activation remains available to assistive click path",
+        "passed": true
+      },
+      {
+        "name": "suspension discards queued controls and ignores keys or assistive click",
+        "passed": true
+      },
+      {
+        "name": "Q focus shortcut consumes once and rejects autorepeat",
+        "passed": true
+      }
+    ],
+    "scope": "Real Input+joystick modules in isolated CPU Chrome; not gameplay, Safari or physical screen-reader validation",
+    "report": "shots/context-input-r15-release/report.json",
+    "sha256": "02881c830e882e34f0780b45ce94126a0ee5165bbc86dfa00cc777a6800cf6c3"
+  },
+  "scripture": {
+    "report": "shots/r15-scripture-verification.json",
+    "sha256": "8f750497be9b0d6925732a7de7aef72b9287a3ecdf909dab011a3935d52abde2"
+  },
+  "streetWalk": {
+    "report": "shots/r15-street-walk.json",
+    "sha256": "e76f33b6c579ac4d43397c2e2593f69b10a76974ef36be8595265491c8da27f1",
+    "method": "Real KeyW movement; debug initializes exploration and aligns camera. Not a manually played full mission."
+  },
+  "limits": [
+    "One Windows RTX machine, including 390x844 touch emulation; no physical iPhone/Safari validation.",
+    "FPS is a five-second idle render sample; no benchmark gain claim.",
+    "Downloads from browser Resource Timing, two documents separately; not network packet capture.",
+    "Mounting controller logic only; no mounted gameplay or approved rider animation.",
+    "Cast net rejected and hidden because no safe underwater placement exists within 12 metres.",
+    "Crowd, coastline quality and additional story scenes remain unfinished.",
+    "Local neural laboratory and its recurrence remain paused."
+  ],
+  "localModelReview": {
+    "gemma": {
+      "promptTokens": 285,
+      "evalTokens": 1000,
+      "usableFinal": false
+    },
+    "qwen": {
+      "promptTokens": 177,
+      "evalTokens": 311
+    },
+    "totalTokens": 1773,
+    "rejected": "Backend/WebSockets are not required for these local single-player NPC encounters.",
+    "monetaryCost": null
+  }
+}

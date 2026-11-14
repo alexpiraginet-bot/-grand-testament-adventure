@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { decodeHeights, Terrain, type HeightsFile, type WorldMeta } from "../src/terrain.ts";
 import { discover, distanceToEdge, EDGE_NOTICE_M, highestNear, LOOKOUT_SEARCH_M, nearestUnfound, ORIGIN_LABEL, parseFound, PLACE_RADIUS_M,
-  PLACES_VERSION, regionPlaces, serializeFound, windName } from "../src/places.ts";
+  PLACE_NOTICE, placeNoticeOpacity, PLACES_VERSION, regionPlaces, serializeFound, windName } from "../src/places.ts";
 
 const read = (p: string) => readFileSync(new URL(`../${p}`, import.meta.url), "utf8");
 const ep = JSON.parse(read("src/data/mc-pescadores.json")) as { ref_pt: string; lugar: string; personagens: { id: string; ref: string; nome: string }[] };
@@ -113,4 +113,24 @@ test("the nearest place still to find, and the wind it lies to", () => {
     ["norte", "nordeste", "leste", "sudeste", "sul", "sudoeste", "oeste", "noroeste"]);
   assert.equal(windName(1, -3), "norte", "within 22.5° of north");
   assert.equal(windName(-0.01, 1), "sul");
+});
+
+test("the place notice comes in, stays and goes out in game time", () => {
+  assert.deepEqual(PLACE_NOTICE, { stay: 6, fadeIn: 0.3, fadeOut: 0.7 });
+  const near = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-9, `${a} is not ${b}`);
+  near(placeNoticeOpacity(6), 0.2);            // just found: already there, faint
+  near(placeNoticeOpacity(5.85), 0.6);         // half of the 0.3 s in: 0.2 + 0.8 * 0.5
+  near(placeNoticeOpacity(5.7), 1);            // in
+  near(placeNoticeOpacity(3), 1);
+  near(placeNoticeOpacity(0.7), 1);            // about to go
+  near(placeNoticeOpacity(0.35), 0.5);         // half of the 0.7 s out
+  assert.equal(placeNoticeOpacity(0), 0);
+  assert.equal(placeNoticeOpacity(-1), 0);
+  assert.equal(placeNoticeOpacity(Number.NaN), 0);
+  // less motion: no fade, there or gone
+  assert.equal(placeNoticeOpacity(6, true), 1);
+  assert.equal(placeNoticeOpacity(0.1, true), 1);
+  assert.equal(placeNoticeOpacity(0, true), 0);
+  // never outside 0..1, whatever the time left
+  for (let left = -1; left <= 7; left += 0.05) { const o = placeNoticeOpacity(left); assert.ok(o >= 0 && o <= 1); }
 });

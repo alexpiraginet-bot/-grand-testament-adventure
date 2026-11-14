@@ -104,6 +104,20 @@ export function distanceToEdge(size: number, margin: number, x: number, z: numbe
 
 // ---------------------------------------------------------------- what was found, kept in this browser
 
+/** The notice of a place just found: how long it stays, comes in and goes out, in game seconds. */
+export const PLACE_NOTICE = { stay: 6, fadeIn: 0.3, fadeOut: 0.7 } as const;
+
+/** The notice's opacity when it still has `left` game seconds to stay: up from 0.2 as it comes in, 1 while it stays,
+ * down to 0 as it goes; no fade for a reader who asked for less motion. It follows game time, which advances only with
+ * frames that are drawn: timed by the clock (a 6 s timer and a 6 s CSS animation, as it was), the notice of the first
+ * place, found on the first frame after Go, could run out before a slow device drew its next frame. */
+export function placeNoticeOpacity(left: number, reducedMotion = false): number {
+  if (!(left > 0)) return 0;
+  if (reducedMotion) return 1;
+  const shown = PLACE_NOTICE.stay - left;
+  return Math.max(0, Math.min(1, 0.2 + 0.8 * (shown / PLACE_NOTICE.fadeIn), left / PLACE_NOTICE.fadeOut));
+}
+
 export const PLACES_KEY = "gta:places";
 export const PLACES_VERSION = 1;
 
