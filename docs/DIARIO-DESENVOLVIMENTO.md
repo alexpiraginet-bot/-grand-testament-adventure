@@ -378,6 +378,131 @@ O modelo da sessão foi trocado por Alex durante a tarde; a linha `claude-fable-
 da API que acompanha o Claude Code (US$ 8 entrada, US$ 40 saída, US$ 0,20 leitura de cache por milhão), acrescentado
 ao script neste commit. Cinco respostas sintéticas (sem tokens) ficam fora da tabela. Conversão para reais não feita.
 
+#### Noite de 13/11 — R10, visitas, conferências da árvore final, interrupção e retomada
+
+**Conciliação com a R10 (`b1959be`, 18:25 UTC):** a `main` recebeu casas e solo do Codex (`cdf7360`). Um conflito, a
+linha de import do `main.ts` (a R10 deixou de importar `settlementLayout` ali; este branch tinha acrescentado o import
+do contador ao lado). A integração da R10 ficou como escrita. 269/269 testes, `tsc` limpo.
+
+**Frente de casas descartada, nunca enviada:** antes de saber que o Codex tinha assumido casas e solo, escrevi
+`house-fit.ts` (casa em proporção própria dentro do lote: de até 2,148× entre eixos para no máximo 1,12×, os três
+modelos em uso, 89/43/26, corredor da missão refeito nos testes; 263/263). Ficou só numa árvore local e não entra em
+lugar nenhum: a R10 cobre proporção e bases. Custo real de duplicar trabalho por falta de aviso a tempo.
+
+**Conferências de navegador, na ordem (Chromium com WebGL 2 por software, uma por vez):**
+
+| Árvore | Passou | Falhou / não rodou |
+|---|---|---|
+| `6878694` (conciliada com a R9) | `check_bible` (390×844 e 1280×800), `check_touch` (três tamanhos; plano cinematográfico entra sem NPCs, 3/3 no quadro), `check_npc_visual` celular (22 verificações) e herói 404 | `check_roam` falhou (ver 1 abaixo); `check_npc_visual` desktop, `check_loading` e `check_painel` não rodaram: a fila foi trocada quando a `main` mudou |
+| `b1959be` (com a R10) | `check_bible`, `check_touch`, `check_npc_visual` celular; `check_analytics` nos dois builds | `check_roam` falhou (ver 2); `check_loading` começou às 18:54:48 UTC e foi cortado pela interrupção da sessão |
+| `aa2340f` (a `main` publicada, `9dcd6cc`, mais o ajuste do teste) | `check_painel`, `check_analytics`, `check_bible`, `check_touch`; `check_loading` 6 de 7 casos | `check_roam`: celular completo, PC falhou (ver 3); `check_loading` caso `slow-desktop` (erros `Couldn't load texture blob:` da fauna opcional cancelada aos 30 s reais, a mesma assinatura de `caf7244`: limite deste renderizador, não mudança desta sessão) |
+
+O que as falhas do `check_roam` eram, uma a uma:
+1. O teste lia o aviso de lugar encontrado em quatro idas ao navegador; com a máquina ocupada por comandos meus, levou
+   mais que os 6 s do aviso. Leitura passou a ser única (`9cc3444`).
+2. O teste lia a etiqueta "Narrativa do jogo" da volta à vila depois de abrir e fechar a Bíblia; a narrativa dura 7 s de
+   jogo e a orientação já estava no lugar. O estado de abertura do epílogo passou a ser lido de uma vez, incluindo o
+   aviso "Cena em desenvolvimento" (`7dc836b`).
+3. **Defeito do jogo, não só do teste:** em 1280×800 o aviso do primeiro lugar nunca chegou a ser desenhado. Ele era
+   regido pelo relógio duas vezes: um temporizador de 6 s que o escondia e uma animação CSS de 6 s que o apagava. O
+   primeiro lugar é encontrado no primeiro quadro depois de Começar, justamente quando um quadro pode demorar mais que
+   isso. A correção saiu em dois passos, e o primeiro estava incompleto:
+   - `e70e1ba` trocou só o temporizador por tempo de jogo. O `check_roam` **passou** nos dois tamanhos de tela e eu
+     registrei a correção como feita; ao olhar as capturas do próprio teste, o aviso não estava em nenhuma. Teste
+     verde, imagem reprovada: a animação CSS continuava no relógio.
+   - `3c16be2` passou a opacidade para o tempo de jogo também (`placeNoticeOpacity` em `places.ts`: entra em 0,3 s, sai
+     em 0,7 s, sem transição para quem pede menos movimento; testado com valores feitos à mão).
+   O teste também precisou de três acertos até provar o que diz: tirar a captura numa carga com o relógio normal do
+   jogo (0,05 s por quadro; no relógio acelerado do teste os 6 s do aviso acabam em doze quadros, antes de a captura
+   sair) (`6d982d8`); e trocar um critério inválido, "o que está no centro do aviso", que sempre devolvia o cenário
+   porque o HUD não recebe cliques por desenho, por visibilidade de toda a cadeia de elementos (`2a19a0f`).
+   Também atualizei o teste para a R12: Simão é o único que pode aparecer seguindo, e só quando o ator dele carregou
+   (`aa2340f`).
+
+**Interrupção:** por volta de 18:55 UTC a sessão parou pelo limite de uso da conta e voltou às 21:43 UTC; os processos
+em segundo plano (fila de conferências, servidores de prévia) se perderam. Nada do que estava enviado se perdeu.
+
+**O que aconteceu nesse intervalo, conferido no Git ao voltar (não é trabalho desta sessão):** o Codex assumiu a
+continuidade a pedido de Alex. A PR #7 (R11: profundidade sem MSAA para o GTAO no WebGPU, SMAA rejeitado) foi
+integrada neste branch em `7d27546`; a PR #8 (R12: Simão, primeiro NPC com rig e animação) em `d1e92ac`; a **PR #1 foi
+marcada como pronta e integrada na `main` pela conta do Alex às 20:42 UTC (`81f4d2a`)**; a PR #9 registrou a
+publicação (`9dcd6cc`). Ver `CONTINUIDADE-R12.md`, `QA-R12.md` e `PUBLICACAO.md`. A cobertura em GPU real dos fluxos
+desta sessão (Bíblia, epílogo, exploração, toque) é a da QA do Codex na R12.
+
+**Conferido em produção ao voltar (21:48 UTC, só leitura):** bundle `index-C2WyNIhZ.js`, 1.253.357 bytes, SHA-256
+`444f649c16d68661c871059373154701f1f30c3a336361a74ab78257f0e60f87`. O contador de visitas está ligado nele (o
+padrão de `countVisits` é verdadeiro, contra falso no build local) e a Vercel serve o script (o mesmo
+`050e35bf7e6e9659…`). `painel.html` responde 200. **A API de consulta da Vercel ainda responde "Web Analytics not
+found"**: daqui não dá para afirmar que visitas estão sendo registradas; a confirmação é a aba Analytics do projeto.
+
+**Resultado final do `check_roam` (build de `2a19a0f`, 22:56 UTC):** passou em 390×844 e 1280×800, agora com o aviso
+"Lugar encontrado · 1 de 5 · Cafarnaum" visível nas duas capturas (`shots/main-2a19a0f/roam/*-0-lugar.png`, locais).
+É a primeira vez que o fluxo inteiro de exploração passa neste ambiente: volta a Cafarnaum com a oração literal de
+Marcos 1:21, cinco lugares, aviso a 20 m do limite, entrada por "Explorar a região", lugar encontrado lembrado depois
+de recarregar. No celular o Simão carregou e seguiu; no PC o ator dele ficou indisponível neste renderizador e o
+jogo seguiu sem ele. 302/302 testes e `tsc` limpo em `2a19a0f`.
+
+**Encontros e interações:** li `INTERACOES-E-ENCONTROS.md`. Nada foi implementado por esta sessão. O que caberia aqui
+sem arte nova é a base lógica (um consumidor do botão de ação por quadro, estados puros do encontro, registro local
+versionado); ficou perguntado a Alex se é comigo ou com o Codex, para não repetir o caso das casas.
+
+**Consumo real da sessão até 13/11/2026 22:57:16 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+respostas desde 09:39:24 UTC). Substitui o retrato das 17:53:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 341 | 750 | 458.389 | 198.825.191 | 0 | 2.182.916 | 93.03 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 279,67**. Atividade estimada: **8,03 h** (intervalos entre respostas
+até 5 min, sem sobreposição; não inclui as ~3 h em que a sessão ficou parada). Não é fatura: a sessão roda no plano da
+conta claude.ai, e foi o limite desse plano que a interrompeu. Respostas sintéticas (sem tokens) ficam fora da tabela.
+Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
+
+#### 14/11 — R13 integrada ao branch e base lógica dos encontros
+
+**Pedido de Alex (14/11, ~12:10 UTC):** "Tem algo que possa continuar? Se sim, manda ver." As duas perguntas da véspera
+(integrar a PR #10; quem faz a base dos encontros) não foram respondidas uma a uma. `Assumption:` tomei o pedido como
+sinal verde para a base dos encontros, que era o que eu tinha dito que podia continuar, e **não** como pedido para
+integrar a PR #10, que segue em rascunho.
+
+**Conferido antes de começar:** a `main` tinha recebido a R13 do Codex (`732a451`: solo com terra e areia, fachadas,
+lago) e nenhum arquivo de interação ou encontro existia nela. Merge da `main` no branch (`be4622a`), sem conflito;
+321/321 testes e `tsc` limpo na árvore conciliada.
+
+**Entregue (ver `docs/ENCONTROS-BASE.md`):** três módulos puros, sem nada visível no jogo e fora do bundle.
+`interactions.ts` decide quem recebe o botão de ação em cada quadro, na ordem do plano, e o rótulo do botão sai da
+mesma decisão; `encounters.ts` tem as sete etapas do primeiro encontro, com o objeto mudando de mãos só no contato do
+gesto e eventos repetidos sem efeito; `world-state.ts` é o registro local e versionado dos fatos (`accepted`,
+`returned`, `completed`), separado do save de progresso, que não foi tocado. 23 testes novos, 344/344 no total.
+
+**Como foi conferido:** valores esperados feitos à mão; duas regras quebradas de propósito (ordem do destino do botão e
+cancelar depois do contato) e os testes acusaram as duas; `vite build` ok e o bundle do jogo não contém os módulos.
+**Não houve conferência de navegador, porque nada muda no jogo.** Não é um encontro jogável: faltam o ator adulto, o
+objeto e as animações do herói de pegar e carregar. Nenhuma fala foi escrita.
+
+**Aviso de lugar encontrado depois da R13:** `check_roam` repetido no build de `1fbfbda` (12:32 UTC): passou em
+390×844 e 1280×800, com o aviso visível na captura sobre o solo novo da R13 (`shots/main-1fbfbda/roam/`, local). As
+outras conferências de navegador não foram repetidas depois da R13.
+
+**Escolhas minhas que o plano não fixa**, para revisão: alcance de altura de 0,5 m e cone de 100° à frente do herói
+(o plano só dá 1,5 m e 2,5 m); coisas a fazer antes de conversas na ordem dos candidatos; `returned` e `completed`
+como momentos distintos.
+
+**Consumo real da sessão até 14/11/2026 12:18:02 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+respostas desde 13/11 09:39:24 UTC). Substitui o retrato das 22:57 de ontem:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 363 | 798 | 502.283 | 216.278.243 | 0 | 3.072.568 | 112.51 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 299,15**. Atividade estimada: **8,25 h** (intervalos entre respostas
+até 5 min, sem sobreposição). Não é fatura: a sessão roda no plano da conta claude.ai. Respostas sintéticas (sem
+tokens) ficam fora da tabela. Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
+
 ### Publicação R3 registrada
 
 O commit completo é `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`, com data de autoria

@@ -5,7 +5,7 @@ import type { WorldMeta } from "./terrain.ts";
 import { SECTIONS, SHORT } from "./credits.ts";
 import { buildJourneyHint, journeyNarrative, journeyRoute, sceneDevelopmentNotice, SCENE_DEVELOPMENT_NOTICE } from './journey.ts';
 import type { Segment } from './world-layout.ts';
-import { ORIGIN_LABEL, type Place } from "./places.ts";
+import { ORIGIN_LABEL, PLACE_NOTICE, placeNoticeOpacity, type Place } from "./places.ts";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -48,7 +48,8 @@ export class Hud {
   private narrativeLeft = 0;
   private roamKind = "";
   private foundOnRadar: readonly Place[] = [];
-  private placeTimer: ReturnType<typeof setTimeout> | undefined;
+  private placeLeft = 0;                 // game seconds the place notice still has on screen
+  private reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
   readonly radiusM = 260;        // metres from the player to the radar's edge
 
   constructor(ep: EpisodeData, meta: WorldMeta, map: HTMLImageElement, touch: boolean, routes:readonly Segment[] = []) {
@@ -130,14 +131,24 @@ export class Hud {
     $("placecount").textContent = `Lugar encontrado · ${found} de ${total}`;
     $("placename").textContent = place.nome;
     $("placenote").textContent = `${place.ref ? `${place.ref} · ` : ""}${ORIGIN_LABEL[place.origem]}`;
-    el.hidden = true; void el.offsetWidth; el.hidden = false;     // restart the fade
-    clearTimeout(this.placeTimer);
-    this.placeTimer = setTimeout(() => { el.hidden = true; }, 6000);
+    this.placeLeft = PLACE_NOTICE.stay;
+    el.style.opacity = String(placeNoticeOpacity(this.placeLeft, this.reducedMotion));
+    el.hidden = false;
+  }
+
+  /** The place notice lives in game time (places.ts placeNoticeOpacity), as update() and roam() receive it each frame. */
+  private tickPlace(dt: number) {
+    if (this.placeLeft <= 0) return;
+    this.placeLeft -= dt;
+    const el = $("placefound");
+    if (this.placeLeft <= 0) { el.hidden = true; return; }
+    el.style.opacity = String(placeNoticeOpacity(this.placeLeft, this.reducedMotion));
   }
 
   /** Exploring after the episode: the same panels, fed by freeroam.ts instead of the mission. */
   roam(v: RoamView, s: State, pos: Vec2, heading: number, goal: Vec2 | null, followers: RadarMark[], notice: string | null, dt: number,
     touch = false, sealed: Sealed | null = null) {
+    this.tickPlace(dt);
     const mk = v.kind === "free" ? "EXPLORAÇÃO LIVRE" : "EPÍLOGO";
     if ($("mk").textContent !== mk) $("mk").textContent = mk;
     const closed = sealed && v.kind === "return";
@@ -171,6 +182,7 @@ export class Hud {
 
   update(s: State, pos: Vec2, heading: number, goal: Vec2 | null, dist: number | null, followers: RadarMark[], touch: boolean, dt: number,
     notice: string | null = null, sealed: Sealed | null = null) {
+    this.tickPlace(dt);
     const ep = this.ep, n = ep.missoes.length;
     const k = Math.min(s.mission, n - 1);
     const m = ep.missoes[k];
