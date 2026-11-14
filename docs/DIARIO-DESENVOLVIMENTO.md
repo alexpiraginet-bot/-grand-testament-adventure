@@ -482,6 +482,10 @@ cancelar depois do contato) e os testes acusaram as duas; `vite build` ok e o bu
 **Não houve conferência de navegador, porque nada muda no jogo.** Não é um encontro jogável: faltam o ator adulto, o
 objeto e as animações do herói de pegar e carregar. Nenhuma fala foi escrita.
 
+**Aviso de lugar encontrado depois da R13:** `check_roam` repetido no build de `1fbfbda` (12:32 UTC): passou em
+390×844 e 1280×800, com o aviso visível na captura sobre o solo novo da R13 (`shots/main-1fbfbda/roam/`, local). As
+outras conferências de navegador não foram repetidas depois da R13.
+
 **Escolhas minhas que o plano não fixa**, para revisão: alcance de altura de 0,5 m e cone de 100° à frente do herói
 (o plano só dá 1,5 m e 2,5 m); coisas a fazer antes de conversas na ordem dos candidatos; `returned` e `completed`
 como momentos distintos.
