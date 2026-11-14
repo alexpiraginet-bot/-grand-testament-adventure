@@ -1053,3 +1053,82 @@ O integrador conferiu as imagens: porta fechada e solo coerente melhoraram,
 mas a repetição das casas e a costa reta permanecem. Nenhuma medição em telefone
 físico foi feita. Seis conjuntos de trabalho, incluindo tentativas rejeitadas,
 foram copiados ao acervo privado e 62 arquivos tiveram SHA-256 confrontado.
+
+## 14/11/2026 — R15 (Claude): jornada de ensino, lugar físico, população e primeira conversa
+
+Pedido de Alex transmitido pela coordenação do Codex: sair do cenário vazio para uma sequência jogável depois do
+barco, com pessoas reais quando houver malha aprovada. Divisão combinada: Codex integra em `main.ts`, HUD, ações,
+montaria e apoio de pedras/redes (branch local `codex/cafarnaum-interacoes-r15`); Claude entrega módulos puros,
+testes e contratos, sem tocar nesses arquivos. **Tudo abaixo é lógica com testes; nada disto foi visto no jogo.**
+
+Início observado desta rodada: 21:49:20 UTC. Medição de uso: 22:19:16 UTC. Branch `claude/quirky-hamilton-bt0y7w`,
+PR #10 (rascunho), sobre `b653232`.
+
+| Commit | O que entrou |
+|---|---|
+| `5477b9a` | Jornada de ensino (Marcos 1:21–22): dados gerados da BLIVRE, transições puras, 12 testes, contrato |
+| `5ec789e` | Lugar físico: pátio, rua e casa procurados no relevo real, 8 testes |
+| `010424f` | População: identidade, modelo e rotina separados; ausentes com motivo; orçamento e setores; 9 testes |
+| `2844042` | Primeira conversa pelo botão único, com reação visível; diagnóstico e tarefas de arte; 5 testes |
+
+### O que foi decidido e por quê
+
+- **Texto.** Marcos 1:21 diz que ele ensinava e não traz discurso. O jogo mostra duas orações do narrador,
+  literais e com referência, e não escreve fala para ninguém. Marcos 1:23–28 é anunciado como não encenado;
+  Marcos 1:29 é citado inteiro e dá o próximo destino. Detalhes em `docs/JORNADA-ENSINO-R15.md`.
+- **Achado na fonte.** O arquivo da BLIVRE traz “temautoridade” em Marcos 1:22. Não foi corrigido (nada é digitado)
+  nem mostrado: a citação para na primeira vírgula. O dado guarda a grafia da fonte e um teste fixa isso.
+- **Lugar.** Nenhuma coordenada foi digitada. O pátio é o chão mais aberto, plano e seco perto do início e fora da
+  rota da missão; a rua é planejada com 1,3 m livres de cada lado e conferida com as regras do seguidor; a casa de
+  Marcos 1:29 é a de porta livre junto à rota, do lado do lago. Tudo marcado “Posição escolhida pelo jogo”; nenhum
+  prédio é apresentado como a sinagoga histórica.
+- **Pessoas.** Só Simão tem malha aprovada. André, Tiago, João, Zebedeu e os empregados ficam ausentes com o motivo
+  `sem-modelo`, sem substituto. O orçamento de 8 (celular) e 20 (desktop) é ponto de partida de teste, não medição.
+- **Conversa.** Como não há clipe de pegar ou soltar, o primeiro encontro é uma conversa curta e opcional. As duas
+  falas de Simão são autoria do jogo, com etiqueta “Narrativa do jogo”, e aguardam a revisão editorial de Alex.
+
+### Tentativas, falhas e correções
+
+- **Candidatos não conferidos.** O host de assets respondeu 404 para os cinco candidatos humanos e
+  `assets-src/tripo-r1/` não existe neste contêiner; não há Blender. O diagnóstico usa só o catálogo versionado
+  (malhas estáticas em T, 0 skins, 0 clipes). Hash, textura e escala dos arquivos ficaram sem conferência.
+- **`village-houses.ts` não importa em Node** (módulo JSON sem atributo, resolvido só pelo Vite). Os colisores da
+  vila foram reconstruídos no teste com as partes puras e com `settlementDetails` e `villageDetailsR13`, usando
+  caixas do tamanho catalogado no lugar das malhas de muro, rede e pedras: 158 footprints finais, 370 colisores.
+- **Mutações.** Jornada: 5 aplicadas, 5 derrubaram teste. Lugar: 4 aplicadas, 2 sobreviveram na primeira rodada
+  (pátio sobre a rota; porta sem checagem) e ganharam teste próprio. População: 8 de 8. Conversa: 5 aplicadas, 1
+  sobreviveu (alvo oferecido enquanto alguém fala) e ganhou asserção. Os testes não foram afrouxados em nenhum caso.
+- **Erros meus corrigidos no caminho:** comparação de tipos estreitada num teste (TS2367) e uma linha duplicada ao
+  extrair o construtor da cena para `test/fixtures/town-scene.ts`.
+- **Não feito de propósito:** generalizar `npc-assets.ts`/`npc-actor.ts` para um segundo ator. Sem segundo modelo
+  não há como exercitar no jogo, e são arquivos que a integração do Codex está usando.
+
+### Resultado medido no relevo real (teste, não jogo)
+
+Pátio em (−39; 85) com 13,3 m livres; rua de 58,7 m em quatro pontos, passagem mais estreita com 1,45 m livres de
+cada lado; casa de índice 31 a 160 m do pátio; 7 pontos de espera em anel no pátio, 2 duplas ao lado da rua, 2
+pontos na margem. Mesmos pátio e casa com solo de 256 e de 192 segmentos.
+
+### Verificação desta rodada
+
+- `npx tsc --noEmit`: sem erros.
+- `node --test test/*.test.ts`: **378 testes, 378 aprovados** (344 antes desta rodada; 34 novos).
+- `npx vite build`: concluído; nenhum arquivo do jogo importa os módulos novos, então o jogo publicado não muda.
+- `python3 -I tools/build_teaching.py --check` e `tools/build_bible.py --check`: dados iguais às fontes.
+
+**Não verificado:** navegador (390×844 e 1280×800), toque e tecla E reais, quadros, bytes, memória, Safari físico,
+`town.boxes` real do jogo, vegetação no pátio. Ficam para a ligação do Codex; sem ela não há o que capturar.
+
+### Uso real da sessão Claude (`tools/session_usage.py`, 22:19:16 UTC)
+
+| Grupo | Modelo | Respostas | Equivalente em preço de API |
+|---|---|---:|---:|
+| principal | claude-fable-5-2 | 447 | US$ 135,73 |
+| principal | claude-opus-5-5 | 635 | US$ 82,85 |
+| workflow | claude-opus-5-5 | 1.109 | US$ 103,79 |
+| **total da sessão** | | | **US$ 322,37** |
+
+Desde a medição anterior (14/11, 12:18:02 UTC): 84 respostas a mais do Fable 5.2 e US$ 23,22. Atividade estimada
+da sessão inteira: 9,0 h (era 8,25 h), por intervalos de até 5 minutos entre respostas; é estimativa, não horas
+contínuas de trabalho. O valor é comparação com preço de API, não cobrança: a sessão roda num plano. Nenhum consumo
+do Codex foi inferido aqui.
