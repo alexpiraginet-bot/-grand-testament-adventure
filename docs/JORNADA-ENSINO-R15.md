@@ -50,7 +50,40 @@ Fases: `off → walk ⇄ ready → line → done`. Sair do pátio em `ready` tir
 12 m do ponto durante as orações interrompe (`interrupted`) sem guardar nada, e pode recomeçar. Segurar ou repetir o
 botão não reinicia oração nem conclui duas vezes. `dt <= 0` (painel aberto, aba oculta) não move nada.
 
-`TeachingPlace = { court, street, onward }` vem do layout da vila (`town-life-layout.ts`, próximo commit desta rodada).
+`TeachingPlace = { court, street, onward }` vem do layout da vila: `townLife(...).teaching` (seção seguinte).
+
+## Lugar físico (`src/town-life-layout.ts`)
+
+```ts
+const life = townLife({ terrain, start: pt(P.start), beach: pt(P.beach), routes: keep,
+  plans: town.plans, boxes: town.boxes, margin: movementMargin });   // TownLife | null
+const place = life?.teaching ?? null;                                // null: não abrir o passo
+```
+
+Nenhuma coordenada é digitada: pátio, rua e casa são procurados no relevo medido, contra os colisores recebidos.
+`null` quando não há pátio seguro ou rua segura; `onward: null` quando nenhuma casa tem porta livre.
+
+Resultado nesta revisão da vila (casas R13, 158 footprints finais, 370 colisores com os acessórios):
+
+| Item | Valor medido |
+|---|---|
+| Pátio (`court.at`) | x −39, z 85; 13,3 m livres até o colisor mais próximo; desnível ≤ 0,7 m no raio de 7 m |
+| Rua (`street.points`) | (−9,1; 35,1) → (−10; 39) → (−29; 64) → (−39; 85); 58,7 m |
+| Passagem mais estreita | 1,45 m livres de cada lado, em (−16,6; 47,7) |
+| Casa de Marcos 1:29 (`onward`) | casa de índice 31 em `plans`; ponto a 2,2 m da fachada, em (−10,3; 242,3); 160 m do pátio |
+| Ação oferecida | a até 6 m do pátio (folga 1,5 m); interrupção a 12 m; chegada à casa a 12 m |
+
+Regras que o teste confere a cada 0,1 m da rua: herói não bloqueado pela regra de `main.ts` (caixas + 0,3 m),
+terra seca (≥ 0,3 m acima do lago), dentro da margem jogável de 60 m, ≥ 1,3 m livres (raio conservador do burro,
+0,91 m, mais margem) e percorrível pelo seguidor com as regras de `npc-navigation.ts`.
+
+`keepClear` (rua + pátio) serve só para vegetação e props; não passar a `houses()` nem à máscara de caminho do solo.
+`pois`: `quarteirao-inicial`, `passagem`, `patio-ensino`, `margem`, `casa-marcos-1-29`, todos com a nota
+“Posição escolhida pelo jogo”.
+
+**Limite da validação:** os colisores do teste são reconstruídos em Node como `village-houses.ts` faz, com caixas
+do tamanho catalogado no lugar das malhas de muro, rede e pedras. Vegetação não tem colisor e não entra; uma árvore
+pode nascer no pátio se `props()` não receber `keepClear`. A conferência no jogo real fica para a ligação.
 
 ## Contrato de ligação, para o Codex
 
