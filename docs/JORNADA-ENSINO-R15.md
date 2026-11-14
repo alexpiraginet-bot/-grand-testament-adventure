@@ -77,7 +77,27 @@ Regras que o teste confere a cada 0,1 m da rua: herói não bloqueado pela regra
 terra seca (≥ 0,3 m acima do lago), dentro da margem jogável de 60 m, ≥ 1,3 m livres (raio conservador do burro,
 0,91 m, mais margem) e percorrível pelo seguidor com as regras de `npc-navigation.ts`.
 
-`keepClear` (rua + pátio) serve só para vegetação e props; não passar a `houses()` nem à máscara de caminho do solo.
+`keepClear` (rua + pátio) descreve o chão a manter livre. Não passar a `houses()` nem à máscara de caminho do solo.
+
+**Achado depois da integração (14/11, 22:39 UTC):** `props()` em `world.ts` usa a lista que recebe para duas coisas.
+Uma é manter a vegetação fora dos segmentos, que era a intenção. A outra é servir de eixo para espalhar árvores,
+arbustos, pedras e capim “ao longo das rotas” (`alongRoutes`). Ao receber `[...keep, ...life.keepClear]`, como o
+`main.ts` integrado faz, a vegetação é redistribuída: um terço dos sorteios passa a cair nos quatro segmentos novos.
+Medido em Node com uma cópia fiel de `alongRoutes` e das regras de árvore e de pedra (as duas sem termo de ruído),
+sobre os colisores reconstruídos, com qualidade 1:
+
+| | Só as rotas da missão (R13) | Rotas + `keepClear` (integrado) |
+|---|---:|---:|
+| Árvores além da vila (z > 120), de 125 | 78 | 46 |
+| Pedras além da vila, de 420 | 362 | 277 |
+| Pedras a até 60 m do pátio | 45 | 110 |
+| Pedras dentro dos 7 m do pátio | 2 | 0 |
+| Sorteios perdidos no segmento de comprimento zero (pátio) | 0 | 22 e 73 |
+
+Nenhuma posição inválida é criada (o segmento de comprimento zero dá `NaN`, que as regras rejeitam). O pátio fica
+livre, como pretendido, mas a caminhada até a margem perde vegetação e a rua do pátio ganha pedras. A correção é
+separar as duas funções da lista em `props()` (um parâmetro só de exclusão), em arquivos que são do Codex nesta
+rodada: não alterei. Arbustos, juncos e capim usam ruído e não foram medidos; o efeito é do mesmo tipo.
 `pois`: `quarteirao-inicial`, `passagem`, `patio-ensino`, `margem`, `casa-marcos-1-29`, todos com a nota
 “Posição escolhida pelo jogo”.
 
