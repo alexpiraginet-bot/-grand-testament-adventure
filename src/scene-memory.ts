@@ -24,8 +24,15 @@ export function sceneTextures(scene: THREE.Scene): MemoryItem[] {
   const add = (t: unknown) => { if (t && (t as THREE.Texture).isTexture) seen.add(t as THREE.Texture); };
   scene.traverse((o) => {
     const mats = (o as THREE.Mesh).material;
-    for (const m of Array.isArray(mats) ? mats : mats ? [mats] : [])
+    for (const m of Array.isArray(mats) ? mats : mats ? [mats] : []) {
       for (const slot of SLOTS) add((m as unknown as Record<string, unknown>)[slot]);
+      // Node materials keep PBR/depth/reflection textures in their graph rather
+      // than classic map slots. This is a texture estimate, not total GPU memory.
+      for(const slot of ['colorNode','normalNode','roughnessNode','metalnessNode','opacityNode','positionNode','emissiveNode']){
+        const node=(m as unknown as Record<string,unknown>)[slot] as THREE.Node|undefined;
+        if(node?.isNode)node.traverse(n=>add((n as unknown as {value?:unknown}).value));
+      }
+    }
   });
   add(scene.background); add(scene.environment);
   const items: MemoryItem[] = [];

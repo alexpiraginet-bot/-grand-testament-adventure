@@ -1,5 +1,12 @@
 # Motores gráficos — registro de decisão, 13/11/2026
 
+Atualização R13: após a crítica de Alex à qualidade da cena, consultar
+[DEMO-CONVINCENTE-R13.md](DEMO-CONVINCENTE-R13.md). A recomendação atual é
+produzir um trecho autorado na base vigente e priorizar PlayCanvas como candidato
+a uma comparação isolada de produtividade; Babylon continua como alternativa.
+Nenhuma migração foi aprovada por benchmark ou executada. O restante deste
+documento registra a pesquisa anterior, com seu contexto histórico de branches.
+
 Alex informou que Claude está pesquisando Godot, O3DE, Bevy, raylib, OGRE e Babylon.js.
 Esta é uma análise documental; nenhum benchmark entre motores foi executado.
 

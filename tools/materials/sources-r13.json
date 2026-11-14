@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "verifiedDate": "2026-11-13",
+  "licenseNote": "Poly Haven asset license CC0-1.0; artistic material reference, not a scan of Capernaum.",
+  "materials": [
+    {
+      "id": "dirt",
+      "name": "Dirt",
+      "authors": [
+        "Charlotte Baglioni"
+      ],
+      "source": "https://polyhaven.com/a/dirt",
+      "infoApi": "https://api.polyhaven.com/info/dirt",
+      "filesApi": "https://api.polyhaven.com/files/dirt",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceDimensionsMm": [
+        2000,
+        2000
+      ],
+      "tileMeters": 2,
+      "maps": {
+        "normal": {
+          "file": "dirt_nor_gl_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/dirt/dirt_nor_gl_1k.png",
+          "md5": "e1d855d9d6b1c9b39681ee4f4097303b",
+          "sha256": "be315cdb7667d58df160a92be2b22423480912ac5668188f3c8360d464203f47",
+          "bytes": 5904305
+        },
+        "roughness": {
+          "file": "dirt_rough_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/dirt/dirt_rough_1k.png",
+          "md5": "293473a9600f0938205a05461a4396bb",
+          "sha256": "29f68a8972f1e69cf47e67924efe469350f953a5f707f63633a9c36cd7c63f6a",
+          "bytes": 1586570
+        },
+        "albedo": {
+          "file": "dirt_diff_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/dirt/dirt_diff_1k.png",
+          "md5": "033b3aaa80b816a1a53ed211d69a3328",
+          "sha256": "96b3eb441121c41806a4766f37eeeeb4667af73207ccd8bfb56bbd446a221d42",
+          "bytes": 5504678
+        }
+      }
+    },
+    {
+      "id": "damp_beach_sand",
+      "name": "Damp Beach Sand",
+      "authors": [
+        "Dimitrios Savva"
+      ],
+      "source": "https://polyhaven.com/a/damp_beach_sand",
+      "infoApi": "https://api.polyhaven.com/info/damp_beach_sand",
+      "filesApi": "https://api.polyhaven.com/files/damp_beach_sand",
+      "license": "CC0-1.0",
+      "licenseUrl": "https://polyhaven.com/license",
+      "sourceDimensionsMm": [
+        2000,
+        2000
+      ],
+      "tileMeters": 2,
+      "maps": {
+        "normal": {
+          "file": "damp_beach_sand_nor_gl_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/damp_beach_sand/damp_beach_sand_nor_gl_1k.png",
+          "md5": "21b001849833dbc2c00cdfc88dfa12de",
+          "sha256": "808b33c3808eaff7f8d72596ef689adafb85fdea55f2b0aabbc3ee960b3c3c2f",
+          "bytes": 5469981
+        },
+        "roughness": {
+          "file": "damp_beach_sand_rough_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/damp_beach_sand/damp_beach_sand_rough_1k.png",
+          "md5": "7877e5ef6e5af0ecc90fff9209e442ca",
+          "sha256": "16ddf148969a46a3a3b402e5c74f254631156f059db6ff3dfcb99b3414a5cd89",
+          "bytes": 1833240
+        },
+        "albedo": {
+          "file": "damp_beach_sand_diff_1k.png",
+          "url": "https://dl.polyhaven.org/file/ph-assets/Textures/png/1k/damp_beach_sand/damp_beach_sand_diff_1k.png",
+          "md5": "6365b1e2428b3fa26984fe98dfb6f1d6",
+          "sha256": "428183b234a22147b2fa90b44fcc041018a02481bfb35d1359795006a27c8781",
+          "bytes": 5539304
+        }
+      }
+    }
+  ]
+}

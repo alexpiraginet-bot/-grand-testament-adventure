@@ -1,6 +1,8 @@
 // Credits shown in the game (start card link, HUD button, end card). The BLIVRE notice is the authors' text, to be
 // copied exactly (biblia-conectada/ATTRIBUTION.md); test/data.test.ts checks it is here unchanged.
 import { BUILD_SHORT } from "./build-info.ts";
+import {GROUND_MATERIAL_CREDITS_R13} from './ground-materials.ts';
+import {FACADE_MATERIAL_CREDIT} from './facade-materials.ts';
 
 export const BLIVRE_NOTICE =
   "Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE), Copyright © Diego Santos, Mario Sérgio, e Marco Teles, http://sites.google.com/site/biblialivre/ - fevereiro de 2018. Licença Creative Commons Atribuição 4.0 Brasil (http://creativecommons.org/licenses/by/4.0/br/). Reprodução permitida desde que devidamente mencionados fonte e autores.";
@@ -30,6 +32,8 @@ export const SECTIONS: { h: string; p: string[]; quote?: string }[] = [
   { h: "Cenário e materiais", p: [
     'Casas de basalto, pátios e vielas: referências arqueológicas apresentadas pelo <a href="https://cmc-terrasanta.com/en/media/news/13281/capernaum,-peter%27s-hometown" target="_blank" rel="noopener noreferrer">Studium Biblicum Franciscanum / Christian Media Center</a>. Pesca e redes: Marcos 1:16–20, na BLIVRE.',
     'Texturas de chão: Rocky Gravel, Dimitrios Savva e Dario Barresi / <a href="https://polyhaven.com/a/rocky_gravel" target="_blank" rel="noopener noreferrer">Poly Haven</a>, CC0. Material fotográfico usado como referência de superfície, não escaneamento de Cafarnaum.',
+    ...GROUND_MATERIAL_CREDITS_R13.map(source=>`Superfície ${source.name}: ${source.author} / <a href="${source.url}" target="_blank" rel="noopener noreferrer">Poly Haven</a>, CC0. Referência contemporânea de material para a recriação artística.`),
+    `Madeira ${FACADE_MATERIAL_CREDIT.name}: ${FACADE_MATERIAL_CREDIT.author} / <a href="${FACADE_MATERIAL_CREDIT.url}" target="_blank" rel="noopener noreferrer">Poly Haven</a>, CC0.`,
     'Céu: Kloofendal 48d Partly Cloudy (Pure Sky), Greg Zaal e Jarod Guest / <a href="https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky" target="_blank" rel="noopener noreferrer">Poly Haven</a>, CC0. Referência fotográfica contemporânea para o ambiente artístico.',
   ] },
   { h: "Código e fontes tipográficas", p: [

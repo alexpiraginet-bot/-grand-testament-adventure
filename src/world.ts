@@ -1,8 +1,11 @@
 // The 3D world: ground from the real relief, the lake, the far hills, sky, plants, Capernaum's houses, the boat.
 // Tripo scenery + sourced CC0 surface maps; the settlement layout is a documented recreation.
 import * as THREE from "three/webgpu";
-import { texture, positionWorld, vec2, vec3, mix, clamp, smoothstep, float, step, color, uniform, normalMap, cameraPosition } from 'three/tsl';
+export {water} from './lake-surface.ts';
 import { createGroundSurface, type GroundTextures } from './ground-surface.ts';
+import {loadGroundMaterialsR13} from './ground-materials.ts';
+import {shoreDetails} from './shore-detail-r13.ts';
+import {abortable} from './asset-loading.ts';
 import { Terrain } from "./terrain.ts";
 import { sceneryMesh, type AssetLibrary, type AssetId } from './tripo-assets.ts';
 import { rng, distanceToSegment, insideObstacle, type Segment, type Obstacle } from './world-layout.ts';
@@ -21,41 +24,30 @@ function noise2(x: number, z: number) {
   return (a * (1 - u) + b * u) * (1 - v) + (c * (1 - u) + d * u) * v;
 }
 
-/** Normal map of small waves, tiling. */
-function waveNormals(size = 256): THREE.CanvasTexture {
-  const c = document.createElement("canvas"); c.width = c.height = size;
-  const g = c.getContext("2d")!;
-  const img = g.createImageData(size, size);
-  const H = (x: number, y: number) => {
-    let v = 0;
-    for (const [kx, ky, a] of [[3, 1, 1], [1, 4, 0.8], [5, -3, 0.5], [-7, 6, 0.3], [11, 9, 0.2]] as const)
-      v += a * Math.sin((2 * Math.PI * (kx * x + ky * y)) / size);
-    return v;
-  };
-  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-    const dx = H(x + 1, y) - H(x - 1, y), dy = H(x, y + 1) - H(x, y - 1);
-    const nx = -dx * 0.9, ny = -dy * 0.9, nz = 1, l = Math.hypot(nx, ny, nz);
-    const i = (y * size + x) * 4;
-    img.data[i] = (nx / l * 0.5 + 0.5) * 255; img.data[i + 1] = (ny / l * 0.5 + 0.5) * 255; img.data[i + 2] = (nz / l * 0.5 + 0.5) * 255; img.data[i + 3] = 255;
-  }
-  g.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  return t;
-}
-
 const SAND = new THREE.Color(0xcdb68c), WET = new THREE.Color(0x8d7b5e), GRASS = new THREE.Color(0x8b8a52),
   DRY = new THREE.Color(0xb3a06c), ROCK = new THREE.Color(0x5a5048), BED = new THREE.Color(0x6f6550);
 
-export async function loadGroundTextures(): Promise<GroundTextures> {
+export async function loadGroundTextures(mobile=false,signal?:AbortSignal): Promise<GroundTextures> {
   const loader=new THREE.TextureLoader(), result={} as Record<keyof GroundTextures,THREE.Texture>;
-  await Promise.all((['albedo','normal','roughness'] as const).map(async role=>{
+  let cancelled=false;
+  const clear=()=>{cancelled=true;for(const key of Object.keys(result) as (keyof GroundTextures)[]){result[key]?.dispose();delete result[key];}};
+  signal?.addEventListener('abort',clear,{once:true});
+  const jobs=(['albedo','normal','roughness'] as const).map(async role=>{
     const tex=await loader.loadAsync(`${import.meta.env.BASE_URL}textures/ground/rocky-gravel-${role}.webp`);
-    tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=8;
+    if(cancelled||signal?.aborted){tex.dispose();throw signal?.reason??Error('Ground loading cancelled');}
+    tex.wrapS=tex.wrapT=THREE.RepeatWrapping; tex.anisotropy=mobile?2:8;
     if(role==='albedo') tex.colorSpace=THREE.SRGBColorSpace;
     result[role]=tex;
+  });
+  jobs.push(loadGroundMaterialsR13({mobile,signal}).then(extra=>{
+    if(cancelled||signal?.aborted){for(const map of Object.values(extra))map.dispose();throw signal?.reason??Error('Ground loading cancelled');}
+    Object.assign(result,extra);
   }));
-  return result;
+  try{
+    const task=Promise.all(jobs.map(job=>job.catch(error=>{clear();throw error;})));
+    await (signal?abortable(task,signal):task);signal?.throwIfAborted();return result;
+  }catch(error){clear();throw error;}
+  finally{signal?.removeEventListener('abort',clear);}
 }
 
 export async function loadSkyTextures(): Promise<{background:THREE.Texture;environment:THREE.Texture}> {
@@ -115,61 +107,6 @@ export function farMesh(far: Int16Array, size: number, n: number): THREE.Mesh {
   geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
   geo.computeVertexNormals();
   return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 }));
-}
-
-export function water(size: number, terrain: Terrain): { mesh: THREE.Mesh; update: (t: number) => void } {
-  const nrm = waveNormals();
-  nrm.anisotropy=4;
-  // Explicit game time: opening a paused panel freezes waves as well as actors.
-  const clock=uniform(0);
-  // Depth comes from the same authored lake bed used by the existing height field.
-  // Keep the actual surface at y=0; transparent shallows reveal the real rendered floor.
-  const pixels=new Uint8Array(terrain.h.length*4);
-  for(let i=0;i<terrain.h.length;i++){
-    const v=Math.round(Math.max(0,Math.min(9,-terrain.h[i]))/9*255);
-    pixels.set([v,v,v,255],i*4);
-  }
-  const depthMap=new THREE.DataTexture(pixels,terrain.n,terrain.n);
-  depthMap.minFilter=depthMap.magFilter=THREE.LinearFilter;depthMap.needsUpdate=true;
-  const m = new THREE.MeshPhysicalNodeMaterial({
-    color: 0x3f747c, roughness: 0.12, metalness: 0.0, ior:1.333,
-    // Sky reflections use the existing small environment map, not an extra scene render.
-    envMapIntensity:1.25,
-    transparent: true, depthWrite:false,
-  });
-  const near=step(positionWorld.x.abs(),float(terrain.size/2)).mul(step(positionWorld.z.abs(),float(terrain.size/2)));
-  // Height samples occupy texel centres, including both terrain endpoints.
-  const depthUV=positionWorld.xz.add(terrain.size/2).div(terrain.step).add(.5).div(terrain.n);
-  const depth=mix(float(9),texture(depthMap,depthUV).r.mul(9),near);
-
-  // Broad wind ripples plus smaller cross-ripples; shared tiled texture, two samples.
-  // Rotate the second normal's xy back into the first tangent basis before blending.
-  const planeUV=vec2(positionWorld.x,positionWorld.z.negate());
-  const broadUV=planeUV.div(7.2).add(vec2(clock.mul(.012),clock.mul(.008)));
-  const crossUV=vec2(planeUV.x.mul(.85).add(planeUV.y.mul(.53)),planeUV.y.mul(.85).sub(planeUV.x.mul(.53)))
-    .div(1.8).add(vec2(clock.mul(-.023),clock.mul(.016)));
-  const broad=texture(nrm,broadUV).xyz.mul(2).sub(1),fine=texture(nrm,crossUV).xyz.mul(2).sub(1);
-  const fineXY=vec2(fine.x.mul(.85).sub(fine.y.mul(.53)),fine.x.mul(.53).add(fine.y.mul(.85)));
-  const combined=vec3(broad.xy.mul(.95).add(fineXY.mul(.48)),broad.z.mul(fine.z)).normalize();
-  m.normalNode=normalMap(combined.mul(.5).add(.5));
-  m.roughnessNode=fine.x.abs().mul(.16).add(.09);
-
-  // Preserve visibility into the shallow band used by fish. Grazing angles favour
-  // the reflected sky; this alpha approximation is not screen-space refraction.
-  const viewUp=clamp(cameraPosition.sub(positionWorld).normalize().y,0,1);
-  const grazing=viewUp.oneMinus().pow(5);
-  const shallowOpacity=mix(.16,.96,smoothstep(0,3.2,depth));
-  m.opacityNode=mix(shallowOpacity,float(.98),grazing.mul(.72));
-  const shore=smoothstep(.05,.25,depth).mul(smoothstep(.75,1.2,depth).oneMinus());
-  const ripple=depth.mul(19).sub(clock.mul(1.2)).add(broad.x.mul(3)).sin().smoothstep(.65,.96).mul(shore);
-  const waterColor=mix(color(0x639b93),color(0x23536c),smoothstep(0,8,depth));
-  m.colorNode=mix(waterColor,color(0xa4bcb0),ripple.mul(.065));
-  const geo = new THREE.PlaneGeometry(size, size, 1, 1);
-  geo.rotateX(-Math.PI / 2);
-  const mesh = new THREE.Mesh(geo, m);
-  mesh.receiveShadow = true;
-  mesh.renderOrder = 2;
-  return { mesh, update: (t) => { clock.value = Number.isFinite(t) ? t : clock.value; } };
 }
 
 /** Sky dome: CC0 photographic panorama; gradient retained for an explicit fallback. */
@@ -354,6 +291,7 @@ export function props(t: Terrain, keepClear: Segment[], q: number, assets: Asset
   }
   const grasses=alongRoutes(t,keepClear,Math.round(8500*q),35,90,(x,z,y)=>y>.55&&clear(x,z)&&noise2(x*.18,z*.18)>.43);
   g.add(instanced(mergeGeos(bladeParts),vc,grasses,36,r=>{const s=.55+r()*.85;return[s,s,s];},false));
+  g.add(shoreDetails(t,keepClear,assets,buildings,q<1));
   g.userData.counts={trees:trees.length,bushes:bushes.length,rocks:rocks.length,reeds:reeds.length,grassTufts:grasses.length};
   g.userData.update=(x:number,z:number)=>{for(const child of g.children) child.userData.update?.(x,z);};
   return g;
