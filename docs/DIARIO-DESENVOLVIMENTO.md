@@ -460,6 +460,45 @@ até 5 min, sem sobreposição; não inclui as ~3 h em que a sessão ficou parad
 conta claude.ai, e foi o limite desse plano que a interrompeu. Respostas sintéticas (sem tokens) ficam fora da tabela.
 Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
 
+#### 14/11 — R13 integrada ao branch e base lógica dos encontros
+
+**Pedido de Alex (14/11, ~12:10 UTC):** "Tem algo que possa continuar? Se sim, manda ver." As duas perguntas da véspera
+(integrar a PR #10; quem faz a base dos encontros) não foram respondidas uma a uma. `Assumption:` tomei o pedido como
+sinal verde para a base dos encontros, que era o que eu tinha dito que podia continuar, e **não** como pedido para
+integrar a PR #10, que segue em rascunho.
+
+**Conferido antes de começar:** a `main` tinha recebido a R13 do Codex (`732a451`: solo com terra e areia, fachadas,
+lago) e nenhum arquivo de interação ou encontro existia nela. Merge da `main` no branch (`be4622a`), sem conflito;
+321/321 testes e `tsc` limpo na árvore conciliada.
+
+**Entregue (ver `docs/ENCONTROS-BASE.md`):** três módulos puros, sem nada visível no jogo e fora do bundle.
+`interactions.ts` decide quem recebe o botão de ação em cada quadro, na ordem do plano, e o rótulo do botão sai da
+mesma decisão; `encounters.ts` tem as sete etapas do primeiro encontro, com o objeto mudando de mãos só no contato do
+gesto e eventos repetidos sem efeito; `world-state.ts` é o registro local e versionado dos fatos (`accepted`,
+`returned`, `completed`), separado do save de progresso, que não foi tocado. 23 testes novos, 344/344 no total.
+
+**Como foi conferido:** valores esperados feitos à mão; duas regras quebradas de propósito (ordem do destino do botão e
+cancelar depois do contato) e os testes acusaram as duas; `vite build` ok e o bundle do jogo não contém os módulos.
+**Não houve conferência de navegador, porque nada muda no jogo.** Não é um encontro jogável: faltam o ator adulto, o
+objeto e as animações do herói de pegar e carregar. Nenhuma fala foi escrita.
+
+**Escolhas minhas que o plano não fixa**, para revisão: alcance de altura de 0,5 m e cone de 100° à frente do herói
+(o plano só dá 1,5 m e 2,5 m); coisas a fazer antes de conversas na ordem dos candidatos; `returned` e `completed`
+como momentos distintos.
+
+**Consumo real da sessão até 14/11/2026 12:18:02 UTC** (`python3 -I tools/session_usage.py <pasta do transcrito>`;
+respostas desde 13/11 09:39:24 UTC). Substitui o retrato das 22:57 de ontem:
+
+| grupo | modelo | respostas | input | output | cache_read | cache_write_5m | cache_write_1h | usd_equivalente_api |
+|---|---|---|---|---|---|---|---|---|
+| principal | claude-fable-5-2 | 363 | 798 | 502.283 | 216.278.243 | 0 | 3.072.568 | 112.51 |
+| principal | claude-opus-5-5 | 635 | 1.417 | 529.421 | 306.777.585 | 0 | 1.362.632 | 82.85 |
+| workflow | claude-opus-5-5 | 1.109 | 2.228 | 1.509.632 | 197.189.024 | 6.829.664 | 0 | 103.79 |
+
+Total equivalente em preço de lista da API: **US$ 299,15**. Atividade estimada: **8,25 h** (intervalos entre respostas
+até 5 min, sem sobreposição). Não é fatura: a sessão roda no plano da conta claude.ai. Respostas sintéticas (sem
+tokens) ficam fora da tabela. Conversão para reais não feita. Nenhum número de outra sessão foi somado aqui.
+
 ### Publicação R3 registrada
 
 O commit completo é `4d7cf867945741c4d28c7ce1d8f9fe1cd8f2318f`, com data de autoria
