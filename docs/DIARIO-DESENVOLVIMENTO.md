@@ -1132,3 +1132,65 @@ Desde a medição anterior (14/11, 12:18:02 UTC): 84 respostas a mais do Fable 5
 da sessão inteira: 9,0 h (era 8,25 h), por intervalos de até 5 minutos entre respostas; é estimativa, não horas
 contínuas de trabalho. O valor é comparação com preço de API, não cobrança: a sessão roda num plano. Nenhum consumo
 do Codex foi inferido aqui.
+
+## 14/11/2026 — R15: ação contextual, ensino e correções de apoio
+
+Codex integrou a base de encontros do Claude e os commits `5477b9a` e
+`5ec789e` num worktree próprio, `codex/cafarnaum-interacoes-r15`. O chat
+existente GTA JC recebeu o handoff, sem mudar o modelo. As responsabilidades
+de main/HUD e módulos de jornada/layout foram separadas. O laboratório neural
+R14 e a automação permanecem pausados por ordem de Alex.
+
+E/toque agora despacha só a ação mostrada: missão, conversa opcional com Simão
+ou ensino. Q/toque troca o alvo. A conversa usa a malha animada já aprovada,
+é identificada como Narrativa do jogo e não avança missão. O retorno a
+Cafarnaum leva a Ensinar; duas orações literais da BLIVRE precedem o destino
+seguinte. A casa e o pátio são escolhas do jogo; as cenas ausentes ficam
+declaradas. O fato de conclusão é salvo localmente sem alterar o save principal.
+
+A revisão corrigiu eventos repetidos de Enter/Space, ações sob Créditos,
+escrita sobre versão futura do registro do mundo e IDs como `__proto__`.
+A QA no navegador encontrou também um erro real de câmera: andar para trás
+recentrava a câmera em direção ao novo heading e curvava o percurso.
+O recuo agora mantém o referencial. A revisão bíblica impediu um intervalo
+contínuo falso sobre versos ausentes e estados Vivido sem layout seguro.
+
+Cinco ilhas do GLB de pedras estavam em alturas locais diferentes; a cópia
+runtime agora as apoia individualmente e consulta o terreno desenhado. A
+rede aberta foi corrigida no pivô, mas reprovada em XZ: não há profundidade
+segura em 12 m. Foi ocultada, sem falsificar transparência ou geometria.
+A margem continua angular: grade de 12/16 m. Esse defeito está documentado
+para uma revisão da malha costeira, junto da vegetação e do kit de casas.
+
+Montaria: controlador lógico com velocidade 1,6×, reserva, varredura e saída
+segura passou os testes. Não está no gameplay: pose do cavaleiro e ciclo
+adequado do burro a 4 m/s precisam ser produzidos e revisados. Novos NPCs,
+multidão e cenas adicionais também não foram apresentados como concluídos.
+
+Build final desta rodada: **418 testes passaram**, typecheck e dois bundles
+Vite concluídos. A primeira rodada de QA falhou por uma suposição do teste
+sobre foco; a segunda expôs o recuo da câmera. Ambas foram preservadas.
+Depois da correção, 28 verificações integradas passaram em 1280×800 e
+390×844 por toque emulado: conversa, pausa, missões, ensino, recarga e
+persistência. A referência bíblica recebeu a correção final em seguida;
+a nova execução passou novamente 28/28, com fontes estáveis, zero erros
+JS/HTTP e mais 9 verificações isoladas de entrada. Resultados finais e hashes
+estão em `docs/evidence/r15-qa-summary.json`. As 32 capturas ficam localmente
+em `shots/context-game-r15-release/`. A revisão independente não identificou
+novos defeitos P0/P1/P2 no escopo integrado.
+
+Uma travessia separada percorreu a rua de 58,6625 m por KeyW, com zero amostras
+bloqueadas/câmera em prédio e zero erro JS. Houve alinhamento de câmera por
+debug e entrada em exploração preparada; os testes de encontros usaram
+teletransporte declarado. Isso não é prova de jogo integral manual ou Safari
+físico. Versos de Marcos 1:21,22,29 conferidos contra o ZIP BLIVRE original.
+
+IA local: Gemma 285/1000 tokens de entrada/saída; Qwen 177/311. Total medido
+1.773 tokens, sem conversão fictícia em reais. A proposta Qwen de exigir
+WebSockets/backend foi rejeitada. Nenhum gasto, download grande, geração
+Tripo, nova voz ou retomada da automação R14. Não houve leitura de conversas
+alheias nem publicação de credenciais.
+
+Plano, evidências, rejeições e próximos critérios: `ENTREGA-INTERACOES-R15.md`.
+Os horários dos arquivos e relatórios delimitam atividade observada; não
+foram convertidos em horas humanas de desenvolvimento contínuo.

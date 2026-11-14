@@ -3,12 +3,17 @@ import type {Terrain} from './terrain.ts';
 import {sceneryMesh,type AssetLibrary} from './tripo-assets.ts';
 import {distanceToSegment,insideObstacle,rng,type Obstacle,type Segment} from './world-layout.ts';
 import {renderedGroundHeight} from './village-house-placement.ts';
+import {supportGroundProp} from './prop-grounding.ts';
+import {settleRockIslands} from './rock-grounding.ts';
 
 /** Small basalt clusters interrupt the otherwise straight edge near two encounters.
  * They use Alex's reviewed rock mesh and do not add colliders or change the DEM. */
 export function shoreDetails(t:Terrain,routes:Segment[],assets:AssetLibrary,obstacles:Obstacle[],low=false){
   const group=new THREE.Group();group.name='shore-contact-r13';
   const source=sceneryMesh(assets['pedras-basalto']);if(!source)return group;
+  settleRockIslands(source.geometry);
+  source.geometry.computeBoundingBox();const bounds=source.geometry.boundingBox!;
+  const shape={min:bounds.min.toArray(),max:bounds.max.toArray()};
   const anchors=[t.meta.points.beach,t.meta.points.simao],random=rng(131313);
   const segments=low?192:256,target=low?40:90;
   const spots:{x:number;y:number;z:number;k:number;turn:number}[]=[];
@@ -18,7 +23,10 @@ export function shoreDetails(t:Terrain,routes:Segment[],assets:AssetLibrary,obst
     const h=renderedGroundHeight(t,x,z,segments);
     if(h<-.18||h>.34||routes.some(s=>distanceToSegment(x,z,s)<s.r+.4)||obstacles.some(o=>insideObstacle(x,z,o,.3)))continue;
     if(spots.some(s=>Math.hypot(s.x-x,s.z-z)<.45))continue;
-    spots.push({x,y:h-.018,z,k:.055+random()*.16,turn:random()*Math.PI*2});
+    const k=.055+random()*.16,turn=random()*Math.PI*2;
+    const support=supportGroundProp(t,shape,{x,z,rot:turn,sx:k,sy:k,sz:k},segments);
+    if(!support)continue;
+    spots.push({x,y:support.y,z,k,turn});
   }
   const batch=new THREE.InstancedMesh(source.geometry,source.material,spots.length),transform=new THREE.Object3D();
   batch.name='shore-basalt-small';batch.receiveShadow=true;batch.castShadow=false;

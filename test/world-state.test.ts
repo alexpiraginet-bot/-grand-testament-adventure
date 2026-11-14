@@ -130,3 +130,93 @@ test("an encounter comes back from the record at each saved fact, and a reload m
   assert.deepEqual(reload(), { id: "rede", stage: "resolved", object: "destination", gesture: 0, thanked: true });
   assert.deepEqual(world.encounters.rede, { stage: "completed", at: 1002 }, "three facts saved, in order: accepted, returned, completed");
 });
+
+test("write rechecks a future version created by another tab after load and preserves both keys", () => {
+  const key = worldStateKey(SAVE), m = memory({ [key]: stored(good), [`${key}:prev`]: "previous-copy" });
+  const store = new WorldStateStore(m.kv), stale = store.load(SAVE, REV, 1);
+  const future = stored({ ...good, v: 2, futureField: [1, 2, 3] });
+  m.kv.setItem(key, future);
+  assert.equal(store.write(recordStage(stale, "rede", "returned", 2)), false);
+  assert.equal(store.status, "newer");assert.equal(m.data.get(key), future);
+  assert.equal(m.data.get(`${key}:prev`), "previous-copy", "even the backup must remain untouched");
+});
+
+test("arbitrary encounter IDs round trip as own data without replacing prototypes", () => {
+  const ids = ["__proto__", "constructor", "toString", "hasOwnProperty"];
+  const encounters = Object.fromEntries(ids.map(id => [id, { stage: "accepted", at: 1 }]));
+  const parsed = parseWorldState(stored({ ...good, encounters }), SAVE);
+  assert.equal(parsed.kind, "ok");if (parsed.kind !== "ok") return;
+  assert.equal(Object.getPrototypeOf(parsed.state.encounters), Object.prototype);
+  assert.equal(Object.hasOwn(parsed.state.encounters, "__proto__"), true);
+  for (const id of ids) assert.equal(savedStage(parsed.state, id), "accepted");
+  assert.equal(savedStage(parsed.state, "stage"), null);assert.equal(savedStage(newWorldState(SAVE, REV), "__proto__"), null);
+  const completed = recordStage(parsed.state, "__proto__", "completed", 2);
+  assert.equal(savedStage(completed, "__proto__"), "completed");
+  assert.equal(Object.getPrototypeOf(completed.encounters), Object.prototype);
+  const m = memory(), store = new WorldStateStore(m.kv);assert.equal(store.write(completed), true);
+  assert.deepEqual(store.load(SAVE, REV, 3), completed);
+});
+
+test("inherited encounter facts are never treated as saved own facts", () => {
+  const state = newWorldState(SAVE, REV);
+  state.encounters = Object.create({ phantom: { stage: "completed", at: 1 } });
+  assert.equal(savedStage(state, "phantom"), null);
+  const next = recordStage(state, "phantom", "accepted", 2);
+  assert.equal(Object.hasOwn(next.encounters, "phantom"), true);assert.equal(savedStage(next, "phantom"), "accepted");
+  assert.equal(Object.hasOwn(state.encounters, "phantom"), false);
+});
+
+test("a stale tab merges current completions and independent facts without moving equal-stage dates", () => {
+  const key = worldStateKey(SAVE), m = memory({ [key]: stored(good) });
+  const first = new WorldStateStore(m.kv), second = new WorldStateStore(m.kv);
+  const a = first.load(SAVE, REV, 1), b = second.load(SAVE, REV, 1);
+  const completed = recordStage(recordStage(a, "rede", "completed", 3), "banco", "returned", 4);
+  assert.equal(first.write(completed), true);
+  const stale = recordStage(recordStage(b, "rede", "returned", 5), "agua", "accepted", 6);
+  assert.equal(second.write(stale, "ep1-r2"), true);
+  const merged = second.load(SAVE, REV, 7);
+  assert.deepEqual(merged.encounters, { rede: { stage: "completed", at: 3 }, banco: { stage: "returned", at: 4 }, agua: { stage: "accepted", at: 6 } } as const);
+  assert.equal(merged.contentRevision, "ep1-r2");assert.deepEqual(JSON.parse(m.data.get(`${key}:prev`)!), completed);
+  const repeated = { ...merged, encounters: { ...merged.encounters, rede: { stage: "completed" as const, at: 999 } } };
+  assert.equal(first.write(repeated), true);assert.deepEqual(first.load(SAVE, REV, 8).encounters.rede, { stage: "completed", at: 3 });
+  assert.deepEqual(b, good, "merging must not mutate the tab's stale snapshot");
+});
+
+test("stale merges also preserve special IDs with own-property semantics", () => {
+  const key = worldStateKey(SAVE), done = recordStage(newWorldState(SAVE, REV), "__proto__", "completed", 8);
+  const m = memory({ [key]: stored(done) }), store = new WorldStateStore(m.kv);
+  const stale = recordStage(recordStage(newWorldState(SAVE, REV), "__proto__", "accepted", 9), "constructor", "returned", 10);
+  assert.equal(store.write(stale), true);
+  const readback = store.load(SAVE, REV, 11);assert.equal(savedStage(readback, "__proto__"), "completed");
+  assert.equal(savedStage(readback, "constructor"), "returned");assert.equal(Object.getPrototypeOf(readback.encounters), Object.prototype);
+});
+
+test("invalid outgoing records fail before any storage mutation and do not disable a later valid write", () => {
+  const key = worldStateKey(SAVE), m = memory({ [key]: stored(good), [`${key}:prev`]: "keep" }), store = new WorldStateStore(m.kv);
+  const invalid: unknown[] = [null, { ...good, v: 2 }, { ...good, saveId: "" }, { ...good, saveId: 123 },
+    { ...good, contentRevision: "" }, { ...good, encounters: { rede: { stage: "carrying", at: 1 } } },
+    { ...good, encounters: { rede: { stage: "completed", at: NaN } } }, { ...good, encounters: { rede: { stage: "completed", at: Infinity } } }];
+  const cyclic = { ...good, extra: {} };cyclic.extra = cyclic;invalid.push(cyclic);
+  for (const payload of invalid) {
+    assert.equal(store.write(payload as WorldState), false);assert.equal(store.status, "ok");
+    assert.equal(m.data.get(key), stored(good));assert.equal(m.data.get(`${key}:prev`), "keep");
+  }
+  assert.equal(store.write(good, ""), false);assert.equal(m.data.get(`${key}:prev`), "keep");
+  assert.equal(store.write(good), true);
+});
+
+test("a merged union over the encounter bound is rejected without losing either current key", () => {
+  const facts = (prefix: string) => Object.fromEntries(Array.from({ length: 300 }, (_, i) => [`${prefix}${i}`, { stage: "accepted" as const, at: 1 }]));
+  const existing = { ...good, encounters: facts("a") }, incoming = { ...good, encounters: facts("b") };
+  const key = worldStateKey(SAVE), m = memory({ [key]: stored(existing), [`${key}:prev`]: "keep" }), store = new WorldStateStore(m.kv);
+  assert.equal(parseWorldState(stored(existing), SAVE).kind, "ok");assert.equal(parseWorldState(stored(incoming), SAVE).kind, "ok");
+  assert.equal(store.write(incoming), false);assert.equal(store.status, "ok");
+  assert.equal(m.data.get(key), stored(existing));assert.equal(m.data.get(`${key}:prev`), "keep");
+});
+
+test("the record size limit is UTF-8 bytes rather than only JavaScript code units", () => {
+  const text = stored({ ...good, extra: "é".repeat(40000) });
+  assert.ok(text.length < WORLD_STATE_LIMITS.bytes);assert.ok(new TextEncoder().encode(text).length > WORLD_STATE_LIMITS.bytes);
+  assert.deepEqual(parseWorldState(text, SAVE), { kind: "corrupt", reason: "too large" });
+  const m = memory(), store = new WorldStateStore(m.kv);assert.equal(store.write(JSON.parse(text)), false);assert.equal(m.data.size, 0);
+});

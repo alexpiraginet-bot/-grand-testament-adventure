@@ -62,14 +62,15 @@ function edgeStops(t: Terrain, a: PointXZ, b: PointXZ, segments: number, maxStep
 
 /** Exact extrema for these two interpolants over a rotated rectangular footprint. */
 export function footprintHeightRange(t: Terrain, b: Pick<Building, 'x' | 'z' | 'w' | 'd' | 'rot'>,
-  segments = t.n - 1): { min: number; max: number } {
+  segments = t.n - 1, surface: 'both' | 'rendered' = 'both'): { min: number; max: number } {
   const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
     .map(([sx, sz]) => buildingPoint(b, sx * b.w / 2, sz * b.d / 2));
   let min = Infinity, max = -Infinity;
   const sample = (p: PointXZ) => {
     const measured = t.heightAt(p.x, p.z), rendered = renderedGroundHeight(t, p.x, p.z, segments);
-    min = Math.min(min, measured, rendered); max = Math.max(max, measured, rendered);
-    return measured;
+    min = Math.min(min, rendered, surface === 'both' ? measured : rendered);
+    max = Math.max(max, rendered, surface === 'both' ? measured : rendered);
+    return surface === 'both' ? measured : rendered;
   };
   // Bilinear patches have no strict interior extremum; grid vertices and edge
   // stationary points suffice. The rendered triangles are affine.
