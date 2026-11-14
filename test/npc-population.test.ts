@@ -8,8 +8,9 @@ import { NPC_MOTION, npcStandable } from "../src/npc-navigation.ts";
 import { townLife, townNpcGround, townPlaces, type TownLifeInput } from "../src/town-life-layout.ts";
 import {
   ABSENCE_NOTE, NPC_APPROVED, NPC_BUDGET, NPC_MODELS, NPC_ROUTINE, NPC_SECTOR_M, animationRate, cast, episodeIdentities, presence, sectorOf,
-  select, settle, stepResidents, type NpcIdentity, type NpcModel, type Resident,
+  placeMission, select, settle, stepResidents, type NpcIdentity, type NpcModel, type Resident,
 } from "../src/npc-population.ts";
+import { TOWN_LINES, freshTalk, talkPress, talkView } from "../src/conversations.ts";
 
 const town = scene(256);
 const input: TownLifeInput = { terrain: t, start, beach, routes, plans: town.plans, boxes: town.boxes, margin: MARGIN };
@@ -45,8 +46,18 @@ test("today only Simão is drawn: the others of the passage are absent, each wit
   assert.deepEqual(NPC_MODELS[0].clips, ["idle", "walk"], "no talk or net clip exists yet");
   // settled, the only person is the mission's and no routine moves him
   const { residents } = settle(now.present, places, ground);
-  assert.deepEqual(residents.map((r) => [r.id, r.routine.kind, r.mission]), [["simao", "mission", true]]);
+  assert.deepEqual(residents.map((r) => [r.id, r.routine.kind, r.mission, r.placed]), [["simao", "mission", true, false]]);
+  assert.ok(Number.isNaN(residents[0].pos.x) && Number.isNaN(residents[0].pos.z), "until the scene says where he is, he is nowhere: not at the map's origin");
+  assert.deepEqual(select(residents, { x: 0, z: 0 }, NPC_BUDGET.mobile, new Set()).active, [], "and he is not listed as drawn");
   assert.deepEqual(presence(residents, new Set(["simao"])).drawn, [], "the mission draws its own people; the ambient lists stay empty");
+  // the scene places him where the follower really is: now he counts
+  placeMission(residents, { simao: { pos: { x: -204, z: 432 }, heading: 1, speed: 0.7 } });
+  assert.deepEqual([residents[0].placed, residents[0].pos, residents[0].heading, residents[0].clip], [true, { x: -204, z: 432 }, 1, "walk"]);
+  assert.deepEqual(select(residents, { x: 0, z: 0 }, NPC_BUDGET.mobile, new Set()).active, ["simao"]);
+  // his actor is hidden or failed: nowhere again
+  placeMission(residents, { simao: null });
+  assert.equal(residents[0].placed, false);
+  assert.deepEqual(select(residents, { x: 0, z: 0 }, NPC_BUDGET.mobile, new Set(["simao"])).removed, ["simao"]);
 });
 
 test("a mesh is never worn by the wrong person, and an unreviewed or missing one draws nobody", () => {
@@ -120,7 +131,7 @@ test("settling is reproducible, puts each person on free ground, pairs people tw
 });
 
 test("the people drawn stay within the budget, nearest first, without flicker at the edge, and nobody in a dialogue vanishes", () => {
-  const far = (id: string, x: number, z: number): Resident => ({ id, model: "teste-a", mission: false, routine: { kind: "wait", spot: "s" }, home: { x, z }, pos: { x, z }, heading: 0, speed: 0, clip: "idle", pace: 0.7, dir: 1, leg: 0, hold: 0 });
+  const far = (id: string, x: number, z: number): Resident => ({ id, model: "teste-a", mission: false, placed: true, routine: { kind: "wait", spot: "s" }, home: { x, z }, pos: { x, z }, heading: 0, speed: 0, clip: "idle", pace: 0.7, dir: 1, leg: 0, hold: 0 });
   const ring = Array.from({ length: 30 }, (_, i) => far(`p${String(i).padStart(2, "0")}`, 3 + i * 2, 0));       // 3 m, 5 m, ... 61 m east
   const player = { x: 0, z: 0 };
   for (const [name, budget] of Object.entries(NPC_BUDGET)) {
@@ -234,4 +245,56 @@ test("only the people drawn exist for the rest of the game: colliders and target
   for (const c of here.colliders) assert.equal(c.radius, NPC_MOTION.radius);
   assert.deepEqual(presence(residents, new Set()).drawn, []);
   assert.deepEqual(presence(residents, new Set(["nobody"])).colliders, []);
+});
+
+test("a mission person without a real place blocks nobody; placed, the town's walkers go round him; his slot is held either way", () => {
+  const present = [...cast(episodeIdentities(names, 0).slice(0, 1), NPC_MODELS, new Set(["simao-r12"])).present, ...crowd(12)];
+  const { residents } = settle(present, places, ground, 7);
+  const simao = residents.find((r) => r.id === "simao")!, walker = residents.find((r) => r.routine.kind === "walk")!;
+  assert.equal(simao.placed, false);
+  const all = new Set(residents.map((r) => r.id)), away = { x: 800, z: -800 }, DT = 0.05;
+  for (let i = 0; i < 200; i++) stepResidents(residents, all, places, ground, away, DT);
+  assert.ok(walker.speed > 0, "the unplaced follower is nothing in his way");
+  // the follower really stands 1.1 m in front of the walker: the walker does not walk into him
+  const front = { x: walker.pos.x + Math.sin(walker.heading) * 1.1, z: walker.pos.z - Math.cos(walker.heading) * 1.1 };
+  placeMission(residents, { simao: { pos: front, heading: 0 } });
+  for (let i = 0; i < 60; i++) {
+    stepResidents(residents, all, places, ground, away, DT);
+    assert.ok(Math.hypot(walker.pos.x - front.x, walker.pos.z - front.z) >= NPC_MOTION.radius * 2, "he keeps a body's distance from the follower");
+  }
+  assert.deepEqual(simao.pos, front, "the routines never move a mission person");
+  // the budget: his slot is held before he appears, so nobody of the town is dropped when he does
+  const near = { ...residents.find((r) => !r.mission)!.pos };
+  placeMission(residents, { simao: null });
+  const B = { ...NPC_BUDGET.mobile, near: 5 };
+  const before = select(residents, near, B, new Set());
+  assert.equal(before.active.length, 4, "four of the town, one slot held");
+  assert.ok(!before.active.includes("simao"));
+  placeMission(residents, { simao: { pos: front, heading: 0 } });
+  const after = select(residents, near, B, new Set(before.active));
+  assert.deepEqual(after.added, ["simao"]); assert.deepEqual(after.removed, []);
+  assert.equal(after.active.length, 5);
+});
+
+test("the conversation's lists go straight in: whoever speaks holds still and is not unloaded, as arrays or as sets", () => {
+  const { residents } = settle(crowd(12), places, ground, 7);
+  const walker = residents.find((r) => r.routine.kind === "walk")!, all = new Set(residents.map((r) => r.id));
+  for (let i = 0; i < 200; i++) stepResidents(residents, all, places, ground, { x: 800, z: -800 }, 0.05);
+  assert.ok(walker.speed > 0);
+  // a test line for this test double: the game's own lines are Simão's
+  const lines = [...TOWN_LINES, { id: "teste", speaker: walker.id, texto: "Bom dia.", when: "sempre" as const, aponta: null }];
+  const people = [{ id: walker.id, nome: null, pos: walker.pos, height: 0 }], hero = { x: walker.pos.x + 1, z: walker.pos.z };
+  const talk = talkPress(freshTalk(), lines, people, `conversa:${walker.id}`, { scripture: false, taught: false }).next;
+  const view = talkView(talk, lines, people, hero, {});
+  assert.deepEqual(view.busy, [walker.id]); assert.deepEqual(view.pinned, [walker.id]);
+  const stood = { ...walker.pos };
+  for (let i = 0; i < 100; i++) stepResidents(residents, all, places, ground, { x: 800, z: -800 }, 0.05, view.busy);
+  assert.deepEqual(walker.pos, stood);
+  for (let i = 0; i < 20; i++) stepResidents(residents, all, places, ground, { x: 800, z: -800 }, 0.05, new Set(view.busy));
+  assert.deepEqual(walker.pos, stood);
+  // far from the player and past the budget, the speaker stays drawn
+  const farAway = { x: walker.pos.x + 1000, z: walker.pos.z };
+  assert.deepEqual(select(residents, farAway, NPC_BUDGET.mobile, new Set(), view.pinned).active, [walker.id]);
+  assert.deepEqual(select(residents, farAway, NPC_BUDGET.mobile, new Set(), new Set(view.pinned)).active, [walker.id]);
+  assert.deepEqual(select(residents, farAway, NPC_BUDGET.mobile, new Set()).active, []);
 });

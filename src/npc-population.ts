@@ -45,6 +45,10 @@ export type NpcIdentity = {
   mission: boolean;
 };
 
+/** A list of ids as either a Set or an array (conversations.ts gives arrays). */
+export type Ids = ReadonlySet<string> | readonly string[];
+const idSet = (ids: Ids): ReadonlySet<string> => (ids instanceof Set ? ids : new Set(ids));
+
 export type Absence = "sem-modelo" | "modelo-desconhecido" | "nao-aprovado" | "sem-idle" | "de-outra-pessoa" | "copias-esgotadas" | "nao-carregado";
 export const ABSENCE_NOTE: Record<Absence, string> = {
   "sem-modelo": "ainda não tem malha com rig e animação revisados",
@@ -102,6 +106,10 @@ export type Resident = {
   id: string;
   model: string;
   mission: boolean;
+  /** The person has a real place in the scene. Always true for the town's people. A mission person is moved by the
+   * mission, so they are placed only while the scene says where they really are (placeMission): until then they
+   * have no position at all, and nothing here treats them as standing anywhere. */
+  placed: boolean;
   routine: Routine;
   /** Where the person belongs: the spot, or the start of the lane. Used to choose who is loaded near the player. */
   home: Vec2;
@@ -142,12 +150,12 @@ export function settle(present: readonly CastMember[], places: TownPlaces, groun
   const residents: Resident[] = [], unplaced: string[] = [];
   const order = present.filter((m) => !m.identity.mission).map((m) => ({ m, k: hash(`${seed}:${m.id}`) })).sort((a, b) => a.k - b.k || a.m.id.localeCompare(b.m.id)).map((x) => x.m);
   for (const m of present) if (m.identity.mission) {
-    residents.push({ id: m.id, model: m.model.id, mission: true, routine: { kind: "mission" }, home: { x: 0, z: 0 }, pos: { x: 0, z: 0 }, heading: 0, speed: 0, clip: "idle", pace: m.model.walkSpeedMps, dir: 1, leg: 0, hold: 0 });
+    residents.push({ id: m.id, model: m.model.id, mission: true, placed: false, routine: { kind: "mission" }, home: { x: NaN, z: NaN }, pos: { x: NaN, z: NaN }, heading: 0, speed: 0, clip: "idle", pace: m.model.walkSpeedMps, dir: 1, leg: 0, hold: 0 });
   }
   const free = places.spots.filter((s) => npcStandable(ground, s.at));
   const take = (pick: (s: Spot) => boolean) => { const i = free.findIndex(pick); return i < 0 ? null : free.splice(i, 1)[0]; };
   const stand = (m: CastMember, s: Spot, routine: Routine, clip: NpcClip, facing = s.facing) =>
-    residents.push({ id: m.id, model: m.model.id, mission: false, routine, home: { ...s.at }, pos: { ...s.at }, heading: facing, speed: 0, clip, pace: m.model.walkSpeedMps, dir: 1, leg: 0, hold: 0 });
+    residents.push({ id: m.id, model: m.model.id, mission: false, placed: true, routine, home: { ...s.at }, pos: { ...s.at }, heading: facing, speed: 0, clip, pace: m.model.walkSpeedMps, dir: 1, leg: 0, hold: 0 });
   const lanes = places.lanes.filter((l) => l.points.length >= 2);
   const walkers = new Map<string, number>();
   const queue = [...order];
@@ -176,9 +184,9 @@ export function settle(present: readonly CastMember[], places: TownPlaces, groun
         const leg = Math.floor(r() * (lane.points.length - 1)), u = 0.15 + r() * 0.7;
         const dir: 1 | -1 = (n + attempt) % 2 ? -1 : 1;
         const pos = beside(lane.points[leg], lane.points[leg + 1], u, lane.side * dir);
-        if (!npcStandable(ground, pos) || residents.some((o) => !o.mission && dist(o.pos, pos) < 2.5)) continue;
+        if (!npcStandable(ground, pos) || residents.some((o) => o.placed && dist(o.pos, pos) < 2.5)) continue;
         const to = dir === 1 ? lane.points[leg + 1] : lane.points[leg];
-        residents.push({ id: m.id, model: m.model.id, mission: false, routine: { kind: "walk", lane: lane.id }, home: { ...pos }, pos, heading: headingTo(pos, to), speed: 0, clip: "idle", pace: m.model.walkSpeedMps, dir, leg, hold: 0 });
+        residents.push({ id: m.id, model: m.model.id, mission: false, placed: true, routine: { kind: "walk", lane: lane.id }, home: { ...pos }, pos, heading: headingTo(pos, to), speed: 0, clip: "idle", pace: m.model.walkSpeedMps, dir, leg, hold: 0 });
         walkers.set(lane.id, n + 1); placed = true;
       }
       if (placed) continue;
@@ -206,20 +214,24 @@ export type Selection = { active: string[]; added: string[]; removed: string[] }
 
 /** The people drawn this frame. Order of claim on the budget: whoever must not vanish (`pinned`: in a conversation,
  * being followed by the camera), then the mission's people, then the nearest. Pinned and mission people stay even
- * past the budget: nobody disappears in the middle of a dialogue. Sectors keep the search local. */
+ * past the budget: nobody disappears in the middle of a dialogue. A mission person holds a slot whether or not the
+ * scene has placed them yet (so nobody is dropped when the follower appears), but is listed as active only while
+ * placed. Sectors keep the search local. */
 export function select(residents: readonly Resident[], player: Vec2, budget: NpcBudget, previous: ReadonlySet<string>,
-  pinned: ReadonlySet<string> = new Set()): Selection {
+  pinnedIds: Ids = []): Selection {
+  const pinned = idSet(pinnedIds);
   const kept: Resident[] = [], rest: { r: Resident; d: number }[] = [];
   const cells = Math.ceil(budget.unload / NPC_SECTOR_M), cx = Math.floor(player.x / NPC_SECTOR_M), cz = Math.floor(player.z / NPC_SECTOR_M);
   for (const r of residents) {
-    if (pinned.has(r.id) || r.mission) { kept.push(r); continue; }
+    if (r.mission || (pinned.has(r.id) && r.placed)) { kept.push(r); continue; }
+    if (!r.placed) continue;
     const sx = Math.floor(r.pos.x / NPC_SECTOR_M), sz = Math.floor(r.pos.z / NPC_SECTOR_M);
     if (Math.abs(sx - cx) > cells || Math.abs(sz - cz) > cells) continue;                 // a sector out of reach
     const d = dist(r.pos, player);
     if (d <= (previous.has(r.id) ? budget.unload : budget.load)) rest.push({ r, d });
   }
   rest.sort((a, b) => a.d - b.d || a.r.id.localeCompare(b.r.id));
-  const active = [...kept, ...rest.slice(0, Math.max(0, budget.near - kept.length)).map((x) => x.r)].map((r) => r.id);
+  const active = [...kept.filter((r) => r.placed), ...rest.slice(0, Math.max(0, budget.near - kept.length)).map((x) => x.r)].map((r) => r.id);
   const now = new Set(active);
   return { active, added: active.filter((id) => !previous.has(id)), removed: [...previous].filter((id) => !now.has(id)).sort() };
 }
@@ -241,8 +253,9 @@ export const NPC_ROUTINE = { yield: 1.6, resume: 0.8, blockedWait: 1.5, turn: 3.
  * `busy` are people in a conversation: they hold still and keep facing whoever they talk to (the conversation turns
  * them). Nobody is moved onto ground the follower's rules reject, into another person, or into the player. */
 export function stepResidents(residents: readonly Resident[], active: ReadonlySet<string>, places: TownPlaces, ground: NpcGround,
-  player: Vec2, dt: number, busy: ReadonlySet<string> = new Set()): void {
+  player: Vec2, dt: number, busyIds: Ids = []): void {
   if (!(dt > 0)) return;
+  const busy = idSet(busyIds);
   const step = Math.min(dt, 0.05);
   const byId = new Map(residents.map((r) => [r.id, r] as const));
   for (const r of residents) {
@@ -253,7 +266,7 @@ export function stepResidents(residents: readonly Resident[], active: ReadonlySe
     if (k.kind === "wait" || k.kind === "net" || k.kind === "talk") {
       const spot = places.spots.find((s) => s.id === k.spot);
       let want = spot?.facing ?? r.heading;
-      if (k.kind === "talk") { const other = byId.get(k.with); if (other) want = headingTo(r.pos, other.pos); }
+      if (k.kind === "talk") { const other = byId.get(k.with); if (other?.placed) want = headingTo(r.pos, other.pos); }
       else if (k.kind === "wait" && dist(r.pos, player) <= NPC_ROUTINE.notice) want = headingTo(r.pos, player);   // he notices who comes near
       r.heading = turn(r.heading, want, NPC_ROUTINE.turn * step);
       continue;
@@ -281,17 +294,30 @@ export function stepResidents(residents: readonly Resident[], active: ReadonlySe
     if (Math.abs(Math.atan2(Math.sin(ahead - r.heading), Math.cos(ahead - r.heading))) > 0.6) { r.clip = "idle"; continue; }   // turn first, then walk
     const move = Math.min(left, r.pace * step);
     const next = { x: r.pos.x + ((target.x - r.pos.x) / left) * move, z: r.pos.z + ((target.z - r.pos.z) / left) * move };
-    const crowded = residents.some((o) => o !== r && active.has(o.id) && dist(o.pos, next) < NPC_MOTION.radius * 2 + 0.2) || dist(next, player) < NPC_MOTION.radius + 0.6;
+    const crowded = residents.some((o) => o !== r && o.placed && active.has(o.id) && dist(o.pos, next) < NPC_MOTION.radius * 2 + 0.2) || dist(next, player) < NPC_MOTION.radius + 0.6;
     if (crowded || !npcCanTraverse(ground, r.pos, next)) {                   // something in the way: wait, then go back
       r.hold = NPC_ROUTINE.blockedWait; r.dir = r.dir === 1 ? -1 : 1; r.clip = "idle"; continue;
     }
     r.pos = next; r.speed = move / step; r.clip = "walk";
   }
 }
+/** Where the mission's people really are this frame, from the scene (the follower's navigation and whether his actor
+ * is visible). Someone not listed, or listed as null, has no place: not loaded, hidden by distance, or not in this
+ * part of the story. A placed mission person is something the town's walkers go round; an unplaced one is nothing. */
+export function placeMission(residents: readonly Resident[], where: Readonly<Record<string, { pos: Vec2; heading: number; speed?: number } | null | undefined>>): void {
+  for (const r of residents) {
+    if (!r.mission) continue;
+    const at = where[r.id];
+    if (at && Number.isFinite(at.pos.x) && Number.isFinite(at.pos.z)) {
+      r.placed = true; r.pos = { ...at.pos }; r.home = { ...at.pos }; r.heading = at.heading; r.speed = at.speed ?? 0; r.clip = (at.speed ?? 0) > 0.02 ? "walk" : "idle";
+    } else { r.placed = false; r.pos = { x: NaN, z: NaN }; r.home = { x: NaN, z: NaN }; r.speed = 0; r.clip = "idle"; }
+  }
+}
+
 /** The people who exist for the rest of the game this frame: drawn, with a collider, on the radar, able to be
  * spoken to. Only the active; an absent or far person is in none of these lists. */
 export function presence(residents: readonly Resident[], active: ReadonlySet<string>) {
-  const here = residents.filter((r) => active.has(r.id) && !r.mission);
+  const here = residents.filter((r) => active.has(r.id) && !r.mission && r.placed);
   return {
     drawn: here.map((r) => ({ id: r.id, model: r.model, pos: { ...r.pos }, heading: r.heading, speed: r.speed, clip: r.clip })),
     colliders: here.map((r) => ({ id: r.id, pos: { ...r.pos }, radius: NPC_MOTION.radius })),

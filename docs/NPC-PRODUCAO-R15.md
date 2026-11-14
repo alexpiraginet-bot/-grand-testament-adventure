@@ -17,7 +17,7 @@ Elenco de hoje, conferido em teste: `simao` presente; `andre`, `tiago`, `joao`, 
 ## API para a ligação (Codex)
 
 ```ts
-import { cast, settle, select, stepResidents, presence, animationRate, episodeIdentities,
+import { cast, settle, select, stepResidents, placeMission, presence, animationRate, episodeIdentities,
   NPC_MODELS, NPC_BUDGET } from "./npc-population.ts";
 import { townPlaces, townNpcGround } from "./town-life-layout.ts";
 
@@ -25,6 +25,7 @@ const who = cast(episodeIdentities(names, meta.level_design.empregados), NPC_MOD
 const places = townPlaces(input, life), ground = townNpcGround(terrain, town.boxes, movementMargin);
 const { residents } = settle(who.present, places, ground, seed);
 // por quadro
+placeMission(residents, { simao: actualNpc() ? { pos: simNav.pos, heading: simNav.heading, speed: simNav.speed } : null });
 const sel = select(residents, player.pos, startupProfile.mobile ? NPC_BUDGET.mobile : NPC_BUDGET.desktop, previous, talk.pinned);
 stepResidents(residents, new Set(sel.active), places, ground, player.pos, dt, talk.busy);
 const here = presence(residents, new Set(sel.active));   // drawn[] e colliders[]: só quem está desenhado
@@ -44,7 +45,12 @@ const here = presence(residents, new Set(sel.active));   // drawn[] e colliders[
   `rua-da-vila`. Todos são posição escolhida pelo jogo e passam na regra de apoio do seguidor.
 
 Para Simão nada muda: ele é pessoa da missão, a rotina não o move e `presence()` não o lista; continua com o
-`NpcNavigation` do R12.
+`NpcNavigation` do R12. **Posição real (correção pedida na revisão do Codex):** uma pessoa de missão não tem lugar
+até a cena dizer onde ela está (`placeMission`, com a posição do seguidor enquanto o ator está visível, `null` caso
+contrário). Antes disso ela não está em lugar nenhum (não na origem do mapa), não aparece como ativa e não bloqueia
+ninguém; colocada, os caminhantes da vila desviam dela. A vaga dela no orçamento fica reservada nos dois casos, para
+ninguém da vila sumir quando o seguidor aparece. `select` e `stepResidents` aceitam as listas `pinned` e `busy` da
+conversa como vetor ou como `Set`.
 
 ## Primeira conversa (`src/conversations.ts`)
 
@@ -127,9 +133,9 @@ Codex está usando.
 
 ## Verificação
 
-`node --test test/npc-population.test.ts test/conversations.test.ts`: 9 + 5 testes, com o relevo real e os
+`node --test test/npc-population.test.ts test/conversations.test.ts`: 11 + 5 testes, com o relevo real e os
 colisores reconstruídos da vila. A multidão dos testes é feita de dublês (`teste-*`) e existe só nos testes.
-Mutações aplicadas uma a uma: 8 na população, 5 na conversa; uma da conversa sobreviveu na primeira rodada (alvo
+Mutações aplicadas uma a uma: 12 na população (8 na primeira entrega, 4 na correção da pessoa de missão), 5 na conversa; uma da conversa sobreviveu na primeira rodada (alvo
 oferecido enquanto alguém fala) e ganhou asserção própria.
 
 ## Limites
