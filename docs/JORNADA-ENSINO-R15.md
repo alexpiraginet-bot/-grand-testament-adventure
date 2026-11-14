@@ -101,9 +101,18 @@ rodada: não alterei. Arbustos, juncos e capim usam ruído e não foram medidos;
 `pois`: `quarteirao-inicial`, `passagem`, `patio-ensino`, `margem`, `casa-marcos-1-29`, todos com a nota
 “Posição escolhida pelo jogo”.
 
-**Limite da validação:** os colisores do teste são reconstruídos em Node como `village-houses.ts` faz, com caixas
-do tamanho catalogado no lugar das malhas de muro, rede e pedras. Vegetação não tem colisor e não entra; uma árvore
-pode nascer no pátio se `props()` não receber `keepClear`. A conferência no jogo real fica para a ligação.
+**Limite da validação em Node:** os colisores do teste são reconstruídos como `village-houses.ts` faz, com caixas
+do tamanho catalogado no lugar das malhas de muro, rede e pedras. Vegetação não tem colisor e não entra.
+
+**Conferência no jogo integrado (14/11, 22:39 UTC, `tools/check_town_life_r15.mjs`):** com a `main` da PR #14 unida
+a este branch (`e95035a`), o jogo foi aberto com `?debug=1` em 1280×800 e em 390×844 com toque emulado, sem jogar.
+O layout que o jogo calculou com o `town.boxes` real é **igual** ao de Node com os colisores reconstruídos: pátio em
+(−39; 85) com 13,3 m livres, rua de 58,7 m com 1,45 m livres no ponto mais estreito, casa de índice 31. Pela regra de
+movimento do próprio jogo (`__gta.blocked`, sem o corpo do seguidor): 592 amostras da rua, 384 do pátio e o ponto
+da porta, nenhuma bloqueada. A reconstrução dá 368 colisores nesta árvore (eram 370 antes das correções de apoio
+de pedras e redes do Codex). Relatório local: `shots/town-life-r15-e95035a/report.json`, SHA-256
+`f3b6dfd2f94ae67f93706a818c6b43dcd718a2c6c65be436bc1db5a3c4443db8`. Chromium com renderizador por software e
+emulação de viewport; não é celular físico, e nada foi caminhado nem capturado em imagem.
 
 ## Contrato de ligação, para o Codex
 

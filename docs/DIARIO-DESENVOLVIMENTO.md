@@ -1194,3 +1194,42 @@ alheias nem publicação de credenciais.
 Plano, evidências, rejeições e próximos critérios: `ENTREGA-INTERACOES-R15.md`.
 Os horários dos arquivos e relatórios delimitam atividade observada; não
 foram convertidos em horas humanas de desenvolvimento contínuo.
+
+## 14/11/2026 — R15 (Claude), depois da integração do Codex
+
+A PR #14 do Codex entrou na `main` às 22:32 UTC com os módulos de Claude até `5ec789e` ligados ao jogo (ação
+contextual, ensino de Marcos 1:21–22, destino de Marcos 1:29, Bíblia e persistência). O comentário dele na PR #10
+deixou população e conversa de Claude para a próxima integração e pediu três coisas antes de usar a população.
+
+| Commit | O que entrou |
+|---|---|
+| `e95035a` | `main` unida ao branch; um conflito, neste diário, com os dois blocos de 14/11 mantidos inteiros |
+| `9faeeae` | População: pessoa de missão sem posição até a cena informar (`placeMission`); listas da conversa como vetor ou `Set` |
+| `3869a39` | Achado da vegetação registrado; ferramenta de conferência do layout no navegador |
+
+- **Pessoa de missão na origem (defeito meu, apontado na revisão).** `settle` punha o seguidor em (0; 0). Um
+  caminhante da vila desviaria de um corpo invisível no centro do mapa. Agora quem é da missão não está em lugar
+  nenhum até `placeMission` receber a posição real do seguidor; a vaga no orçamento fica reservada para ninguém da
+  vila sumir quando ele aparece. Quatro mutações da correção, quatro acusadas.
+- **Listas `busy` e `pinned`.** A conversa devolve vetores e a população pedia `Set`; o exemplo do meu documento
+  nem compilaria. As duas funções aceitam os dois.
+- **Colisores e vegetação do jogo real.** A conferência no navegador passou nos dois tamanhos: o layout calculado
+  pelo jogo é igual ao dos testes e a rua, o pátio e a porta estão livres pela regra de movimento do jogo.
+- **Efeito colateral encontrado.** `props()` usa a mesma lista para excluir e para espalhar vegetação “ao longo das
+  rotas”. Com `keepClear` junto das rotas, como o `main.ts` integrado passa (e como o meu documento sugeria, sem eu
+  ter lido `props()` antes), a vegetação muda de lugar: árvores além da vila 78 → 46 de 125, pedras além da vila
+  362 → 277 de 420, pedras a até 60 m do pátio 45 → 110. Medido em Node com cópia fiel da regra; arbustos, juncos e
+  capim não foram medidos. A correção é em `world.ts`/`main.ts`, do Codex: não alterei, avisei na PR.
+- **Tentativa recusada.** Um comando que nomeava o bundle gerado foi recusado pelo filtro de privacidade da sessão
+  (o arquivo contém um endereço de contato). Não contornei: o hash do bundle desta conferência não foi registrado.
+- **Duas conversas com Simão.** O Codex ligou a dele (`context-action.ts`, quatro falas); a minha
+  (`conversations.ts`, duas falas) segue fora do jogo. Consolidar numa só fica para a próxima rodada, com a
+  prioridade da Escritura preservada; quais falas ficam é decisão editorial de Alex.
+
+Verificação na árvore unida: `npx tsc --noEmit` sem erros; `node --test test/*.test.ts` 434 de 434; `npx vite build`
+concluído; `tools/check_town_life_r15.mjs` aprovado em 1280×800 e 390×844 (emulação, renderizador por software).
+Não verificado: caminhada real, capturas, quadros, bytes, Safari físico.
+
+Uso real da sessão às 22:40:29 UTC: 490 respostas do Fable 5.2 (US$ 143,92 em equivalente de API), total da sessão
+US$ 330,56; desde a medição das 22:19:16, 43 respostas e US$ 8,19. Atividade estimada 9,26 h (era 9,0 h). É
+comparação com preço de API, não cobrança, e a atividade é estimativa por intervalos de até 5 minutos.
