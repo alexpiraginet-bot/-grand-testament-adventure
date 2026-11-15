@@ -44,6 +44,8 @@
 .bible-entry summary strong::after { content: " +"; color: var(--ui-accent); font-weight: 400; }
 .bible-entry details[open] summary strong::after { content: " −"; }
 .bible-entry.is-depois { opacity: .86; }
+.bible-run { margin: 14px 0 4px; font: 700 12px "Space Mono", monospace; letter-spacing: .04em; color: var(--ui-action); }
+.bible-run:first-of-type { margin-top: 8px; }
 .bible-verse { position: relative; margin: 6px 0; color: var(--ui-secondary); }
 .bible-verse sup { margin-right: 6px; font: 700 11px "Space Mono", monospace; color: var(--ui-accent); }
 .bible-entry.is-here .bible-verse { padding: 6px 10px; border-radius: 8px; }

@@ -46,6 +46,22 @@ export function rangeRef(ep: Pick<EpisodeData, "ref_pt">, first: string, last: s
   return a.verse === b.verse ? ref : `${ref}–${b.verse}`;
 }
 
+/** The keys in runs of consecutive verses of one chapter, in the order given: "Mark.1.16" to "Mark.1.22" is one run
+ * and "Mark.1.29" begins another. The panel names each run when the passage has more than one, so a verse number is
+ * never read under the wrong chapter. A key that is not a verse key ends a run and belongs to none. */
+export function verseRuns(keys: readonly string[]): string[][] {
+  const runs: string[][] = [];
+  let last: Key | null = null;
+  for (const k of keys) {
+    const cur = parseKey(k);
+    if (!cur) { last = null; continue; }
+    if (last && cur.book === last.book && cur.chapter === last.chapter && cur.verse === last.verse + 1) runs[runs.length - 1].push(k);
+    else runs.push([k]);
+    last = cur;
+  }
+  return runs;
+}
+
 /** Where the played passage goes in the reading order: right after the last moment that the same gospel tells
  * before it. The itinerary does not fix how the four gospels' accounts interleave and neither does this: a moment the
  * passage's gospel does not tell stays where the itinerary put it. Returns the index to insert at, and the moment it
