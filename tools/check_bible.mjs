@@ -14,7 +14,10 @@ mkdirSync(OUT, { recursive: true });
 // the verses as the episode data has them: what the panel must show, letter for letter
 const ep = JSON.parse(readFileSync(new URL("../src/data/mc-pescadores.json", import.meta.url), "utf8"));
 const order = JSON.parse(readFileSync(new URL("../src/data/biblia-cronologica.json", import.meta.url), "utf8"));
-const V = (n) => ep.versiculos[`Mark.1.${n}`];
+// R15: the panel also carries the step after the boat (Mark 1:21-22) and the verse that names the next place (1:29)
+const ensino = JSON.parse(readFileSync(new URL("../src/data/mc-ensino.json", import.meta.url), "utf8"));
+const V = (n) => ep.versiculos[`Mark.1.${n}`] ?? ensino.versiculos[`Mark.1.${n}`] ?? (ensino.depois.versiculo === `Mark.1.${n}` ? ensino.depois.texto : undefined);
+const AHEAD = [[22, "a-seguir"], [29, "a-seguir"]];       // the verses of the teaching step and of the house, before they are reached
 const report = { url: URL_, note: "Missions reached by debug teleport and action; Chromium emulation, not a physical phone.", runs: {} };
 const LONG = { timeout: 600000, polling: 150 };
 
@@ -59,13 +62,14 @@ async function run(name, ctxOpts) {
   await g(() => new Promise((done) => { let n = 0; const tick = () => (++n >= 3 ? done() : requestAnimationFrame(tick)); requestAnimationFrame(tick); }));
   assert.equal(await g(() => window.__gta.state.time), t0, "the game is paused while the Bible is open");
   assert.deepEqual(await nextBox(), { h: "Próximo passo", ref: "Marcos 1:16", verses: [V(16)], task: "No jogoDesça até a praia" });
-  assert.deepEqual(await marks(), [[16, "agora"], [17, "a-seguir"], [18, "a-seguir"], [19, "a-seguir"], [20, "a-seguir"], [21, "a-seguir"]]);
-  assert.deepEqual(await g(() => [...document.querySelectorAll("#bible-here .bible-verse")].map((p) => p.childNodes[1].textContent)), [16, 17, 18, 19, 20, 21].map(V),
+  assert.deepEqual(await marks(), [[16, "agora"], [17, "a-seguir"], [18, "a-seguir"], [19, "a-seguir"], [20, "a-seguir"], [21, "a-seguir"], ...AHEAD]);
+  assert.deepEqual(await g(() => [...document.querySelectorAll("#bible-here .bible-verse")].map((p) => p.childNodes[1].textContent)), [16, 17, 18, 19, 20, 21, 22, 29].map(V),
     "the passage's verses, letter for letter");
   // the reading order: the itinerary's moments with the passage after the baptism
   const entries = await g(() => [...document.querySelectorAll(".bible-list > li")].map((li) => [li.querySelector(".bible-tag").textContent, li.querySelector("strong").textContent, li.querySelector(".bible-where").textContent]));
   const expected = order.momentos.map((m, i) => [i < 2 ? "Antes desta passagem" : "Ainda não jogável", m.titulo, `${m.fase} · ${m.lugar} · ${m.ref}`]);
-  expected.splice(2, 0, ["Você está aqui", ep.titulo, `${ep.lugar} · Marcos 1:16–21`]);
+  // R15 names the passage by its three disjoint references: Mark 1:23-28 is not in it and is not implied
+  expected.splice(2, 0, ["Você está aqui", ep.titulo, `${ep.lugar} · ${ep.ref_pt}; ${ensino.ref_pt}; ${ensino.depois.ref_pt}`]);
   assert.deepEqual(entries, expected);
   assert.equal(await text(".bible-note"), "Roteiro de leitura do Bíblia Conectada: uma ordem editorial ampla, não uma cronologia histórica harmonizada. Esta passagem aparece depois de “Às águas do Jordão” pela ordem de Marcos; a relação exata com os relatos dos outros evangelhos não é fixada.");
   assert.ok((await text(".bible-footer")).startsWith("Todas as Escrituras em português citadas são da Bíblia Livre (BLIVRE)"), "the BLIVRE notice is in the panel");
@@ -111,7 +115,7 @@ async function run(name, ctxOpts) {
   assert.deepEqual(await line(), { objective: "Abra a Bíblia", right: "Marcos 1:19–20", sealed: true });
   await press("#obj"); await waitOpen(true);
   assert.deepEqual(await nextBox(), { h: "Próximo passo", ref: "Marcos 1:19–20", verses: [V(19), V(20)], task: "No jogoChame Tiago e João" });
-  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "agora"], [20, "agora"], [21, "a-seguir"]]);
+  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "agora"], [20, "agora"], [21, "a-seguir"], ...AHEAD]);
   await page.screenshot({ path: `${OUT}/${name}-4-segundo-chamado.png` });
   await page.keyboard.press("Escape"); await waitOpen(false);
   await page.waitForFunction(() => document.getElementById("objt").textContent === "Chame Tiago e João", null, LONG);
@@ -127,17 +131,33 @@ async function run(name, ctxOpts) {
   assert.deepEqual(await line(), { objective: "Abra a Bíblia", right: "Marcos 1:21", sealed: true });
   await press("#obj"); await waitOpen(true);
   assert.deepEqual(await nextBox(), { h: "Próximo passo", ref: "Marcos 1:21", verses: [V(21)], task: "No jogoVolte a Cafarnaum" });
-  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "vivido"], [20, "vivido"], [21, "agora"]]);
+  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "vivido"], [20, "vivido"], [21, "agora"], ...AHEAD]);
   await press("#bible-close"); await waitOpen(false);
   await page.waitForFunction(() => document.getElementById("objt").textContent === "Volte a Cafarnaum", null, LONG);
   assert.match(await text("#dist"), /^\d+ m$/);
   await tp(P.start[0], P.start[1] + 10, head(P.beach, P.start));
   await page.waitForFunction(() => window.__gta.roam().phase === "free", null, LONG);
+  // 7. R15: back in the village the story goes on. The next step is the teaching (Mark 1:21-22): verse 21, whose
+  // first clause the epilogue just staged, and verse 22 are "now"; the house's verse is still ahead.
   await g(() => window.__gta.openBible()); await waitOpen(true);
-  assert.equal(await text("#bible-next-h"), "Passagem vivida");
-  assert.deepEqual((await marks()).map((m) => m[1]), Array(6).fill("vivido"));
-  assert.equal(await text("#bible-here .bible-tag"), "Vivida");
-  await page.screenshot({ path: `${OUT}/${name}-5-vivida.png` });
+  assert.deepEqual(await nextBox(), { h: "Próximo passo", ref: "Marcos 1:21–22", verses: [V(21), V(22)], task: "No jogoVá ao pátio para começar a ensinar." });
+  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "vivido"], [20, "vivido"], [21, "agora"], [22, "agora"], [29, "a-seguir"]]);
+  assert.equal(await text("#bible-here .bible-tag"), "Você está aqui");
+  await page.screenshot({ path: `${OUT}/${name}-5-ensino.png` });
+  await page.keyboard.press("Escape"); await waitOpen(false);
+  assert.equal(await isOpen(), false);
+  // the place is reached without the Bible having to be open, and one real press lives the step
+  const court = await g(() => window.__gta.teaching().layout.court.at);
+  await tp(court.x, court.z + 2, 0);
+  await page.waitForFunction(() => { const a = window.__gta.actions(); return window.__gta.teaching().state.phase === "ready" && a.shown.to === "mission" && a.shown.label === "Ensinar"; }, null, LONG);
+  if (touch) await page.tap("#act", { timeout: 300000 });
+  else { await page.locator("#c").click({ position: { x: Math.floor(ctxOpts.viewport.width * 0.55), y: Math.floor(ctxOpts.viewport.height * 0.45) } }); await page.keyboard.press("KeyE"); }
+  await page.waitForFunction(() => window.__gta.teaching().state.phase === "done", null, LONG);
+  // 8. lived: what the text says next is the house (Mark 1:29), shown as the step in preparation it is
+  await page.waitForFunction(() => { window.__gta.openBible(); return document.getElementById("biblia")?.open === true; }, null, LONG);
+  assert.deepEqual(await nextBox(), { h: "Próximo passo", ref: "Marcos 1:29", verses: [V(29)], task: "No jogoConheça o destino seguinte. Esta cena ainda está em preparação." });
+  assert.deepEqual(await marks(), [[16, "vivido"], [17, "vivido"], [18, "vivido"], [19, "vivido"], [20, "vivido"], [21, "vivido"], [22, "vivido"], [29, "agora"]]);
+  await page.screenshot({ path: `${OUT}/${name}-6-destino.png` });
   await page.keyboard.press("Escape"); await waitOpen(false);
   assert.equal(await isOpen(), false);
 

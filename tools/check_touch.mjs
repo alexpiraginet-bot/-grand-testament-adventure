@@ -152,8 +152,12 @@ async function run(name, ctxOpts) {
     const a = center(actR);
     await finger("touchStart", a.x, a.y); await finger("touchEnd");                 // a real tap, not the debug hook
   } else {
-    assert.equal(await g(() => document.getElementById("act").hidden), true, "no round button on PC");
-    assert.equal(await g(() => document.getElementById("prompt").hidden), false, "E prompt on PC");
+    // R15: the round button is offered on a PC as well (it can be clicked), beside the E prompt, with the same word
+    const pc = await g(() => ({ act: document.getElementById("act").hidden, word: document.getElementById("actt").textContent, prompt: document.getElementById("prompt").hidden }));
+    assert.deepEqual(pc, { act: false, word: label, prompt: false }, "round button and E prompt on PC, saying the same thing");
+    const actR = await rect("#act");
+    for (const s of [".radarbox", ".mission", "#prompt"]) assert.ok(!overlap(actR, await rect(s)), `action button clear of ${s}`);
+    r.action = { rect: actR };
     await page.screenshot({ path: `${OUT}/${name}-3-prompt.png` });
     await page.keyboard.press("KeyE");
   }
