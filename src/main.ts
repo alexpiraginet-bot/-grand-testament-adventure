@@ -3,7 +3,7 @@
 import * as THREE from "three/webgpu";
 import episode from "./data/mc-pescadores.json";
 import teachingData from './data/mc-ensino.json';
-import {beginTeaching,restoreTeaching,stepTeaching,teachingLines,teachingView,recordTeaching,TEACHING_ID,type TeachingStep} from './teaching-journey.ts';
+import {beginTeaching,restoreTeaching,stepTeaching,teachingLines,teachingView,recordTeaching,TEACHING_ID,TEACHING_ONWARD_ID,type TeachingStep} from './teaching-journey.ts';
 import {WorldStateStore,savedStage} from './world-state.ts';
 import {townLife} from './town-life-layout.ts';
 import {teachingReading} from './teaching-bible.ts';
@@ -217,6 +217,8 @@ async function main() {
   });
   scene.add(town.group);
   const life=townLife({terrain,start:pt(P.start),beach:pt(P.beach),routes:keep,plans:town.plans,boxes:town.boxes,margin:movementMargin});
+  // Without a safe yard or street the step after the boat is not offered. Say so: otherwise it vanishes without a trace.
+  if(!life)console.warn('Lugar do ensino indisponível nesta vila; a jornada termina no epílogo.');
   const vegetation=props(terrain,[...keep,...life?.keepClear??[]],q,assets,town.boxes); scene.add(vegetation);
 
   // Attach ambience to actual tree positions and the mapped shore, not a global sound bed.
@@ -467,7 +469,7 @@ async function main() {
 
   const worldStore=new WorldStateStore();
   let worldRecord=worldStore.load(save.id,'cafarnaum-r15',Date.now());
-  let teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID)),teachingAnnounceLeft=0;
+  let teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID),savedStage(worldRecord,TEACHING_ONWARD_ID)),teachingAnnounceLeft=0;
   const teachingText=teachingLines(teachingData);
   const applyTeaching=(result:TeachingStep)=>{
     teaching=result.next;
@@ -770,7 +772,7 @@ async function main() {
 
     // Exactly one read and one destination. Revalidate the painted label after
     // movement: a disappearing actor never redirects E to its neighbour.
-    if(worldRecord.saveId!==save.id){worldRecord=worldStore.load(save.id,'cafarnaum-r15',Date.now());teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID));}
+    if(worldRecord.saveId!==save.id){worldRecord=worldStore.load(save.id,'cafarnaum-r15',Date.now());teaching=restoreTeaching(savedStage(worldRecord,TEACHING_ID),savedStage(worldRecord,TEACHING_ONWARD_ID));}
     if(life&&roam.phase==='free'&&!paused&&!frozen&&!shot)applyTeaching(beginTeaching(teaching));
     const actionPressed=input.takeAction(),changeFocus=input.takeFocus();
     const actionAllowed=!paused&&!frozen&&!shot&&playing&&(!ended||roaming)&&state.phase!=='line'&&roam.phase!=='line'&&teaching.phase!=='line'&&teachingAnnounceLeft<=0;
@@ -930,7 +932,7 @@ async function main() {
       const closed = sealedStep();                                 // the step still unread in the Bible, if any
       const lesson=currentTeaching();
       if(lesson)hud.teaching(lesson,state,player.pos,player.heading,followers,dt,input.touch,teachingAnnounceLeft>0,
-        worldStore.status==='ok'?'':'O progresso deste encontro vale só nesta visita.');
+        worldStore.status==='ok'?'':'O progresso deste encontro vale só nesta visita.',notice);
       else if (roaming) {
         const back = roam.phase === "return";
         // free: the radar points to the nearest place not yet found, so the open region has somewhere to go

@@ -113,11 +113,11 @@ export class Hud {
     if($('subr').textContent!=='SIMÃO · NARRATIVA DO JOGO')$('subr').textContent='SIMÃO · NARRATIVA DO JOGO';
   }
 
-  teaching(v:TeachingView,s:State,pos:Vec2,heading:number,followers:RadarMark[],dt:number,touch:boolean,announce:boolean,storageNotice:string){
+  teaching(v:TeachingView,s:State,pos:Vec2,heading:number,followers:RadarMark[],dt:number,touch:boolean,announce:boolean,storageNotice:string,notice:string|null=null){
     if(this.teachingPhase!==v.phase){this.teachingPhase=v.phase;this.narrativeLeft=7;}
     const routes=v.route.slice(1).map((point,i)=>({ax:v.route[i].x,az:v.route[i].z,bx:point.x,bz:point.z,r:1.5}));
     this.roam({kind:v.line?'line':'free',objective:v.objective,dist:v.dist,line:v.line??(announce?v.announce:null),
-      narrative:v.narrative,guidance:[v.guidance,storageNotice].filter(Boolean).join(' '),routes},s,pos,heading,v.goal,followers,null,dt,touch);
+      narrative:v.narrative,guidance:[v.guidance,storageNotice].filter(Boolean).join(' '),routes},s,pos,heading,v.goal,followers,notice,dt,touch);
     $('mk').textContent='CAFARNAUM · ENSINAMENTOS';
     $('ref').textContent=v.ref;
     const plateReference=$('plate').querySelector('.r');
