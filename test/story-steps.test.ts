@@ -124,7 +124,16 @@ test("a step is a walk and, where the passage gives him something to do, one act
     assert.ok(s.objective.length >= 8 && s.objective.length <= 52, `${s.id}: the mission line fits the HUD (${s.objective.length})`);
     assert.doesNotMatch(s.objective, /[.!?]$/);
     if (s.action) {
-      assert.ok(s.action.length <= 20, `${s.id}: the button's word fits (${s.action})`);
+      // The round button, as measured in the running page (10 px capitals, about 6.6 px a character, 78 px wide at
+      // the most; the browser also breaks a line after a hyphen): one line holds nine characters inside the circle,
+      // two lines hold ten and seven. "Falar aos discípulos" and "Ir até ela" were seen leaving it.
+      const rows: string[] = [];
+      for (const piece of s.action.split(/ |(?<=-)/)) {
+        const last = rows[rows.length - 1], glue = last?.endsWith("-") ? "" : " ";
+        if (last !== undefined && `${last}${glue}${piece}`.length <= 11) rows[rows.length - 1] = `${last}${glue}${piece}`; else rows.push(piece);
+      }
+      assert.ok(rows.length === 1 ? rows[0].length <= 9 : rows.length === 2 && rows[0].length <= 10 && rows[1].length <= 7,
+        `${s.id}: "${s.action}" fits the round button (${JSON.stringify(rows)})`);
       assert.match(s.action, /^[A-ZÀ-Ú]/);
       assert.notEqual(s.doing, s.objective, `${s.id}: what to do there is not the way there`);
       assert.ok(s.doing.length <= 52);

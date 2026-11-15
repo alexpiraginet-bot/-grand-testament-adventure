@@ -190,6 +190,22 @@ async function run(name, ctxOpts) {
         assert.equal(await text("#mk"), mark);
         assert.equal(await text("#objt"), cur.def.doing);
         if (touch) assert.equal(await visible("#act"), true, `${cur.def.id}: the hand is offered`);
+        // the label is inside the round button: its line boxes against the button's circle, in the real styles
+        const fit = await g(() => {
+          const b = document.getElementById("act"), t = document.getElementById("actt");
+          if (b.hidden || getComputedStyle(b).display === "none") return null;
+          const rb = b.getBoundingClientRect(), cx = rb.left + rb.width / 2, cy = rb.top + rb.height / 2, r = Math.min(rb.width, rb.height) / 2;
+          const range = document.createRange(); range.selectNodeContents(t);
+          const lines = [...range.getClientRects()].filter((q) => q.width > 0);
+          const over = Math.max(...lines.flatMap((q) => [[q.left, q.top], [q.right, q.top], [q.left, q.bottom], [q.right, q.bottom]].map(([x, y]) => Math.hypot(x - cx, y - cy) - r)));
+          return { label: t.textContent, lines: lines.length, over: Math.round(over * 10) / 10 };
+        });
+        if (touch) assert.ok(fit, `${cur.def.id}: the round button is there to be measured`);
+        if (fit) {
+          assert.equal(fit.label, cur.def.action);
+          assert.ok(fit.lines >= 1 && fit.lines <= 2 && fit.over <= 0, `${cur.def.id}: "${fit.label}" leaves the round button by ${fit.over} px (${fit.lines} lines)`);
+          row.buttonInsideByPx = -fit.over;
+        }
         await act();
       }
       // its clauses come on screen. For the picture the story's clock is held (the debug hook __gta.freeze: nothing

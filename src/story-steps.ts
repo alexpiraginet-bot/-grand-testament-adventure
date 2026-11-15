@@ -4,7 +4,7 @@
 // What is the text's and what is the game's. Every line shown is a clause cut out of a BLIVRE verse, to the letter
 // (src/data/mc-caminho.json, tools/build_story.py): the cuts below name where a clause begins and ends inside its
 // verse, never the words themselves. The action's word comes from the verb the passage gives him ("aproximou-se",
-// "esteve a orar", "estendeu a mão"); it is not a power the player has anywhere else. The objective is the game's
+// "esteve a orar", "estendeu a mão", "disse"); it is not a power the player has anywhere else. The objective is the game's
 // guidance ("Orientação"). Nothing here is a line written for a character.
 //
 // What is not there. None of the people of these passages is drawn (only Simão has a reviewed model), so each step
@@ -29,7 +29,10 @@ export type StoryStepDef = {
   /** Stable: the world record refers to it. */
   id: string;
   place: StoryPlaceId;
-  /** The button's word, from the passage's own verb; null when reaching the place is the step. */
+  /** The button's word, from the passage's own verb; null when reaching the place is the step. It is drawn inside a
+   * round button 84 px across in 10 px capitals (hud.css `.act span`), under the hand: one line of nine characters
+   * at most, or two lines of ten and seven (measured in the page; tools/check_story_r16.mjs asserts the label is
+   * inside the circle). So the button says only the gesture, and the mission line (`doing`) says to whom or what. */
   action: string | null;
   /** The mission line on the way there, and once there. A step lived by arriving has one line: both are the same. */
   objective: string;
@@ -72,7 +75,7 @@ export const STORY_STEPS: readonly StoryStepDef[] = [
   { id: "mc-2-2-falava-a-palavra", place: "casa", action: "Falar a palavra",
     objective: "Volte à casa", doing: "Fale a palavra aos que se juntaram", people: true, review: null,
     cuts: [whole(2, 2)] },
-  { id: "mc-2-3-paralitico", place: "casa", action: "Falar ao paralítico",
+  { id: "mc-2-3-paralitico", place: "casa", action: "Falar",
     objective: "Volte à casa", doing: "Fale ao paralítico que baixaram pelo telhado", people: true, review: "cura",
     cuts: [whole(2, 3), whole(2, 4), whole(2, 5), whole(2, 11), whole(2, 12)] },
   { id: "mc-2-13-junto-ao-mar", place: "praia", action: "Ensinar",
@@ -90,7 +93,7 @@ export const STORY_STEPS: readonly StoryStepDef[] = [
   { id: "mc-3-7-para-o-mar", place: "redes", action: null,
     objective: "Retire-se com os discípulos para o mar", doing: "Retire-se com os discípulos para o mar", people: true, review: null,
     cuts: [{ verse: v(3, 7), until: ";" }] },
-  { id: "mc-3-9-barquinho", place: "barco", action: "Pedir o barquinho",
+  { id: "mc-3-9-barquinho", place: "barco", action: "Pedir",
     objective: "Vá até o barco", doing: "Peça que um barquinho fique por perto", people: true, review: null,
     cuts: [whole(3, 9)] },
   { id: "mc-3-13-subiu-ao-monte", place: "monte", action: null,
@@ -103,7 +106,7 @@ export const STORY_STEPS: readonly StoryStepDef[] = [
   { id: "mc-4-1-junto-ao-mar", place: "barco", action: "Ensinar",
     objective: "Volte à margem, junto ao barco", doing: "Ensine outra vez junto ao mar", people: true, review: null,
     cuts: [{ verse: v(4, 1), until: ";" }] },
-  { id: "mc-4-35-o-outro-lado", place: "barco", action: "Falar aos discípulos",
+  { id: "mc-4-35-o-outro-lado", place: "barco", action: "Falar",
     objective: "Ao entardecer, volte ao barco", doing: "Fale aos discípulos", people: true, review: null,
     cuts: [whole(4, 35)] },
 ];
