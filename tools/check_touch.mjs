@@ -20,6 +20,8 @@ async function run(name, ctxOpts) {
   const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   const ctx = await browser.newContext(ctxOpts);
   const page = await ctx.newPage();
+  // a software renderer can take longer than Playwright's 30 s for a click or a screenshot: that is the tool's limit, not the game's
+  page.setDefaultTimeout(600000);
   const errors = [], warnings = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); else if (m.type() === "warning") warnings.push(m.text().slice(0, 200)); });
