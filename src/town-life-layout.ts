@@ -79,7 +79,7 @@ export function distanceToBox(x: number, z: number, b: Obstacle): number {
 }
 
 /** The colliders indexed in cells, so a query looks only at the boxes around it. */
-function boxIndex(boxes: readonly Obstacle[], cell = 16) {
+export function boxIndex(boxes: readonly Obstacle[], cell = 16) {
   const cells = new Map<string, Obstacle[]>();
   for (const b of boxes) {
     const r = Math.hypot(b.hx, b.hz);
