@@ -104,23 +104,25 @@ export function stepStory(s: StoryState, steps: readonly StoryStep[], places: St
   if (s.phase === "end") return { next: { ...s, time }, events: [] };
   const cur = steps[s.step];
   if (!cur) return { next: { ...s, time, phase: "end", step: steps.length, line: null, lineLeft: 0, index: 0, until: time }, events: [{ type: "end" }] };
-  const step = s.step, d = dist(input.pos, places[cur.def.place]);
+  // a distance that is not a number (a place or a position that is not there) is never "near": every test below
+  // asks whether he is within reach, so nothing is offered or lived on a broken measure
+  const step = s.step, at = places[cur.def.place], d = at ? dist(input.pos, at) : Number.NaN;
   const speak = (): StoryResult => ({
     next: { ...s, time, phase: "line", index: 0, line: cur.lines[0], lineLeft: readingTime(cur.lines[0].texto) },
     events: [{ type: "line", step, fala: cur.lines[0] }],
   });
   if (s.phase === "walk") {
-    if (d > STORY.radius || !input.clear) return { next: { ...s, time }, events: [] };
+    if (!(d <= STORY.radius) || !input.clear) return { next: { ...s, time }, events: [] };
     if (cur.def.action) return { next: { ...s, time, phase: "ready" }, events: [{ type: "arrived", step }] };
     const said = speak();                                              // a step lived by arriving
     return { next: said.next, events: [{ type: "arrived", step }, ...said.events] };
   }
   if (s.phase === "ready") {
-    if (d > STORY.radius + STORY.slack || !input.clear) return { next: { ...s, time, phase: "walk" }, events: [{ type: "left", step }] };
+    if (!(d <= STORY.radius + STORY.slack) || !input.clear) return { next: { ...s, time, phase: "walk" }, events: [{ type: "left", step }] };
     return input.action ? speak() : { next: { ...s, time }, events: [] };
   }
   // the clauses are on screen: pressing again does nothing; walking away from the place ends them
-  if (d > STORY.radius + STORY.leave) return { next: { ...s, time, phase: "walk", line: null, lineLeft: 0, index: 0 }, events: [{ type: "interrupted", step }] };
+  if (!(d <= STORY.radius + STORY.leave)) return { next: { ...s, time, phase: "walk", line: null, lineLeft: 0, index: 0 }, events: [{ type: "interrupted", step }] };
   const left = s.lineLeft - dt;
   if (left > 0) return { next: { ...s, time, lineLeft: left }, events: [] };
   const following = cur.lines[s.index + 1];
@@ -161,8 +163,8 @@ export function storyView(s: StoryState, steps: readonly StoryStep[], places: St
   }
   const cur = steps[s.step];
   if (!cur) return null;
-  const at = places[cur.def.place];
-  const base = { ...none, mark: `JORNADA · ${s.step + 1} DE ${total}`, step: s.step, total, ref: cur.ref, goal: at, dist: dist(pos, at) };
+  const at = places[cur.def.place], far = at ? dist(pos, at) : Number.NaN;
+  const base = { ...none, mark: `JORNADA · ${s.step + 1} DE ${total}`, step: s.step, total, ref: cur.ref, goal: at ?? null, dist: Number.isFinite(far) ? far : null };
   const scene = cur.def.people ? SCENE_DEVELOPMENT_NOTICE : "";
   if (s.phase === "walk") return { ...base, phase: "walk", objective: cur.def.objective, scene: "", guidance: STORY_GUIDANCE.walk };
   if (s.phase === "ready") {

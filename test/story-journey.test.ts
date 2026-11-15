@@ -180,6 +180,32 @@ test("the clock is the game's: no time, no change", () => {
   assert.equal(long.next.index, 1); assert.equal(long.events.length, 1);
 });
 
+test("a position or a place that is not a number is never near: nothing is offered, lived or kept on it", () => {
+  const nowhere = { x: Number.NaN, z: 0 };
+  const g = game(); g.begin();
+  g.pos = nowhere;
+  for (let i = 0; i < 50; i++) g.frame(true);
+  assert.equal(g.s.phase, "walk"); assert.equal(g.events.length, 1);
+  assert.equal(g.view()!.dist, null, "no distance is shown rather than a broken one");
+  // at the place, ready; then the position is lost: the offer goes
+  g.go(places.casa); g.frame();
+  assert.equal(g.s.phase, "ready");
+  g.pos = nowhere;
+  assert.deepEqual(g.frame(true), [{ type: "left", step: 0 }]);
+  // with the clauses on screen: they end, nothing is kept
+  g.go(places.casa); g.frame(); g.frame(true);
+  assert.equal(g.s.phase, "line");
+  g.pos = nowhere;
+  assert.deepEqual(g.frame(), [{ type: "interrupted", step: 0 }]);
+  assert.equal(g.writes, 0);
+  // a map of places with one missing: the step that needs it waits, it is not lived where he stands
+  const holed = { ...places } as Record<string, Vec2>; delete holed["rua-da-casa"];
+  const h = game(); h.begin(); h.live();
+  for (let i = 0; i < 50; i++) h.apply(stepStory(h.s, steps, holed as typeof places, { pos: places.casa, action: true, clear: true }, DT));
+  assert.deepEqual([h.s.step, h.s.phase], [1, "walk"]);
+  assert.deepEqual(storyView(h.s, steps, holed as typeof places, places.casa, false)!.goal, null);
+});
+
 test("a reload opens the first step not lived, at every point of the story, never mid-clause", () => {
   const g = game(); g.begin();
   for (let k = 0; k < steps.length; k++) {
