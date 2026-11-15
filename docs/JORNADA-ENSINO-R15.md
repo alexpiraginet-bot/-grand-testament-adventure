@@ -46,7 +46,11 @@ teachingStage(s): StableStage | null
 streetAhead(street, pos): Vec2[]                   // o que falta da rua, para o radar
 ```
 
-Fases: `off → walk ⇄ ready → line → done`. Sair do pátio em `ready` tira a oferta (`left`); afastar-se mais de
+Fases: `off → walk ⇄ ready → line → done`. Depois de `done`, o passo aponta a casa de Marcos 1:29 até o jogador
+chegar a 12 m dela (evento `onward`, uma vez), diz por 12 s de jogo que a cena ainda não existe e então
+`teachingView` volta a devolver `null`: a tela é de novo da exploração da região. Numa vila sem essa casa, as
+palavras finais ficam 30 s de jogo e a devolução é a mesma. A chegada à casa é um fato próprio do registro do mundo
+(`casa-marcos-1-29`); `restoreTeaching(salvo, casaSalva?)` recebe-o como segundo argumento opcional. Sair do pátio em `ready` tira a oferta (`left`); afastar-se mais de
 12 m do ponto durante as orações interrompe (`interrupted`) sem guardar nada, e pode recomeçar. Segurar ou repetir o
 botão não reinicia oração nem conclui duas vezes. `dt <= 0` (painel aberto, aba oculta) não move nada.
 
@@ -157,3 +161,18 @@ aplicadas uma a uma e cada uma derrubou ao menos um teste (ver diário).
 - Não há multidão, ouvintes nem interior: só Simão tem ator aprovado. O aviso de cena fica ligado nessas fases.
 - A Bíblia do jogo ainda não mostra Marcos 1:22; a referência do passo aparece, o painel não foi estendido.
 - Marcos 1:23–28 e a cena da casa (1:29–31) não existem; o jogo diz isso em vez de sugerir que existem.
+
+## Depois da integração: o passo precisa devolver a tela (15/11)
+
+Revisando a integração com a lista de falhas silenciosas do ECC, apareceram duas regressões da exploração livre,
+as duas na passagem de bastão entre este módulo e o laço do jogo:
+
+1. **O painel de exploração nunca mais aparecia.** O laço mostra o painel da exploração só quando não há visão do
+   ensino, e `teachingView` devolvia uma visão enquanto o passo estivesse aberto, vivido ou não. Desde a R15 a região
+   aberta não dizia mais quais lugares faltam encontrar, quantos foram achados nem para que lado fica o mais próximo.
+   Corrigido neste módulo (commit `b2974f9`): ver “Fases” acima.
+2. **O aviso do limite da região sumia.** `hud.teaching` passava `null` no lugar do aviso. Corrigido com o aviso
+   atravessando o painel do ensino (`hud.ts` e `main.ts`, duas linhas cada, em commit isolado para o Codex revisar).
+
+No mesmo commit isolado: o laço passa a casa salva a `restoreTeaching` e avisa no console quando a vila não tem
+pátio ou rua seguros (`townLife` nulo), em vez de o passo simplesmente não existir sem deixar rastro.
