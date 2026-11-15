@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""The verses of the story after the teaching in Capernaum (Mark 1:30 to 4:35, the passages the game stages), literal.
+"""The verses of the story after the teaching in Capernaum (Mark 1:30 to 4:35, the verses the game stages), literal.
 
     python3 -I tools/build_story.py [path-to-biblia-conectada] [--check]
 
@@ -22,8 +22,10 @@ BIBLIA = Path(args[0] if args else ROOT.parent / "biblia-conectada").resolve()
 BLIVRE = BIBLIA / "fontes/blivre/porbr2018_vpl.zip"
 OUT = ROOT / "src/data/mc-caminho.json"
 BOOK = {"vpl": "MAR", "key": "Mark", "evangelho": "marcos"}
-# chapter -> inclusive verse ranges: each passage whole, so the game's Bible can show it whole
-PASSAGES = {1: [(30, 45)], 2: [(1, 17)], 3: [(7, 19)], 4: [(1, 1), (35, 35)]}
+# chapter -> inclusive verse ranges: exactly the verses the steps quote (src/story-steps.ts; a test compares the two).
+# A verse of these passages that no step stages is left out, so the game's Bible never marks as lived what was not
+# staged: Mark 1:43-45, 2:6-10, 3:8, 3:10-12 and 3:15 are not here.
+PASSAGES = {1: [(30, 42)], 2: [(1, 5), (11, 17)], 3: [(7, 7), (9, 9), (13, 14), (16, 19)], 4: [(1, 1), (35, 35)]}
 
 
 def build():

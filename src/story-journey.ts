@@ -23,7 +23,9 @@ export type StoryData = { id: string; livro: string; passagens: string[]; versic
 export type StoryStep = { def: StoryStepDef; ref: string; lines: Fala[] };
 
 /** Every step with its clauses, or null when one clause of one step cannot be cut out of the data: then the story is
- * not offered at all, rather than with a hole in it or with typed words in a clause's place. */
+ * not offered at all, rather than with a hole in it or with typed words in a clause's place. This is the one place
+ * where the story's text is decided to be there: the game's Bible (story-bible.ts) shows the verses these steps
+ * quote, so what plays and what the Bible lists cannot differ. */
 export function storySteps(d: Pick<StoryData, "livro" | "versiculos">, defs: readonly StoryStepDef[] = STORY_STEPS): StoryStep[] | null {
   const out: StoryStep[] = [], ids = new Set<string>();
   for (const def of defs) {
@@ -36,9 +38,9 @@ export function storySteps(d: Pick<StoryData, "livro" | "versiculos">, defs: rea
 }
 
 /** Level design, not text. radius: how close to its place a step is offered or lived; slack: how far past it the
- * offer holds, so it does not flicker at the edge; leave: walking this far past the radius while the clauses are on
- * screen ends them (nothing is kept, and the step can be lived again); afterEnd: game seconds the closing words stay
- * once the last step was lived. */
+ * offer holds, so it does not flicker at the edge; leave: in a step with an action, walking this far past the radius
+ * while the clauses are on screen ends them (nothing is kept, and the step can be lived again); afterEnd: game
+ * seconds the closing words stay once the last step was lived. */
 export const STORY = { radius: 7, slack: 1.5, leave: 6, afterEnd: 25 } as const;
 
 /** off: not open yet. walk: on the way to the step's place. ready: at the place, the action is offered. line: the
@@ -121,8 +123,11 @@ export function stepStory(s: StoryState, steps: readonly StoryStep[], places: St
     if (!(d <= STORY.radius + STORY.slack) || !input.clear) return { next: { ...s, time, phase: "walk" }, events: [{ type: "left", step }] };
     return input.action ? speak() : { next: { ...s, time }, events: [] };
   }
-  // the clauses are on screen: pressing again does nothing; walking away from the place ends them
-  if (!(d <= STORY.radius + STORY.leave)) return { next: { ...s, time, phase: "walk", line: null, lineLeft: 0, index: 0 }, events: [{ type: "interrupted", step }] };
+  // The clauses are on screen: pressing again does nothing. In a step with an action, walking away from the place
+  // ends them (he left what he was doing; nothing is kept). A step lived by arriving was lived when he arrived: its
+  // clauses stay to their end wherever he goes next, so a player who keeps walking, as the mission line of such a
+  // step tells him to, does not cancel them.
+  if (cur.def.action && !(d <= STORY.radius + STORY.leave)) return { next: { ...s, time, phase: "walk", line: null, lineLeft: 0, index: 0 }, events: [{ type: "interrupted", step }] };
   const left = s.lineLeft - dt;
   if (left > 0) return { next: { ...s, time, lineLeft: left }, events: [] };
   const following = cur.lines[s.index + 1];

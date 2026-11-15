@@ -8,6 +8,7 @@ import { teachingReading } from "../src/teaching-bible.ts";
 import { rangeRef, readingOrder, verseRuns, verseStates, type BibleData } from "../src/bible.ts";
 import { goals as makeGoals } from "../src/episode.ts";
 import { storySteps, type StoryData } from "../src/story-journey.ts";
+import { stepVerses } from "../src/story-steps.ts";
 import type { EpisodeData } from "../src/missions.ts";
 import type { WorldMeta } from "../src/terrain.ts";
 
@@ -26,7 +27,7 @@ test("the twenty steps come after the teaching's, each with the whole verses of 
   const seen = new Set<string>();
   full.steps.slice(full.storyIndex).forEach((s, i) => {
     assert.equal(s.kind, "missao"); assert.equal(s.ref, steps[i].ref);
-    assert.equal(rangeRef(full.episode, s.verses[0], s.verses[s.verses.length - 1]), s.ref, "the reference is the verses shown");
+    assert.deepEqual(s.verses, stepVerses(steps[i].def), "the verses shown are the verses the step quotes, and no other");
     for (const k of s.verses) { assert.equal(full.episode.versiculos[k], data.versiculos[k], `${k} is the data's verse, whole`); seen.add(k); }
     // what is staged on screen is part of what the Bible shows for the step
     for (const line of steps[i].lines) assert.ok(s.verses.some((k) => data.versiculos[k].includes(line.texto)));
@@ -56,9 +57,19 @@ test("with no story the Bible is exactly what it was", () => {
     assert.equal(r.steps, base.steps); assert.equal(r.episode, base.episode); assert.equal(r.order, base.order);
     assert.equal(r.storyIndex, base.steps.length);
   }
-  // a step whose passage is not in the data: nothing is added rather than a step with no verses
-  const short = { ...data, versiculos: { ...data.versiculos } }; delete short.versiculos["Mark.1.45"];
+  // a verse a step quotes is not in the data: nothing is added, rather than a step listed without its verse
+  const short = { ...data, versiculos: { ...data.versiculos } }; delete short.versiculos["Mark.1.42"];
   assert.equal(storyReading(base, steps, short, bible).steps, base.steps);
+});
+
+test("only what was staged is ever marked: the verses a step leaves out are not in the passage at all", () => {
+  const listed = new Set(full.steps.flatMap((s) => s.verses));
+  for (const k of ["Mark.1.23", "Mark.1.28", "Mark.1.43", "Mark.1.45", "Mark.2.6", "Mark.2.10", "Mark.3.8", "Mark.3.10", "Mark.3.12", "Mark.3.15", "Mark.4.2"]) {
+    assert.equal(listed.has(k), false, `${k} is not staged, so it is not listed`);
+    assert.equal(Object.hasOwn(full.episode.versiculos, k), false);
+    assert.equal(verseStates(full.steps, full.steps.length).has(k), false, `${k} is never "vivido"`);
+  }
+  assert.equal(full.steps.find((s) => s.ref === "Marcos 2:3–5, 11–12")?.verses.length, 5);
 });
 
 test("verse by verse: lived, now and still ahead, at every step of the story", () => {
@@ -91,6 +102,6 @@ test("verseRuns: consecutive verses of a chapter, in the order given", () => {
   // the passage as the panel lists it: one run per stretch the game tells
   const runs = verseRuns(Object.keys(full.episode.versiculos));
   assert.deepEqual(runs.map((r) => rangeRef(full.episode, r[0], r[r.length - 1])),
-    ["Marcos 1:16–22", "Marcos 1:29–45", "Marcos 2:1–17", "Marcos 3:7–19", "Marcos 4:1", "Marcos 4:35"]);
+    ["Marcos 1:16–22", "Marcos 1:29–42", "Marcos 2:1–5", "Marcos 2:11–17", "Marcos 3:7", "Marcos 3:9", "Marcos 3:13–14", "Marcos 3:16–19", "Marcos 4:1", "Marcos 4:35"]);
   assert.equal(runs.flat().length, Object.keys(full.episode.versiculos).length);
 });

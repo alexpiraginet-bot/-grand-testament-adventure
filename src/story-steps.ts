@@ -11,6 +11,10 @@
 // with people carries the notice "Cena em desenvolvimento · personagens em preparação". The steps marked `review`
 // stage a healing, an exorcism summary or a controversy with the text alone: they wait for Alex's editorial review
 // before they are shown to players. Every place is the game's choice on its art-directed ground (story-places.ts).
+//
+// A step is told by the verses it quotes, and by no other: the game's Bible marks a verse as lived only when a
+// clause of it was on screen. So a passage with a part the game does not stage has a gap in its reference
+// ("Marcos 2:3–5, 11–12"), and the verses in the gap are not in the data (tools/build_story.py).
 import type { Fala } from "./missions.ts";
 
 export type StoryPlaceId =
@@ -24,8 +28,6 @@ export type Cut = { verse: string; from?: string; until?: string; through?: stri
 export type StoryStepDef = {
   /** Stable: the world record refers to it. */
   id: string;
-  /** First and last verse of the passage that tells this step (the game's Bible shows them whole). */
-  verses: readonly [string, string];
   place: StoryPlaceId;
   /** The button's word, from the passage's own verb; null when reaching the place is the step. */
   action: string | null;
@@ -43,86 +45,97 @@ const v = (chapter: number, verse: number) => `Mark.${chapter}.${verse}`;
 const whole = (chapter: number, verse: number): Cut => ({ verse: v(chapter, verse) });
 
 export const STORY_STEPS: readonly StoryStepDef[] = [
-  { id: "mc-1-30-sogra-de-simao", verses: [v(1, 30), v(1, 31)], place: "casa", action: "Aproximar-se",
-    objective: "Entre na casa de Simão e de André", doing: "Aproxime-se da sogra de Simão", people: true, review: "cura",
+  { id: "mc-1-30-sogra-de-simao", place: "casa", action: "Aproximar-se",
+    objective: "Vá à porta da casa de Simão e de André", doing: "Aproxime-se da sogra de Simão", people: true, review: "cura",
     cuts: [{ verse: v(1, 30), until: "," }, whole(1, 31)] },
-  { id: "mc-1-32-ao-entardecer", verses: [v(1, 32), v(1, 34)], place: "rua-da-casa", action: null,
+  { id: "mc-1-32-ao-entardecer", place: "rua-da-casa", action: null,
     objective: "Ao entardecer, saia à rua diante da casa", doing: "Ao entardecer, saia à rua diante da casa", people: true, review: "cura",
     cuts: [{ verse: v(1, 32), until: ";" }, whole(1, 33), { verse: v(1, 34), through: "demônios." }] },
-  { id: "mc-1-35-lugar-deserto", verses: [v(1, 35), v(1, 35)], place: "lugar-deserto", action: "Orar",
+  { id: "mc-1-35-lugar-deserto", place: "lugar-deserto", action: "Orar",
     objective: "De madrugada, vá a um lugar deserto", doing: "Fique ali em oração", people: false, review: null,
     cuts: [whole(1, 35)] },
-  { id: "mc-1-36-todos-te-procuram", verses: [v(1, 36), v(1, 37)], place: "encontro", action: null,
+  { id: "mc-1-36-todos-te-procuram", place: "encontro", action: null,
     objective: "Vá ao encontro dos que o seguiram", doing: "Vá ao encontro dos que o seguiram", people: true, review: null,
     cuts: [whole(1, 36), whole(1, 37)] },
-  { id: "mc-1-38-aldeias-vizinhas", verses: [v(1, 38), v(1, 38)], place: "encontro", action: "Responder",
+  { id: "mc-1-38-aldeias-vizinhas", place: "encontro", action: "Responder",
     objective: "Volte para junto dos que o acharam", doing: "Responda aos que o procuravam", people: true, review: null,
     cuts: [{ verse: v(1, 38), from: ": " }] },
-  { id: "mc-1-39-por-toda-a-galileia", verses: [v(1, 39), v(1, 39)], place: "caminho-das-aldeias", action: null,
+  { id: "mc-1-39-por-toda-a-galileia", place: "caminho-das-aldeias", action: null,
     objective: "Siga para as aldeias vizinhas", doing: "Siga para as aldeias vizinhas", people: true, review: "cura",
     cuts: [whole(1, 39)] },
-  { id: "mc-1-40-leproso", verses: [v(1, 40), v(1, 45)], place: "caminho", action: "Estender a mão",
+  { id: "mc-1-40-leproso", place: "caminho", action: "Estender a mão",
     objective: "Siga pelo caminho de volta", doing: "Estenda a mão ao leproso que se ajoelha", people: true, review: "cura",
     cuts: [whole(1, 40), { verse: v(1, 41), from: "Jesus , " }, whole(1, 42)] },
-  { id: "mc-2-1-outra-vez-em-cafarnaum", verses: [v(2, 1), v(2, 1)], place: "casa", action: null,
+  { id: "mc-2-1-outra-vez-em-cafarnaum", place: "casa", action: null,
     objective: "Entre outra vez em Cafarnaum e volte à casa", doing: "Entre outra vez em Cafarnaum e volte à casa", people: false, review: null,
     cuts: [whole(2, 1)] },
-  { id: "mc-2-2-falava-a-palavra", verses: [v(2, 2), v(2, 2)], place: "casa", action: "Falar a palavra",
+  { id: "mc-2-2-falava-a-palavra", place: "casa", action: "Falar a palavra",
     objective: "Volte à casa", doing: "Fale a palavra aos que se juntaram", people: true, review: null,
     cuts: [whole(2, 2)] },
-  { id: "mc-2-3-paralitico", verses: [v(2, 3), v(2, 12)], place: "casa", action: "Falar ao paralítico",
+  { id: "mc-2-3-paralitico", place: "casa", action: "Falar ao paralítico",
     objective: "Volte à casa", doing: "Fale ao paralítico que baixaram pelo telhado", people: true, review: "cura",
     cuts: [whole(2, 3), whole(2, 4), whole(2, 5), whole(2, 11), whole(2, 12)] },
-  { id: "mc-2-13-junto-ao-mar", verses: [v(2, 13), v(2, 13)], place: "praia", action: "Ensinar",
+  { id: "mc-2-13-junto-ao-mar", place: "praia", action: "Ensinar",
     objective: "Saia outra vez para o mar", doing: "Ensine a multidão junto ao mar", people: true, review: null,
     cuts: [whole(2, 13)] },
-  { id: "mc-2-14-levi", verses: [v(2, 14), v(2, 14)], place: "posto", action: "Chamar",
+  { id: "mc-2-14-levi", place: "posto", action: "Chamar",
     objective: "Passe pelo posto de coleta de impostos", doing: "Chame Levi", people: true, review: null,
     cuts: [{ verse: v(2, 14), through: "Segue-me." }, { verse: v(2, 14), from: "Segue-me." }] },
-  { id: "mc-2-15-a-mesa", verses: [v(2, 15), v(2, 15)], place: "casa-de-levi", action: null,
+  { id: "mc-2-15-a-mesa", place: "casa-de-levi", action: null,
     objective: "Vá à casa de Levi", doing: "Vá à casa de Levi", people: true, review: null,
     cuts: [{ verse: v(2, 15), until: ";" }] },
-  { id: "mc-2-16-os-que-estao-doentes", verses: [v(2, 16), v(2, 17)], place: "casa-de-levi", action: "Responder",
+  { id: "mc-2-16-os-que-estao-doentes", place: "casa-de-levi", action: "Responder",
     objective: "Volte à casa de Levi", doing: "Responda aos escribas e fariseus", people: true, review: "controvérsia",
     cuts: [whole(2, 16), { verse: v(2, 17), from: ": " }] },
-  { id: "mc-3-7-para-o-mar", verses: [v(3, 7), v(3, 8)], place: "redes", action: null,
+  { id: "mc-3-7-para-o-mar", place: "redes", action: null,
     objective: "Retire-se com os discípulos para o mar", doing: "Retire-se com os discípulos para o mar", people: true, review: null,
     cuts: [{ verse: v(3, 7), until: ";" }] },
-  { id: "mc-3-9-barquinho", verses: [v(3, 9), v(3, 12)], place: "barco", action: "Pedir o barquinho",
+  { id: "mc-3-9-barquinho", place: "barco", action: "Pedir o barquinho",
     objective: "Vá até o barco", doing: "Peça que um barquinho fique por perto", people: true, review: null,
     cuts: [whole(3, 9)] },
-  { id: "mc-3-13-subiu-ao-monte", verses: [v(3, 13), v(3, 13)], place: "monte", action: null,
+  { id: "mc-3-13-subiu-ao-monte", place: "monte", action: null,
     objective: "Suba ao monte", doing: "Suba ao monte", people: false, review: null,
     cuts: [{ verse: v(3, 13), until: "," }] },
-  { id: "mc-3-13-os-doze", verses: [v(3, 13), v(3, 19)], place: "monte", action: "Chamar",
+  { id: "mc-3-13-os-doze", place: "monte", action: "Chamar",
     objective: "Volte ao alto do monte", doing: "Chame os doze", people: true, review: null,
     cuts: [{ verse: v(3, 13), from: ", " }, { verse: v(3, 14), until: ",\\n" }, { verse: v(3, 16), until: ";" }, { verse: v(3, 17), until: ";\\n" },
       whole(3, 18), whole(3, 19)] },
-  { id: "mc-4-1-junto-ao-mar", verses: [v(4, 1), v(4, 1)], place: "barco", action: "Ensinar",
+  { id: "mc-4-1-junto-ao-mar", place: "barco", action: "Ensinar",
     objective: "Volte à margem, junto ao barco", doing: "Ensine outra vez junto ao mar", people: true, review: null,
     cuts: [{ verse: v(4, 1), until: ";" }] },
-  { id: "mc-4-35-o-outro-lado", verses: [v(4, 35), v(4, 35)], place: "barco", action: "Falar aos discípulos",
+  { id: "mc-4-35-o-outro-lado", place: "barco", action: "Falar aos discípulos",
     objective: "Ao entardecer, volte ao barco", doing: "Fale aos discípulos", people: true, review: null,
     cuts: [whole(4, 35)] },
 ];
 
-/** The verses a step is told by, in the data's order (a step's passage is inside one chapter). */
-export function stepVerses(def: Pick<StoryStepDef, "verses">, verses: Readonly<Record<string, string>>): string[] {
-  const keys = Object.keys(verses), a = keys.indexOf(def.verses[0]), b = keys.indexOf(def.verses[1]);
-  return a < 0 || b < a ? [] : keys.slice(a, b + 1);
+/** The verses a step is told by: the ones it quotes, once each, in the order it quotes them. The game's Bible
+ * shows them whole; what is on screen is a part of them. */
+export function stepVerses(def: Pick<StoryStepDef, "cuts">): string[] {
+  return [...new Set(def.cuts.map((c) => c.verse))];
 }
+
+const parseKey = (key: string) => { const m = /^[^.]+\.(\d+)\.(\d+)$/.exec(key); return m ? { chapter: Number(m[1]), verse: Number(m[2]) } : null; };
 
 /** "Mark.2.14" with the book's name -> "Marcos 2:14"; null when the key is malformed. */
 export function storyRef(book: string, key: string): string | null {
-  const m = /^[^.]+\.(\d+)\.(\d+)$/.exec(key);
-  return m && book ? `${book} ${m[1]}:${m[2]}` : null;
+  const k = parseKey(key);
+  return k && book ? `${book} ${k.chapter}:${k.verse}` : null;
 }
 
-/** "Marcos 2:3–12" for a step's passage ("Marcos 1:35" when it is one verse). */
-export function stepRef(book: string, def: Pick<StoryStepDef, "verses">): string | null {
-  const a = /^[^.]+\.(\d+)\.(\d+)$/.exec(def.verses[0]), b = /^[^.]+\.(\d+)\.(\d+)$/.exec(def.verses[1]);
-  if (!a || !b || a[1] !== b[1] || !book) return null;
-  return `${book} ${a[1]}:${a[2]}${a[2] === b[2] ? "" : `–${b[2]}`}`;
+/** The reference of a step's verses: "Marcos 1:35" for one verse, "Marcos 1:30–31" for a run, and
+ * "Marcos 2:3–5, 11–12" when the step leaves verses out between the ones it quotes. Null when a key is malformed,
+ * when the verses are not in rising order or when they are not all of one chapter. */
+export function stepRef(book: string, def: Pick<StoryStepDef, "cuts">): string | null {
+  const keys = stepVerses(def).map(parseKey);
+  if (!book || !keys.length || keys.some((k) => !k)) return null;
+  const all = keys as { chapter: number; verse: number }[], runs: [number, number][] = [];
+  for (const k of all) {
+    if (k.chapter !== all[0].chapter) return null;
+    const last = runs[runs.length - 1];
+    if (last && k.verse <= last[1]) return null;
+    if (last && k.verse === last[1] + 1) last[1] = k.verse; else runs.push([k.verse, k.verse]);
+  }
+  return `${book} ${all[0].chapter}:${runs.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(", ")}`;
 }
 
 /** One clause, cut out of its verse as the cut says; null when the verse is missing or a marker is not in it. A

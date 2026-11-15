@@ -1,6 +1,7 @@
 // The story's steps (story-steps.ts) in the game's Bible, after the steps teaching-bible.ts already gives it. Each
-// step shows the whole verses of its passage, in the BLIVRE's words; what the game stages on screen is a part of
-// them (story-journey.ts). No reading requirement is introduced: the Bible guides and never locks.
+// step shows, whole and in the BLIVRE's words, the verses it quotes on screen (story-journey.ts), and no other: a
+// verse the game does not stage is not listed, so it is never marked as lived. No reading requirement is
+// introduced: the Bible guides and never locks.
 import { readingOrder, type BibleData, type BibleStep } from "./bible.ts";
 import { stepVerses } from "./story-steps.ts";
 import type { StoryData, StoryStep } from "./story-journey.ts";
@@ -22,8 +23,8 @@ export function storyReading(base: TeachingReading, steps: readonly StoryStep[] 
   if (!steps?.length) return without;
   const added: BibleStep[] = [];
   for (const s of steps) {
-    const verses = stepVerses(s.def, d.versiculos);
-    if (!verses.length) return without;
+    const verses = stepVerses(s.def);
+    if (!verses.length || verses.some((k) => !d.versiculos[k])) return without;
     added.push({ kind: "missao", verses, ref: s.ref, objetivo: storyTask(s) });
   }
   const episode = { ...base.episode, versiculos: { ...base.episode.versiculos, ...d.versiculos }, ref_pt: [base.episode.ref_pt, ...d.passagens].join("; ") };

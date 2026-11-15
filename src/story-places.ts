@@ -15,7 +15,7 @@ import type { Vec2 } from "./missions.ts";
 import { NPC_MOTION } from "./npc-navigation.ts";
 import { buildingPoint, type Building, type Obstacle, type Segment } from "./world-layout.ts";
 import { TOWN_LIFE, boxIndex, type TownGround } from "./town-life-layout.ts";
-import type { StoryPlaceId } from "./story-steps.ts";
+import { STORY_STEPS, type StoryPlaceId } from "./story-steps.ts";
 
 export type StoryPlacesInput = {
   terrain: TownGround;
@@ -34,24 +34,25 @@ export type StoryPlacesInput = {
 /** Level design, in metres; none is a measure of the historical place.
  * edge: kept from the playable limit, beyond its notice (places.ts EDGE_NOTICE_M, 40 m). wade: the lowest ground a
  * place may be on: the shore points are at the lake's level, and the hero is stopped at -0.55. clear: free ground
- * around a place (the hero's body takes 0.3). apart: a step that is lived by arriving is at least this far from the
- * step before it, more than twice the reach of story-journey.ts, so it is never lived without a walk.
+ * around a place (the hero's body takes 0.3). apart: two places of consecutive steps are at least this far from
+ * each other: more than the reach of a step, plus how far he may walk from it with its clauses on screen, plus the
+ * reach of the next (story-journey.ts STORY: 7 + 6 + 7), so a step is never lived from where the one before it was.
  * streetReach: how far along the lane the street point is looked for. solitary / solitaryOffRoute / solitarySlope:
  * the solitary place has no house or fitting this near, is off every route and on gentle ground. search / grid: how
  * far and how finely the open ground is searched. meet: how far back towards the house they find him. roadOut: the
  * road out is at least this much farther from the house than the solitary place; roadClear: free ground there.
  * leper: metres back from it towards the town. near: a point that cannot be stood on is replaced by the nearest one
  * that can, within this. post: metres along the shore road from the beach; postAside: how far beside the road its
- * dry ground may be. leviNear / leviFar: how far from the
- * post the second house's door may be; leviApart: and from the first house. mountRise / mountSlope / mountClear:
+ * dry ground may be. leviFar: how far from the post the second house's door may be; leviApart: how far it keeps
+ * from the first house's. mountRise / mountSlope / mountClear:
  * "the mount" is the nearest ground to the boat's shore that rises this much above the lake, on a slope the hero's
  * followers could climb, free of colliders. */
 export const STORY_PLACES = {
-  edge: 80, wade: -0.2, clear: 1.2, apart: 18,
+  edge: 80, wade: -0.2, clear: 1.2, apart: 21,
   streetReach: 60,
   solitary: 60, solitaryOffRoute: 30, solitarySlope: 0.25, search: 480, grid: 6,
   meet: 30, roadOut: 120, roadClear: 25, leper: 60, near: 12,
-  post: 70, postAside: 30, leviNear: 20, leviFar: 160, leviApart: 30,
+  post: 70, postAside: 30, leviFar: 160, leviApart: 30,
   mountRise: 15, mountSlope: 0.35, mountClear: 6, mountSearch: 720,
 } as const;
 
@@ -115,7 +116,9 @@ export function storyPlaces(input: StoryPlacesInput): StoryPlaces | null {
     const l = dist(a, b);
     return l > 1e-9 ? { x: a.x + ((b.x - a.x) * metres) / l, z: a.z + ((b.z - a.z) * metres) / l } : { ...a };
   };
+  /** The point `metres` along the path from its beginning; null before its beginning or past its end. */
   const along = (path: readonly Segment[], metres: number): Vec2 | null => {
+    if (!(metres >= 0)) return null;
     let left = metres;
     for (const s of path) {
       const l = Math.hypot(s.bx - s.ax, s.bz - s.az);
@@ -187,7 +190,7 @@ export function storyPlaces(input: StoryPlacesInput): StoryPlaces | null {
   plans.forEach((p, i) => {
     if (i === house.house) return;
     const at = buildingPoint(p, 0, p.d / 2 + TOWN_LIFE.doorFront), far = dist(at, posto);
-    if (far < S.leviNear || far > S.leviFar || dist(at, casa) < S.leviApart || dist(at, praia) < S.apart) return;
+    if (far < S.apart || far > S.leviFar || dist(at, casa) < S.leviApart || dist(at, praia) < S.apart || dist(at, redes) < S.apart) return;
     if (!stand(at, TOWN_LIFE.doorClear) || !dry(at) || t.slopeAt(at.x, at.z) > NPC_MOTION.maxSlope) return;
     if (far < bestDoor - 1e-9) { bestDoor = far; levi = at; leviHouse = i; }
   });
@@ -199,11 +202,14 @@ export function storyPlaces(input: StoryPlacesInput): StoryPlaces | null {
     && t.slopeAt(p.x, p.z) <= S.mountSlope && index.clearance(p.x, p.z, S.mountClear) >= S.mountClear);
   if (!monte) return null;
 
-  return {
-    revision: "story-places-r16", leviHouse, note: NOTE,
-    at: {
-      casa, "rua-da-casa": rua, "lugar-deserto": deserto, encontro, "caminho-das-aldeias": aldeias, caminho,
-      praia, posto, "casa-de-levi": casaDeLevi, redes, barco, monte,
-    },
+  const at: Record<StoryPlaceId, Vec2> = {
+    casa, "rua-da-casa": rua, "lugar-deserto": deserto, encontro, "caminho-das-aldeias": aldeias, caminho,
+    praia, posto, "casa-de-levi": casaDeLevi, redes, barco, monte,
   };
+  // the last word: whatever the rules above found, two consecutive steps at different places are a walk apart
+  for (let i = 1; i < STORY_STEPS.length; i++) {
+    const a = at[STORY_STEPS[i - 1].place], b = at[STORY_STEPS[i].place];
+    if (a !== b && !(dist(a, b) >= S.apart)) return null;
+  }
+  return { revision: "story-places-r16", leviHouse, note: NOTE, at };
 }

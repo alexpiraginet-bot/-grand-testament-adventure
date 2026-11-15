@@ -27,7 +27,7 @@ test("the data file is the BLIVRE's, with its origin and the one declared altera
   assert.match(data.fonte_texto, /^Bíblia Livre \(BLIVRE\), CC BY/);
   assert.match(data.origem.texto_sha256, /^[0-9a-f]{64}$/);
   assert.match(data.alteracao, /colchetes/);
-  assert.equal(keys.length, 48);
+  assert.equal(keys.length, 35);
   for (const [k, text] of Object.entries(V)) {
     assert.match(k, /^Mark\.\d+\.\d+$/);
     assert.ok(text.trim() === text && text.length > 10, `${k} is a whole verse`);
@@ -44,8 +44,8 @@ test("there are twenty steps, with stable ids the world record can keep", () => 
     assert.ok(id.length <= WORLD_STATE_LIMITS.idLength);
     assert.ok(id !== TEACHING_ID && id !== TEACHING_ONWARD_ID, "no collision with the teaching step's facts");
   }
-  // an id names the first verse of its step's passage
-  for (const s of STORY_STEPS) { const a = parse(s.verses[0]); assert.ok(s.id.startsWith(`mc-${a.chapter}-${a.verse}-`), s.id); }
+  // an id names the first verse its step quotes
+  for (const s of STORY_STEPS) { const a = parse(stepVerses(s)[0]); assert.ok(s.id.startsWith(`mc-${a.chapter}-${a.verse}-`), s.id); }
 });
 
 test("every clause on screen is a literal part of its verse, with that verse's reference", () => {
@@ -68,36 +68,55 @@ test("every clause on screen is a literal part of its verse, with that verse's r
 
 test("no clause on screen carries a slip of the source's spacing, and the slips are where the cuts assume them", () => {
   for (const s of STORY_STEPS) for (const line of lines(s)) for (const [what, re] of SLIPS) assert.doesNotMatch(line.texto, re, `${s.id}: ${what} in "${line.texto}"`);
-  // the four verses whose spacing the cuts go around (if the source is corrected, the cuts can be simplified)
+  // the three verses whose spacing the cuts go around (if the source is corrected, the cuts can be simplified)
   const slipped = keys.filter((k) => SLIPS.some(([, re]) => re.test(V[k])));
-  assert.deepEqual(slipped, ["Mark.1.30", "Mark.1.41", "Mark.2.10", "Mark.2.14"]);
+  assert.deepEqual(slipped, ["Mark.1.30", "Mark.1.41", "Mark.2.14"]);
   // and the steps that use those verses do cut them
   for (const k of slipped) for (const s of STORY_STEPS) for (const c of s.cuts) if (c.verse === k) assert.ok(c.from !== undefined || c.until !== undefined || c.through !== undefined, `${s.id} cuts ${k}`);
 });
 
-test("the steps follow Mark's order and their passages are exactly the verses of the data", () => {
+test("the steps follow Mark's order, and the verses they quote are exactly the verses of the data", () => {
   let last = { chapter: 0, verse: 0 };
   const seen = new Set<string>();
   for (const s of STORY_STEPS) {
-    const a = parse(s.verses[0]), b = parse(s.verses[1]);
-    assert.equal(a.chapter, b.chapter, `${s.id} stays inside one chapter`);
-    assert.ok(b.verse >= a.verse);
-    assert.ok(a.chapter > last.chapter || (a.chapter === last.chapter && a.verse >= last.verse), `${s.id} does not go back in the text`);
-    last = a;
-    const told = stepVerses(s, V);
-    assert.equal(told.length, b.verse - a.verse + 1, `${s.id}: every verse of its passage is in the data`);
-    assert.deepEqual([told[0], told[told.length - 1]], [...s.verses]);
+    const told = stepVerses(s);
+    assert.ok(told.length >= 1 && told.every((k) => V[k]), `${s.id}: every verse it quotes is in the data`);
+    const at = told.map(parse);
+    assert.ok(at.every((k) => k.chapter === at[0].chapter), `${s.id} stays inside one chapter`);
+    assert.deepEqual(at.map((k) => k.verse), [...at.map((k) => k.verse)].sort((x, y) => x - y), `${s.id} quotes in the text's order`);
+    assert.equal(new Set(told).size, told.length);
+    assert.ok(at[0].chapter > last.chapter || (at[0].chapter === last.chapter && at[0].verse >= last.verse), `${s.id} does not go back in the text`);
+    last = at[0];
     for (const k of told) seen.add(k);
-    // each clause comes from a verse of the step's own passage, in the text's order
-    const at = s.cuts.map((c) => told.indexOf(c.verse));
-    assert.ok(at.every((i) => i >= 0), `${s.id} quotes only its passage`);
-    assert.deepEqual(at, [...at].sort((x, y) => x - y), `${s.id} quotes in the text's order`);
-    assert.equal(stepRef(data.livro, s), `Marcos ${a.chapter}:${a.verse}${a.verse === b.verse ? "" : `–${b.verse}`}`);
+    // each clause comes from one of those verses, in the text's order (two clauses may share a verse)
+    const order = s.cuts.map((c) => told.indexOf(c.verse));
+    assert.ok(order.every((i) => i >= 0));
+    assert.deepEqual(order, [...order].sort((x, y) => x - y));
   }
-  assert.deepEqual([...seen].sort(), [...keys].sort(), "no verse of the data is left out and none is foreign to it");
+  // a verse is in the data only because a step quotes it: the Bible never lists, or marks as lived, what was not staged
+  assert.deepEqual([...seen].sort(), [...keys].sort(), "no verse of the data is unquoted and none quoted is missing");
   // the data's own list of passages is the same verses
   const listed = data.passagens.flatMap((p) => { const m = /^Marcos (\d+):(\d+)(?:–(\d+))?$/.exec(p)!; const out = []; for (let n = Number(m[2]); n <= Number(m[3] ?? m[2]); n++) out.push(`Mark.${m[1]}.${n}`); return out; });
   assert.deepEqual(listed, keys);
+});
+
+test("a step's reference names the verses it quotes, with the gap when it leaves some out", () => {
+  const ref = (id: string) => stepRef(data.livro, STORY_STEPS.find((s) => s.id === id)!);
+  assert.equal(ref("mc-1-35-lugar-deserto"), "Marcos 1:35");
+  assert.equal(ref("mc-1-30-sogra-de-simao"), "Marcos 1:30–31");
+  assert.equal(ref("mc-1-40-leproso"), "Marcos 1:40–42", "what follows in the passage is not staged and not claimed");
+  assert.equal(ref("mc-2-3-paralitico"), "Marcos 2:3–5, 11–12");
+  assert.equal(ref("mc-2-14-levi"), "Marcos 2:14", "two clauses of one verse are one verse");
+  assert.equal(ref("mc-3-7-para-o-mar"), "Marcos 3:7");
+  assert.equal(ref("mc-3-13-os-doze"), "Marcos 3:13–14, 16–19");
+  for (const s of STORY_STEPS) assert.match(stepRef(data.livro, s)!, /^Marcos \d+:\d+(–\d+)?(, \d+(–\d+)?)*$/);
+  const cuts = (...verses: string[]) => ({ cuts: verses.map((verse) => ({ verse })) });
+  assert.equal(stepRef("Marcos", cuts("Mark.1.1", "Mark.1.2", "Mark.1.4")), "Marcos 1:1–2, 4");
+  assert.equal(stepRef("Marcos", cuts("Mark.1.2", "Mark.1.1")), null, "not in rising order");
+  assert.equal(stepRef("Marcos", cuts("Mark.1.45", "Mark.2.1")), null, "two chapters");
+  assert.equal(stepRef("Marcos", cuts("Mark.1")), null);
+  assert.equal(stepRef("Marcos", cuts()), null);
+  assert.equal(stepRef("", cuts("Mark.1.1")), null);
 });
 
 test("a step is a walk and, where the passage gives him something to do, one action", () => {
@@ -157,6 +176,5 @@ test("a step with a verse missing or changed is not offered with other words in 
   assert.equal(stepLines(s, { ...V, "Mark.2.14": "Outro texto sem a marca." }, data.livro), null);
   const without = { ...V }; delete without["Mark.2.14"];
   assert.equal(stepLines(s, without, data.livro), null);
-  assert.deepEqual(stepVerses(s, without), []);
   assert.equal(stepLines(s, V, ""), null, "no book name, no reference, no line");
 });

@@ -70,7 +70,12 @@ test("each place is what its rule says", () => {
   assert.deepEqual(at.praia, beach); assert.deepEqual(at.redes, nets); assert.deepEqual(at.barco, boat);
   // the street before the door: on the lane, a walk from the door
   assert.ok(offRoutes(at["rua-da-casa"]) < 1e-6, "the street point is on the lane");
-  assert.ok(dist(at["rua-da-casa"], at.casa) >= S.apart && dist(at["rua-da-casa"], at.casa) < S.apart + 2);
+  // a house at the very beginning of the lane, with the lane ahead of it built over: the street point is looked for
+  // the other way, where the lane does not go. It is never put behind the lane's beginning: no street, no story.
+  const first = { x: start.x, z: start.z }, wall: Obstacle = { x: start.x + 5, z: start.z + 40, hx: 10, hz: 27, rot: 0 };
+  assert.ok(!heroBlocked([wall])(first.x, first.z), "the house's door itself is free");
+  const cornered = storyPlaces({ ...main.input, house: { at: first, house: life!.onward!.house }, boxes: [...main.input.boxes, wall] });
+  assert.ok(cornered === null || offRoutes(cornered.at["rua-da-casa"]) < 1e-6, "never a street point off the lane");
   // the solitary place: no collider near, off every route, farther than the street
   assert.ok(index.clearance(at["lugar-deserto"].x, at["lugar-deserto"].z, 200) >= S.solitary);
   assert.ok(offRoutes(at["lugar-deserto"]) >= S.solitaryOffRoute);
@@ -117,14 +122,14 @@ test("the second house is another house: not one beside the post, by the beach o
     throw new Error("no such point on this ground");
   };
   // a door right beside the post would be the nearest: it is not taken (the table is not the house)
-  const beside = find((p) => dist(p, at.posto) > 4 && dist(p, at.posto) < S.leviNear - 2);
+  const beside = find((p) => dist(p, at.posto) > 4 && dist(p, at.posto) < S.apart - 2);
   assert.deepEqual(buildingPoint(houseAt(beside), 0, 3 + TOWN_LIFE.doorFront), beside);
   assert.equal(withHouse(beside).leviHouse, leviHouse);
   // a door nearer to the post than the chosen one, but by the beach where the step before it is lived: not taken
   const byBeach = find((p) => dist(p, at.praia) < S.apart - 0.5 && dist(p, at.posto) < reach - 1);
   assert.equal(withHouse(byBeach).leviHouse, leviHouse);
   // a door as near to the post, a little farther from the beach, is taken: the rule, not the ground, kept that one out
-  const off = find((p) => dist(p, at.praia) >= S.apart + 1 && dist(p, at.praia) < S.apart + 8 && dist(p, at.posto) < reach - 1 && dist(p, at.posto) >= S.leviNear);
+  const off = find((p) => dist(p, at.praia) >= S.apart + 1 && dist(p, at.praia) < S.apart + 8 && dist(p, at.posto) < reach - 1 && dist(p, at.posto) >= S.apart);
   assert.equal(withHouse(off).leviHouse, added);
   assert.deepEqual(withHouse(off).at["casa-de-levi"], off);
   // with no other house than one whose door is by the first house's door: no second house, no story
@@ -133,15 +138,32 @@ test("the second house is another house: not one beside the post, by the beach o
   assert.equal(storyPlaces({ ...input, plans: [first, houseAt(near)], house: { at: life!.onward!.at, house: 0 } }), null);
 });
 
-test("a step lived by arriving is always a walk away from the step before it", () => {
+test("no step can be lived from where the step before it was: consecutive places are a walk apart", () => {
   const at = main.places!.at;
+  // from anywhere he may stand while a step's clauses are on screen (its reach, then as far as he may walk from it),
+  // the next step's place is still out of reach
+  assert.ok(STORY_PLACES.apart > STORY.radius + STORY.leave + STORY.radius, "the rule covers the whole ring of the step before");
   STORY_STEPS.forEach((s, i) => {
     if (!i) return;
     const before = STORY_STEPS[i - 1], d = dist(at[s.place], at[before.place]);
     if (s.place === before.place) { assert.ok(s.action, `${s.id} at the same place needs its action`); return; }
-    assert.ok(d >= 2 * STORY.radius + STORY.slack + 2, `${s.id}: ${d.toFixed(1)} m from ${before.id}: standing where the last step was lived is not yet at this one`);
-    assert.ok(d > STORY.radius + STORY.leave, `${s.id}: its clauses are not on screen at the place of the step before`);
+    assert.ok(d >= STORY_PLACES.apart, `${s.id}: ${d.toFixed(1)} m from ${before.id}`);
+    assert.ok(d - (STORY.radius + STORY.leave) > STORY.radius, `${s.id} is out of reach from the edge of ${before.id}'s ring`);
   });
+  // and it is the rule that keeps it so, not this ground: the boat's shore moved to ground a place may stand on, a
+  // few steps from the nets, withholds the story; the same kind of ground a walk away from the nets does not
+  const { input, town } = main, index = boxIndex(town.boxes), S = STORY_PLACES;
+  const shoreNear = (lo: number, hi: number): Vec2 => {
+    for (let x = Math.round(input.nets.x) - 40; x <= input.nets.x + 40; x++) for (let z = Math.round(input.nets.z) - 40; z <= input.nets.z + 40; z++) {
+      const p = { x, z }, d = dist(p, input.nets);
+      if (d >= lo && d <= hi && t.heightAt(x, z) >= S.wade + 0.05 && index.clearance(x, z, 3) >= S.clear + 0.5) return p;
+    }
+    throw new Error("no such shore point on this ground");
+  };
+  assert.equal(storyPlaces({ ...input, boat: shoreNear(8, S.apart - 2) }), null, "the boat's shore a few steps from the nets");
+  const moved = storyPlaces({ ...input, boat: shoreNear(S.apart + 2, S.apart + 12) });
+  assert.ok(moved, "a walk away from the nets, the same ground is accepted");
+  assert.ok(dist(moved.at.barco, moved.at.redes) >= S.apart);
 });
 
 test("every place can be walked to from where the walk begins, by a rule stricter than the hero's", () => {

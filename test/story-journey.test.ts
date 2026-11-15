@@ -59,7 +59,7 @@ function game(world: WorldState = newWorldState("save-1", "cafarnaum-r15")) {
 test("the data gives twenty steps with their clauses, or no story at all", () => {
   assert.equal(steps.length, 20);
   assert.deepEqual(steps.map((s) => s.def), [...STORY_STEPS]);
-  for (const s of steps) { assert.match(s.ref, /^Marcos \d+:\d+(–\d+)?$/); assert.ok(s.lines.length >= 1); }
+  for (const s of steps) { assert.match(s.ref, /^Marcos \d+:\d+(–\d+)?(, \d+(–\d+)?)*$/); assert.ok(s.lines.length >= 1); }
   assert.equal(steps.reduce((n, s) => n + s.lines.length, 0), STORY_STEPS.reduce((n, s) => n + s.cuts.length, 0));
   assert.equal(steps.reduce((n, s) => n + s.lines.length, 0), 37, "the clauses staged, counted");
   const broken = { ...data, versiculos: { ...data.versiculos, "Mark.3.9": "Outro texto." } };
@@ -166,6 +166,32 @@ test("walking away while the clauses are on screen ends them, keeps nothing, and
   assert.equal(g.writes, 0); assert.equal(savedStage(g.world, steps[0].def.id), null);
   assert.deepEqual(g.live(), steps[0].lines.map((l) => l.texto), "from its first clause again");
   assert.equal(g.writes, 1);
+});
+
+test("a step lived by arriving is lived once he arrived: walking or running on does not cancel its clauses", () => {
+  // every such step, crossed in a straight line without stopping, at a walk and at a run (main.ts: 2.5 and 5.2 m/s)
+  for (const speed of [2.5, 5.2]) {
+    const g = game(); g.begin();
+    let beyond = 0;                                                     // steps that ended with him past the ring
+    for (let k = 0; k < steps.length; k++) {
+      const cur = steps[k], at = places[cur.def.place];
+      if (cur.def.action) { g.live(); continue; }
+      const from = k ? places[steps[k - 1].def.place] : at, l = Math.hypot(at.x - from.x, at.z - from.z), ux = (at.x - from.x) / l, uz = (at.z - from.z) / l;
+      const before = g.events.length;
+      // from 30 m before the place, through it, and on for as long as its clauses take
+      let travelled = -30;
+      g.until(() => { travelled += speed * DT; g.go({ x: at.x + ux * travelled, z: at.z + uz * travelled }); return g.s.step !== k; }, `${cur.def.id} crossed at ${speed} m/s`);
+      const mine = g.events.slice(before);
+      assert.equal(mine.filter((e) => e.type === "interrupted").length, 0, `${cur.def.id} at ${speed} m/s`);
+      assert.deepEqual(mine.filter((e) => e.type === "line").map((e) => e.type === "line" && e.fala.texto), cur.lines.map((l) => l.texto));
+      if (travelled > STORY.radius + STORY.leave) beyond++;
+      assert.equal(savedStage(g.world, cur.def.id), "completed");
+    }
+    assert.equal(g.s.phase, "end"); assert.equal(g.writes, 20);
+    // this is not an idle case: at either pace some of the seven end with him farther than an action step allows
+    assert.ok(beyond >= 3, `${beyond} of 7 ended past the ring at ${speed} m/s`);
+  }
+  // a step with an action is different: he must stay with what he is doing (the test above this one)
 });
 
 test("the clock is the game's: no time, no change", () => {

@@ -14,8 +14,10 @@ orações da própria passagem na tela, uma por vez, literais, com a referência
 - **Treze missões têm ação.** A palavra do botão vem do verbo que a passagem dá a ele ("aproximou-se", "esteve a orar",
   "estendeu a mão", "chamou"). Não é um poder que o jogador tem em outro lugar: fora do lugar da missão o botão não a
   oferece. Não existe botão genérico de milagre.
-- **Sete são vividas ao chegar** (a passagem só diz aonde ele foi). Nenhuma dessas fica no lugar da missão anterior:
-  sempre pedem uma caminhada, e um teste garante que parado onde a anterior terminou ele ainda não está nela.
+- **Sete são vividas ao chegar** (a passagem só diz aonde ele foi). Chegou, está vivida: as orações ficam na tela até
+  o fim mesmo que ele siga andando ou correndo. Nenhuma dessas fica no lugar da missão anterior: lugares de missões
+  consecutivas ficam a pelo menos 21 m um do outro, mais que o alcance de uma (7 m), o quanto ele pode se afastar
+  dela com as orações na tela (6 m) e o alcance da seguinte (7 m). Sem essa distância a jornada não é oferecida.
 - **A Bíblia orienta e não tranca.** Nada pergunta se a passagem foi lida. Quem chega ao lugar age.
 - **Ordem de Marcos**, a partir de 1:30. A jornada abre quando o ensino (R15) foi vivido e a casa de Marcos 1:29 foi
   alcançada; termina em 4:35 ("Passemos para o outro lado"), com o aviso de que a travessia ainda está em preparação.
@@ -25,7 +27,7 @@ orações da própria passagem na tela, uma por vez, literais, com a referência
 | Na tela | Origem | Rótulo |
 |---|---|---|
 | Orações das passagens | `src/data/mc-caminho.json`, gerado por `tools/build_story.py` do ZIP da BLIVRE (SHA-256 conferido); recortadas do versículo por `src/story-steps.ts` | "Bíblia Livre · referência" |
-| Versículos inteiros de cada missão | os mesmos dados, na Bíblia do jogo | Bíblia (painel) |
+| Os versículos que a missão cita, inteiros | os mesmos dados, na Bíblia do jogo | Bíblia (painel) |
 | Objetivo, palavra do botão, "o radar aponta…" | escritos para o jogo | "Orientação" |
 | Aviso de cena | `SCENE_DEVELOPMENT_NOTICE` | "Cena em desenvolvimento · personagens em preparação." |
 
@@ -48,8 +50,11 @@ parece descuido dela; os recortes passam ao largo desses trechos (ver `ATTRIBUTI
    luz da cena não muda.
 4. **Lugares são escolha do jogo.** Nenhuma fonte situa a casa, o lugar deserto, o posto de impostos ou "o monte" nesse
    terreno. O posto e o monte não têm objeto nem marco na cena: são pontos do chão.
-5. **Trechos de Marcos não encenados** entre as missões (1:23–28 já estava fora; 2:18–3:6; 3:20–35; 4:2–34) não
-   aparecem como vividos: a Bíblia do jogo nomeia cada trecho contado com a sua referência.
+5. **Só o que foi encenado é marcado como vivido.** A Bíblia do jogo lista, de cada missão, os versículos que ela
+   cita e nenhum outro. Ficam fora, e nunca aparecem como vividos: Marcos 1:23–28 (já estava fora), 1:43–45, 2:6–10,
+   2:18–3:6, 3:8, 3:10–12, 3:15, 3:20–35 e 4:2–34. A referência de uma missão mostra o salto quando há
+   ("Marcos 2:3–5, 11–12"), e a passagem é listada em trechos, cada um com a sua referência. Um versículo citado em
+   parte é listado inteiro.
 6. **A travessia de 4:35 não existe.** A jornada termina na margem.
 7. **Sem trilha desenhada no radar** entre os lugares: o radar aponta o lugar e mostra a distância.
 8. **O progresso é local** (registro do mundo, neste navegador), como o do ensino. A nuvem não o carrega.
@@ -58,7 +63,7 @@ parece descuido dela; os recortes passam ao largo desses trechos (ver `ATTRIBUTI
 
 | Arquivo | Papel |
 |---|---|
-| `tools/build_story.py` → `src/data/mc-caminho.json` | os 48 versículos, literais, com origem e hash; `--check` refaz e compara |
+| `tools/build_story.py` → `src/data/mc-caminho.json` | os 35 versículos citados, literais, com origem e hash; `--check` refaz e compara |
 | `src/story-steps.ts` | as vinte definições: id estável, passagem, lugar, ação, objetivo, recortes |
 | `src/story-places.ts` | os doze lugares calculados no terreno contra os colisores; `null` se algum falhar |
 | `src/story-journey.ts` | motor puro: fases, eventos, registro, visão para o HUD |
@@ -84,7 +89,9 @@ storyReading(base, steps, data, bibleData): StoryReading  // base de teaching-bi
 ```
 
 - `clear`: nada entre ele e o lugar da missão. Uma missão não é oferecida nem vivida através de uma parede.
-- Afastar-se mais de 13 m com as orações na tela as interrompe; nada é salvo e a missão recomeça da primeira oração.
+- Numa missão com ação, afastar-se mais de 13 m com as orações na tela as interrompe; nada é salvo e a missão
+  recomeça da primeira oração. Numa missão vivida ao chegar, as orações vão até o fim.
+- Uma distância que não é número (lugar ou posição ausente) nunca é "perto": nada é oferecido nem vivido.
 - Recarregar abre a primeira missão não vivida, da caminhada, nunca no meio de uma oração.
 - Um registro com uma missão posterior vivida e uma anterior não (não se escreve jogando) abre na anterior.
 - Ids das missões começam por `mc-` e não colidem com `ensino-cafarnaum` nem `casa-marcos-1-29`.
@@ -104,3 +111,20 @@ ser revista ou revertida sem tocar no resto:
 **Efeito sobre o que já existia:** depois da casa de 1:29 o painel de exploração ("Encontre os lugares da região") só
 volta quando a jornada termina. Os lugares continuam sendo descobertos a pé durante as missões, e o aviso da borda da
 região continua passando.
+
+## Revisão independente (15/11) e o que mudou por causa dela
+
+Um revisor sem o meu contexto leu o código e simulou o motor no terreno. Não achou defeito crítico; achou quatro
+pontos, todos corrigidos antes da verificação final, e um editorial:
+
+| Achado | Correção | Teste que acusa a regressão |
+|---|---|---|
+| Missão vivida ao chegar era cancelada se o jogador não parasse (correndo, perdia 6 das 7; andando, 3), e a linha da missão mandava seguir | chegou, está vivida: só missão com ação é interrompida ao se afastar | `story-journey.test.ts`, as sete cruzadas a 2,5 e 5,2 m/s sem parar |
+| A distância mínima entre missões consecutivas (18 m) era menor que o anel de onde a anterior ainda vale (20 m): do limite do anel da casa dava para viver a da rua | 21 m, e regra final sobre todos os pares consecutivos; sem isso, sem jornada | `story-places.test.ts`, anel inteiro e ponto válido a poucos passos das redes |
+| O ponto da rua podia ser extrapolado para trás do começo da viela (não ocorre no mapa atual) | nunca antes do começo da viela | `story-places.test.ts`, casa no começo da viela com a frente construída |
+| O jogo e a Bíblia decidiam separadamente se a jornada existe: com um versículo não citado ausente, o jogo tocava e a Bíblia dizia "vivida" | uma decisão só: a Bíblia lista exatamente os versículos que as missões citam | `story-bible.test.ts` e `story-steps.test.ts` |
+| (Editorial) A Bíblia marcava como "Vivido" o trecho inteiro da missão, com versículos nunca encenados | os dados e a Bíblia passaram a ter só os versículos citados (35, eram 48) | `story-bible.test.ts`, "only what was staged is ever marked" |
+
+Outros dois meus, antes da revisão: uma distância `NaN` contava como "perto" (missão vivida em qualquer lugar se um
+lugar faltasse); e a ferramenta de navegador perdia uma oração curta entre duas leituras e travava (passou a ler um
+registro feito na própria página a cada quadro).
