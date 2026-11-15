@@ -1,5 +1,14 @@
 # Grand Testament Adventure — continuidade local
 
+R16 (15/11): por pedido de Alex, vinte missões depois do ensino (Marcos 1:30 a
+4:35), branch `claude/quirky-hamilton-bt0y7w`, PR #10. Ler `docs/JORNADA-R16.md`
+e a tabela gerada `docs/JORNADA-R16-MISSOES.md` antes de evoluir missões, lugares
+ou a Bíblia do jogo. Cada oração na tela é recorte literal da BLIVRE; nenhuma
+fala autoral foi escrita. Nenhuma pessoa dessas passagens está desenhada, e seis
+missões (curas, expulsões, uma controvérsia) aguardam a revisão editorial de
+Alex. Os lugares são calculados no terreno: não digitar coordenadas. A ligação
+em `main.ts`/`hud.ts` está em commit isolado. A travessia de 4:35 não existe.
+
 R13 (13/11): Alex aceitou concentrar a produção numa amostra convincente.
 Branch `codex/demo-direcao-r13`, PR #11. Ler `docs/CONTINUIDADE-R13.md` e
 `docs/QA-CAFARNAUM-R13.md` antes de evoluir solo, fachadas ou água. Os novos
