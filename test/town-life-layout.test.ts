@@ -184,5 +184,8 @@ test("the teaching step is lived on the real place: down the street at the hero'
   assert.equal(v.objective, "Siga para a casa de Simão e de André");
   assert.deepEqual(v.goal, life.onward!.at);
   assert.ok(Math.abs(v.dist! - Math.hypot(pos.x - life.onward!.at.x, pos.z - life.onward!.at.z)) < 1e-9);
-  assert.equal(teachingView(s, place, data, lines, life.onward!.at, false)!.goal, null, "at the house the radar has nowhere left to point");
+  // at the house the step notices it once and the radar has nowhere left to point
+  pos = { ...life.onward!.at }; events.length = 0; frame();
+  assert.deepEqual(events.map((e) => e.type), ["onward"]);
+  assert.equal(teachingView(s, place, data, lines, pos, false)!.goal, null);
 });

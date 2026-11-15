@@ -9,7 +9,7 @@ import { SCENE_DEVELOPMENT_NOTICE } from "../src/journey.ts";
 import { LocalSaveStore, SAVE_KEY, newSave, recordMission } from "../src/save.ts";
 import { WorldStateStore, newWorldState, savedStage, worldStateKey } from "../src/world-state.ts";
 import {
-  TEACHING, TEACHING_ACTION, TEACHING_ID, beginTeaching, freshTeaching, onwardPlaceName, recordTeaching, restoreTeaching,
+  TEACHING, TEACHING_ACTION, TEACHING_ID, TEACHING_ONWARD_ID, beginTeaching, freshTeaching, onwardPlaceName, recordTeaching, restoreTeaching,
   stepTeaching, streetAhead, teachingLines, teachingStage, teachingView,
   type TeachingData, type TeachingEvent, type TeachingPlace, type TeachingState,
 } from "../src/teaching-journey.ts";
@@ -120,11 +120,45 @@ test("first visit: the street, the place, the action, two clauses, and what come
   assert.deepEqual(v.announce, { texto: data.depois.texto, ref: "Marcos 1:29" });
   assert.match(v.narrative, /Marcos 1:23–28/); assert.match(v.narrative, /não é encenado/);
   assert.deepEqual(v.goal, place.onward); assert.equal(v.dist, 40);
-  // at the house the radar has nowhere left to point and the guidance says the scene is not there yet
-  v = teachingView(s, place, data, lines, { x: 40, z: 60 - TEACHING.onward + 1 }, false)!;
-  assert.equal(v.goal, null); assert.equal(v.dist, null); assert.match(v.guidance, /em preparação/);
-  // a town with no such house names no destination
-  assert.equal(teachingView(s, { ...place, onward: null }, data, lines, place.court, false)!.objective, "Explore a cidade");
+  assert.match(v.guidance, /em preparação/);
+});
+
+test("once lived, the step points at the house until he gets there, says so for a moment, and then gives the screen back", () => {
+  const lived = play(play(beginTeaching(freshTeaching()).next, place.court, { max: 1 }).s, place.court, { action: true, until: (x) => x.phase === "done" }).s;
+  // however long he wanders, the house stays the objective: the radar keeps somewhere to point
+  let r = play(lived, { x: -300, z: -300 }, { max: 120 });
+  assert.deepEqual(r.events, []);
+  let v = teachingView(r.s, place, data, lines, { x: -300, z: -300 }, false)!;
+  assert.deepEqual(v.goal, place.onward); assert.equal(v.objective, "Siga para a casa de Simão e de André");
+  // just outside the radius nothing happens; inside it he has arrived, once
+  r = play(r.s, { x: 40, z: 60 - TEACHING.onward - 0.5 }, { max: 1 });
+  assert.deepEqual(r.events, []);
+  const at = { x: 40, z: 60 - TEACHING.onward + 0.5 };
+  r = play(r.s, at, { action: "always", max: 2 });
+  assert.deepEqual(types(r.events), ["onward"]);
+  assert.equal(r.s.phase, "done"); assert.equal(teachingStage(r.s), "completed");
+  // the radar has nowhere left to point and the guidance says the scene is not there yet
+  v = teachingView(r.s, place, data, lines, at, false)!;
+  assert.equal(v.goal, null); assert.equal(v.dist, null);
+  assert.match(v.guidance, /Esta é a casa que o jogo escolheu/); assert.match(v.guidance, /em preparação/);
+  // after its moment the step has nothing left to say: null hands the screen to the region's exploration again
+  r = play(r.s, at, { max: TEACHING.afterOnward });
+  assert.deepEqual(r.events, [], "arriving is noticed once");
+  assert.equal(teachingView(r.s, place, data, lines, at, false), null);
+  assert.equal(teachingView(r.s, place, data, lines, { x: -300, z: -300 }, false), null, "and walking away does not bring the objective back");
+  // a town with no such house: the closing words for a while, then the same hand-back
+  const bare = { ...place, onward: null };
+  v = teachingView(lived, bare, data, lines, place.court, false)!;
+  assert.equal(v.objective, "Explore a cidade"); assert.equal(v.goal, null);
+  assert.deepEqual(v.announce, { texto: data.depois.texto, ref: "Marcos 1:29" }, "the verse is still announced");
+  const later = play(lived, place.court, { max: TEACHING.afterDone + 0.5 }).s;
+  assert.equal(teachingView(later, bare, data, lines, place.court, false), null);
+  assert.ok(TEACHING.afterDone >= readingTime(data.depois.texto) + 7, "long enough for the verse and the closing words to be read");
+  // the house is a fact of its own in the world record, kept apart from the teaching's
+  const world = recordTeaching(newWorldState("s", "r15"), [{ type: "save", stage: "completed" }, { type: "onward" }], 9);
+  assert.equal(savedStage(world, TEACHING_ID), "completed");
+  assert.equal(savedStage(world, TEACHING_ONWARD_ID), "completed");
+  assert.equal(savedStage(recordTeaching(newWorldState("s", "r15"), [{ type: "save", stage: "completed" }], 9), TEACHING_ONWARD_ID), null);
 });
 
 test("the clause on screen is the state's own, and the walk's opening words are not repeated to someone on the clauses", () => {
@@ -199,6 +233,12 @@ test("a reload finds the step at its last saved fact, never mid-clause", () => {
   assert.equal(beginTeaching(s).next, s);
   assert.deepEqual(play(s, place.court, { action: "always", max: 3 }).events, []);
   assert.equal(teachingView(s, place, data, lines, place.court, false)!.objective, "Siga para a casa de Simão e de André");
+  // lived and the house reached in an earlier visit: nothing left to say, the region's exploration has the screen
+  s = restoreTeaching("completed", "completed");
+  assert.equal(s.phase, "done"); assert.equal(s.onwardSeen, true);
+  assert.equal(teachingView(s, place, data, lines, place.court, false), null);
+  assert.deepEqual(play(s, place.onward!, { action: "always", max: 3 }).events, [], "and the house is not announced again");
+  assert.equal(restoreTeaching("accepted", "completed").onwardSeen, false, "a house on record means nothing before the teaching was lived");
   // a stage this step does not use still counts as begun, never as lived
   assert.equal(restoreTeaching("returned").phase, "off");
   assert.equal(restoreTeaching("returned").intro, false);
