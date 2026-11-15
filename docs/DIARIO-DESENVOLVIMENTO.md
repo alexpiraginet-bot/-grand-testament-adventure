@@ -1233,3 +1233,128 @@ Não verificado: caminhada real, capturas, quadros, bytes, Safari físico.
 Uso real da sessão às 22:40:29 UTC: 490 respostas do Fable 5.2 (US$ 143,92 em equivalente de API), total da sessão
 US$ 330,56; desde a medição das 22:19:16, 43 respostas e US$ 8,19. Atividade estimada 9,26 h (era 9,0 h). É
 comparação com preço de API, não cobrança, e a atividade é estimativa por intervalos de até 5 minutos.
+
+## 15/11/2026 — R16 (Claude): método do ECC, regressões da R15 e vinte missões novas
+
+Três pedidos de Alex neste dia, na ordem: instalar o plugin ECC "para o ambiente de todas as sessões", usar "o que tem
+dele aqui" para continuar as melhorias do jogo, e "mais 20 missões novas até o fim do dia. Sem falhas".
+
+### ECC: o que deu e o que não deu
+
+- **Não instalado para todas as sessões.** Daqui não há ferramenta que acrescente um marketplace à conta, e as sessões
+  na nuvem não instalam plugins listados no repositório. O caminho é a página de Plugins da conta (marketplace
+  `affaan-m/ECC`, plugin `ecc`). Medido com a CLI: cerca de 48 mil tokens carregados em toda sessão e 27 comandos de
+  hook, alguns que negam a primeira edição e formatam ao parar. A decisão de instalar inteiro ou um recorte é de Alex.
+- **Usado como método**, a partir do clone (`affaan-m/ECC` v2.2.3, MIT, commit `d2ef268`): o laço de verificação
+  (build, tipos, testes, navegador, diff), a lente de falhas silenciosas e a prática de guardar captura e estado quando
+  uma conferência de navegador falha.
+
+### O que o laço de verificação achou na árvore unida com a R15 (corrigido antes das missões)
+
+| Commit | O que entrou |
+|---|---|
+| `b2974f9` | **Regressão 1.** Depois da R15 o painel de exploração nunca mais aparecia: a visão do ensino nunca devolvia `null`. Agora devolve a tela à exploração quando não tem mais o que dizer |
+| `100f0e8` | **Regressão 2**, commit isolado em `main.ts`/`hud.ts` (arquivos do Codex): o aviso da borda da região deixou de passar pelo painel do ensino; a casa salva; aviso quando a vila não tem lugar |
+| `20a98e1`, `742e311` | Conferências de navegador atualizadas para o fluxo da R15, com captura e estado na falha |
+
+A primeira bateria nessa árvore (`20a98e1`) foi interrompida por mim quando o `main.ts` mudou de novo: `check_roam`
+passou no celular e falhou no PC por um limite de 30 s **da própria ferramenta** num clique com o renderizador a 0 fps;
+`check_bible` passou no celular e foi interrompida no PC. Os números finais são os da bateria abaixo, na árvore final.
+
+### As vinte missões (Marcos 1:30 a 4:35)
+
+Desenho em `docs/JORNADA-R16.md`; lista gerada do código em `docs/JORNADA-R16-MISSOES.md`.
+
+| Commit | O que entrou |
+|---|---|
+| `5c3d8da` | `tools/build_story.py` → `src/data/mc-caminho.json` (BLIVRE, SHA-256 conferido) e `src/story-steps.ts`: vinte passos, cada oração um recorte literal |
+| `2e4fb03` | `src/story-places.ts`: doze lugares calculados no terreno real; teste de caminho a pé por preenchimento |
+| `a34e32b` | `src/story-journey.ts`: motor puro, um fato salvo por missão, visão para o painel do ensino |
+| `e17e14d` | Bíblia do jogo: as missões depois das do ensino; a passagem listada em trechos com referência |
+| `7542f56` | Documento e tabela gerada |
+| `d96961b` | Distância que não é número nunca é "perto" |
+| `3213e12` | Correções da revisão independente |
+| `18bc9bb` | Ligação no jogo, commit isolado em `main.ts`/`hud.ts` |
+| `a95b9e8` | `tools/check_story_r16.mjs` e conferências de exploração e Bíblia atualizadas |
+
+**Decisões e por quê**
+
+- **Missão = lugar + (às vezes) ação + texto literal.** Sem pessoas desenhadas além de Simão, o que é honesto encenar é
+  ir ao lugar, fazer o gesto que o verbo da passagem dá a ele e ler a passagem. Nenhuma fala foi escrita para
+  personagem; não há "Narrativa do jogo" nestas missões.
+- **Nada digitado como coordenada nem como citação.** Lugares saem de regras sobre o terreno e os colisores; orações
+  saem de recortes (onde começa, onde termina) sobre o arquivo gerado da BLIVRE. A tabela para a revisão de Alex é
+  gerada dos mesmos módulos e um teste falha se ela ficar para trás.
+- **Jornada inteira ou nenhuma.** Faltou um lugar ou um recorte: o jogo fica como era.
+- **Arquivos do Codex.** A ligação em `main.ts`/`hud.ts` foi num commit só dela. No `hud.ts`: rótulo do topo como
+  parâmetro e a orientação aparecendo logo quando não há narrativa (antes, 7 s em branco a cada mudança de fase). No
+  `main.ts`, além da ligação, a frase do rodapé da Bíblia: dizia "sem alteração" também para a passagem jogada, que
+  tem os colchetes retirados.
+
+**Tentativas, falhas e correções (todas antes da verificação final)**
+
+1. Posto de impostos: o primeiro cálculo o pôs na água rasa (o caminho da margem passa por −0,2 m). Passou a ficar no
+   chão seco mais próximo ao lado do caminho.
+2. Lugar deserto a 66 m da casa com 45 m livres: pouco "deserto". Subi para 60 m livres (ficou a 84 m).
+3. Ferramenta de navegador travou na missão 2: esperava cada oração por consulta e uma curta passava entre duas
+   consultas. Passou a ler um registro feito na página a cada quadro. Não era defeito do jogo.
+4. `NaN > raio` é falso: com um lugar ausente a missão seria vivida em qualquer ponto. Corrigido e testado.
+5. **Revisão independente** (um agente sem o meu contexto, que simulou o motor no terreno): nenhuma falha crítica,
+   quatro pontos corrigidos e um editorial. Missão vivida ao chegar era cancelada se o jogador não parasse (correndo,
+   6 de 7); distância mínima entre missões consecutivas de 18 m contra um anel de 20 m; ponto da rua extrapolável para
+   trás da viela; jogo e Bíblia decidindo em separado; e a Bíblia marcava "Vivido" em versículos não encenados. Por
+   este último os dados caíram de 48 para 35 versículos: só os citados.
+6. "Entre na casa" virou "Vá à porta da casa": o herói não entra em casa nenhuma neste jogo.
+7. Rodapé da Bíblia: a primeira redação da correção alongava o rodapé fixo no celular; encurtei.
+8. Três baterias de navegador foram interrompidas por mim (a da árvore `20a98e1`, uma no build antes das correções
+   da revisão, uma com a frase longa do rodapé). Nenhuma delas conta como verificação.
+9. Na árvore final, a primeira execução em 1280×800 viveu as vinte missões e parou num limite de 30 s da ferramenta
+   para uma captura de tela, antes da última asserção; e a bateria única foi cortada pelo limite de 2 h das tarefas em
+   segundo plano, no meio da Bíblia em PC. Dei às ferramentas um limite longo, dividi a bateria em blocos e executei de
+   novo o que ficou sem resultado.
+
+### Verificação na árvore final (`a95b9e8`)
+
+| Camada | Resultado |
+|---|---|
+| `python3 -I tools/build_story.py --check` | dados iguais ao ZIP da BLIVRE |
+| `npx tsc --noEmit` | sem erros |
+| `node --test test/*.test.ts` | 472 de 472 (435 no começo da rodada das missões) |
+| Mutações, uma por vez, nos módulos novos | 46 de 46 acusadas (3 sobreviveram na primeira passada e 1 na segunda: cada uma ganhou teste) |
+| `npx vite build`, com e sem `VERCEL_ENV=production` | concluído |
+| 20 missões, 390×844 com toque (`tools/check_story_r16.mjs`) | aprovado, 20 de 20, 19,9 min |
+| 20 missões, 1280×800 com teclado | aprovado, 20 de 20, 54,5 min (segunda execução) |
+| Exploração, Bíblia | aprovadas nos dois tamanhos |
+| Toque | aprovado (em pé, deitado, PC) |
+| Layout da vila, painel, analytics | aprovados |
+| Carregamento | 5 de 7; `slow-desktop` e `fail-retry` falham como já falhavam em `ac1f47e` (assets opcionais, limite real de 30 s neste renderizador) |
+
+O que a conferência das missões compara e o que é emulação estão em `docs/JORNADA-R16.md`. **Não verificado:** caminhada
+real entre as missões (o herói foi levado por teletransporte de depuração; o caminho a pé está provado por
+preenchimento com os colisores do jogo, 326.345 células), celular físico e Safari, quadros, bytes e memória, e a
+conferência `check_context_game_r15.mjs` do Codex, presa à máquina dele. As capturas (46 das missões, mais as das
+outras conferências) ficam locais em `shots/r16/`, fora do Git.
+
+### Pendências que são de Alex
+
+- Revisão editorial das seis missões marcadas (curas, expulsões e a controvérsia, narradas só com o texto) e da
+  escolha das orações em cada missão (`docs/JORNADA-R16-MISSOES.md`).
+- As duas falas de Simão da R15 e o "temautoridade" de Marcos 1:22, ainda em aberto.
+- Instalar ou não o ECC na conta, inteiro ou um recorte.
+
+### Uso real da sessão Claude (`tools/session_usage.py`, 20:49:49 UTC)
+
+| Grupo | Modelo | Respostas | Equivalente em preço de API |
+|---|---|---:|---:|
+| principal | claude-fable-5-2 | 765 | US$ 234,67 |
+| principal | claude-opus-5-5 | 635 | US$ 82,85 |
+| subagente | claude-fable-5-2 | 24 | US$ 7,60 |
+| subagente | claude-haiku-5-5 | 7 | sem preço na tabela |
+| workflow | claude-opus-5-5 | 1.109 | US$ 103,79 |
+| **Total da sessão** | | | **US$ 428,91** |
+
+Desde a medição de 14/11 às 22:40:29 UTC (US$ 330,56): 275 respostas do Fable na conversa principal (US$ 90,75) e 24 do
+revisor independente (US$ 7,60), US$ 98,35 ao todo. Atividade estimada da sessão: 13,8 h (era 9,26 h), por intervalos de
+até 5 minutos entre respostas; inclui a espera pelas conferências de navegador e não é hora humana nem de GPU. É
+comparação com preço de API, não cobrança: a sessão roda num plano. Nenhum gasto novo, nenhuma geração Tripo, nenhum
+download de pesos, laboratório R14 intocado.

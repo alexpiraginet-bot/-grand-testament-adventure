@@ -112,6 +112,56 @@ ser revista ou revertida sem tocar no resto:
 volta quando a jornada termina. Os lugares continuam sendo descobertos a pé durante as missões, e o aviso da borda da
 região continua passando.
 
+## Verificação (árvore `a95b9e8`, 15/11/2026)
+
+| Camada | Comando | Resultado |
+|---|---|---|
+| Dados contra a fonte | `python3 -I tools/build_story.py --check` | iguais ao ZIP da BLIVRE (SHA-256 conferido contra `fontes/SHA256SUMS`) |
+| Tabela gerada | `node tools/build_story_table.mjs --check` | igual ao código e aos dados |
+| Tipos | `npx tsc --noEmit` | sem erros |
+| Testes | `node --test test/*.test.ts` | 472 de 472 |
+| Mutações | 46 nos módulos da jornada e na Bíblia, uma por vez | 46 acusadas |
+| Build | `npx vite build` (com e sem `VERCEL_ENV=production`) | concluído |
+| **20 missões, 390×844 com toque** | `tools/check_story_r16.mjs` | **aprovado, 20 de 20**, 19,9 min |
+| **20 missões, 1280×800 com teclado** | idem | **aprovado, 20 de 20**, 54,5 min (segunda execução, ver abaixo) |
+| Exploração | `tools/check_roam.mjs` | aprovado nos dois tamanhos |
+| Bíblia | `tools/check_bible.mjs` | aprovado nos dois tamanhos |
+| Toque | `tools/check_touch.mjs` | aprovado (celular em pé, deitado e PC) |
+| Layout da vila | `tools/check_town_life_r15.mjs` | aprovado nos dois tamanhos |
+| Painel dos desenvolvedores | `tools/check_painel.mjs` | aprovado |
+| Analytics | `tools/check_analytics.mjs` | aprovado |
+| Carregamento | `tools/check_loading.mjs` | 5 de 7; os dois que falham são os mesmos que já falhavam antes das missões (abaixo) |
+
+**O que a conferência das vinte missões faz, em cada tamanho:** compara os doze lugares do jogo em execução com os que o
+Node calcula (iguais); testa cada lugar com a regra de movimento e os colisores do próprio jogo; caminha por
+preenchimento da vila até cada lugar com esses colisores (326.345 células alcançadas, todos os doze lugares entre elas);
+vive o ensino e as treze ações com um aperto real (tecla E, ou toque na mão); lê do HUD as 37 orações, uma vez cada, na
+ordem, letra por letra contra o arquivo de dados, com a referência; confere o aviso de cena, o rótulo "JORNADA · n DE
+20", a distância mostrada e que nada é oferecido fora do lugar; recarrega a página de verdade depois da 7ª e da 14ª
+missão e no fim (o registro do navegador abre a missão seguinte, sem oração na tela); abre a Bíblia no meio (próxima
+missão, trechos com referência, 28 versículos vividos, 1 agora, 14 adiante) e no fim ("Passagem vivida"); e confere que
+a tela volta para a exploração da região.
+
+**O que é emulação e o que não foi verificado**
+
+- O episódio inicial é pulado pelo gancho de depuração que o "Explorar a região" usa, e o herói é levado a cada lugar por
+  teletransporte de depuração: **nenhuma caminhada entre missões foi feita no navegador.** Que cada lugar é alcançável a
+  pé está provado por preenchimento, não por um jogador andando.
+- Chromium com renderizador por software e viewport emulado: **não é celular físico nem Safari**, e nenhum número de
+  quadros desta sessão diz algo sobre um aparelho real (aqui o jogo roda a 0–2 quadros por segundo).
+- A primeira execução em 1280×800 viveu as vinte missões e parou depois, num limite de 30 s **da ferramenta** para uma
+  captura de tela, antes da última asserção. Corrigi o limite e executei de novo: é a execução aprovada acima.
+- Uma bateria anterior foi cortada pelo limite de 2 h das tarefas em segundo plano no meio da Bíblia em PC; a Bíblia foi
+  executada de novo inteira (aprovada).
+- Carregamento: `slow-desktop` e `fail-retry` falham com "THREE.GLTFLoader: Couldn't load texture blob", efeito do
+  limite real de 30 s dos assets opcionais neste renderizador; falhavam igual na árvore anterior às missões (`ac1f47e`).
+  Não investiguei além de confirmar que é o mesmo par e a mesma mensagem.
+- `tools/check_context_game_r15.mjs`, do Codex, **não foi executado**: aponta para o Playwright e o Chrome da máquina
+  dele e usa o relógio real do jogo. Nada do que ele confere foi alterado de propósito, mas isso não é verificação.
+- Não medidos: bytes do bundle, memória, tempo de carregamento. O cálculo dos lugares levou de 25 a 75 ms em Node, nas seis vezes em que foi cronometrado.
+- A vegetação não desvia dos lugares das missões (não é colisor): pode haver um arbusto sobre o ponto, como no lugar
+  deserto. Vegetação é do Codex.
+
 ## Revisão independente (15/11) e o que mudou por causa dela
 
 Um revisor sem o meu contexto leu o código e simulou o motor no terreno. Não achou defeito crítico; achou quatro
