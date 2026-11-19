@@ -112,7 +112,10 @@ ser revista ou revertida sem tocar no resto:
 volta quando a jornada termina. Os lugares continuam sendo descobertos a pé durante as missões, e o aviso da borda da
 região continua passando.
 
-## Verificação (árvore `a95b9e8`, 15/11/2026)
+## Verificação (árvore final `94a5c05`)
+
+Tudo abaixo foi executado nesta árvore: as conferências de navegador em 15/11/2026, e o último bloco (layout, painel,
+analytics, carregamento), testes e mutações em 19/11/2026, quando a sessão foi retomada.
 
 | Camada | Comando | Resultado |
 |---|---|---|
@@ -122,25 +125,26 @@ região continua passando.
 | Testes | `node --test test/*.test.ts` | 472 de 472 |
 | Mutações | 46 nos módulos da jornada e na Bíblia, uma por vez | 46 acusadas |
 | Build | `npx vite build` (com e sem `VERCEL_ENV=production`) | concluído |
-| **20 missões, 390×844 com toque** | `tools/check_story_r16.mjs` | **aprovado, 20 de 20**, 19,9 min |
-| **20 missões, 1280×800 com teclado** | idem | **aprovado, 20 de 20**, 54,5 min (segunda execução, ver abaixo) |
+| **20 missões, 390×844 com toque** | `tools/check_story_r16.mjs` | **aprovado, 20 de 20**, 19,9 min, primeira execução |
+| **20 missões, 1280×800 com teclado** | idem | **aprovado, 20 de 20**, 53,9 min, primeira execução |
 | Exploração | `tools/check_roam.mjs` | aprovado nos dois tamanhos |
 | Bíblia | `tools/check_bible.mjs` | aprovado nos dois tamanhos |
 | Toque | `tools/check_touch.mjs` | aprovado (celular em pé, deitado e PC) |
 | Layout da vila | `tools/check_town_life_r15.mjs` | aprovado nos dois tamanhos |
 | Painel dos desenvolvedores | `tools/check_painel.mjs` | aprovado |
 | Analytics | `tools/check_analytics.mjs` | aprovado |
-| Carregamento | `tools/check_loading.mjs` | 5 de 7; os dois que falham são os mesmos que já falhavam antes das missões (abaixo) |
+| Carregamento | `tools/check_loading.mjs` | **não aprovado**: 4 de 7 e, repetido, 5 de 7 (abaixo) |
 
 **O que a conferência das vinte missões faz, em cada tamanho:** compara os doze lugares do jogo em execução com os que o
 Node calcula (iguais); testa cada lugar com a regra de movimento e os colisores do próprio jogo; caminha por
 preenchimento da vila até cada lugar com esses colisores (326.345 células alcançadas, todos os doze lugares entre elas);
-vive o ensino e as treze ações com um aperto real (tecla E, ou toque na mão); lê do HUD as 37 orações, uma vez cada, na
-ordem, letra por letra contra o arquivo de dados, com a referência; confere o aviso de cena, o rótulo "JORNADA · n DE
-20", a distância mostrada e que nada é oferecido fora do lugar; recarrega a página de verdade depois da 7ª e da 14ª
-missão e no fim (o registro do navegador abre a missão seguinte, sem oração na tela); abre a Bíblia no meio (próxima
-missão, trechos com referência, 28 versículos vividos, 1 agora, 14 adiante) e no fim ("Passagem vivida"); e confere que
-a tela volta para a exploração da região.
+vive o ensino e as treze ações com um aperto real (tecla E, ou toque na mão); mede, em cada ação, se o rótulo fica
+dentro do círculo do botão (folga de 0,4 a 10,3 px nos treze); lê do HUD as 37 orações, uma vez cada, na ordem, letra
+por letra contra o arquivo de dados, com a referência; confere o aviso de cena, o rótulo "JORNADA · n DE 20", a
+distância mostrada e que nada é oferecido fora do lugar; recarrega a página de verdade depois da 7ª e da 14ª missão e no
+fim (o registro do navegador abre a missão seguinte, sem oração na tela); abre a Bíblia no meio (próxima missão,
+trechos com referência, 28 versículos vividos, 1 agora, 14 adiante) e no fim ("Passagem vivida"); e confere que a tela
+volta para a exploração da região.
 
 **O que é emulação e o que não foi verificado**
 
@@ -149,18 +153,25 @@ a tela volta para a exploração da região.
   pé está provado por preenchimento, não por um jogador andando.
 - Chromium com renderizador por software e viewport emulado: **não é celular físico nem Safari**, e nenhum número de
   quadros desta sessão diz algo sobre um aparelho real (aqui o jogo roda a 0–2 quadros por segundo).
-- A primeira execução em 1280×800 viveu as vinte missões e parou depois, num limite de 30 s **da ferramenta** para uma
-  captura de tela, antes da última asserção. Corrigi o limite e executei de novo: é a execução aprovada acima.
-- Uma bateria anterior foi cortada pelo limite de 2 h das tarefas em segundo plano no meio da Bíblia em PC; a Bíblia foi
-  executada de novo inteira (aprovada).
-- Carregamento: `slow-desktop` e `fail-retry` falham com "THREE.GLTFLoader: Couldn't load texture blob", efeito do
-  limite real de 30 s dos assets opcionais neste renderizador; falhavam igual na árvore anterior às missões (`ac1f47e`).
-  Não investiguei além de confirmar que é o mesmo par e a mesma mensagem.
+- **Carregamento não está aprovado e não sei dizer que está são.** `slow-desktop` e `fail-retry` falham em toda execução,
+  nesta árvore e na anterior às missões (`ac1f47e`), com "THREE.GLTFLoader: Couldn't load texture blob" (os assets
+  opcionais têm limite real de 30 s, que este renderizador estoura) ou com um limite de 15 s da própria conferência.
+  `context-loss-ready` falhou por esse limite de 15 s numa execução e passou na seguinte. Não há indício de que as
+  missões tenham mudado o carregamento (a diferença para a árvore em que dava 5 de 7 são três rótulos de botão), mas
+  só uma máquina com GPU real separa instabilidade do renderizador de defeito do jogo.
 - `tools/check_context_game_r15.mjs`, do Codex, **não foi executado**: aponta para o Playwright e o Chrome da máquina
   dele e usa o relógio real do jogo. Nada do que ele confere foi alterado de propósito, mas isso não é verificação.
 - Não medidos: bytes do bundle, memória, tempo de carregamento. O cálculo dos lugares levou de 25 a 75 ms em Node, nas seis vezes em que foi cronometrado.
 - A vegetação não desvia dos lugares das missões (não é colisor): pode haver um arbusto sobre o ponto, como no lugar
   deserto. Vegetação é do Codex.
+- O rótulo "Conversar com Simão", da ação contextual do Codex, sai 3,6 px do círculo do mesmo botão (medido com a mesma
+  régua). Não alterei: é dele.
+
+**Execuções que não contam** (árvores anteriores, registradas para a história): em `a95b9e8` as vinte missões passaram
+nos dois tamanhos, mas a de PC só na segunda execução (a primeira viveu as vinte e parou num limite de 30 s da
+ferramenta para uma captura de tela), e uma bateria foi cortada pelo limite de 2 h das tarefas em segundo plano. Depois
+disso uma captura de revisão mostrou o rótulo "Falar aos discípulos" saindo do botão redondo no celular; os rótulos
+foram encurtados e tudo foi executado de novo na árvore final.
 
 ## Revisão independente (15/11) e o que mudou por causa dela
 
@@ -175,6 +186,9 @@ pontos, todos corrigidos antes da verificação final, e um editorial:
 | O jogo e a Bíblia decidiam separadamente se a jornada existe: com um versículo não citado ausente, o jogo tocava e a Bíblia dizia "vivida" | uma decisão só: a Bíblia lista exatamente os versículos que as missões citam | `story-bible.test.ts` e `story-steps.test.ts` |
 | (Editorial) A Bíblia marcava como "Vivido" o trecho inteiro da missão, com versículos nunca encenados | os dados e a Bíblia passaram a ter só os versículos citados (35, eram 48) | `story-bible.test.ts`, "only what was staged is ever marked" |
 
-Outros dois meus, antes da revisão: uma distância `NaN` contava como "perto" (missão vivida em qualquer lugar se um
-lugar faltasse); e a ferramenta de navegador perdia uma oração curta entre duas leituras e travava (passou a ler um
-registro feito na própria página a cada quadro).
+Outros três meus: uma distância `NaN` contava como "perto" (missão vivida em qualquer lugar se um lugar faltasse); a
+ferramenta de navegador perdia uma oração curta entre duas leituras e travava (passou a ler um registro feito na
+própria página a cada quadro); e três rótulos de botão saíam do círculo do botão redondo ("Falar aos discípulos" 5,8
+px, "Falar ao paralítico" 5,8 px, "Pedir o barquinho" 3,6 px). Este último só apareceu numa captura de revisão, depois
+de a conferência ter aprovado: agora a conferência mede o rótulo contra o círculo em toda ação, e um teste guarda a
+medida (uma linha de até nove caracteres, ou duas de dez e sete).

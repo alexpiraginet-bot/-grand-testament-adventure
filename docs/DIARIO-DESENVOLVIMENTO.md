@@ -1358,3 +1358,23 @@ revisor independente (US$ 7,60), US$ 98,35 ao todo. Atividade estimada da sessã
 até 5 minutos entre respostas; inclui a espera pelas conferências de navegador e não é hora humana nem de GPU. É
 comparação com preço de API, não cobrança: a sessão roda num plano. Nenhum gasto novo, nenhuma geração Tripo, nenhum
 download de pesos, laboratório R14 intocado.
+
+### 19/11/2026 — fecho da R16 na árvore final (`94a5c05`)
+
+A sessão foi interrompida em 15/11 com a última bateria em andamento e retomada em 19/11. O bloco "Verificação na
+árvore final (`a95b9e8`)" acima descreve a penúltima árvore; a final é `94a5c05`, e o que vale é isto:
+
+- **Mais um defeito meu, achado depois da aprovação.** Uma captura de revisão no celular mostrou "FALAR AOS DISCÍPULOS"
+  saindo do botão redondo. Medi no jogo os rótulos contra o círculo: três vazavam (5,8; 5,8; 3,6 px). A primeira troca
+  ("Ir até ela") também vazava 1,8 px; a medição mostrou que o "Aproximar-se" original cabia, e voltei a ele. Ficaram
+  "Falar" e "Pedir" nas três missões; a linha da missão já diz a quem. A conferência passou a medir o rótulo em toda
+  ação. Commit `94a5c05`.
+- **Tudo executado de novo nessa árvore:** 20 missões aprovadas no celular (19,9 min) e no PC (53,9 min), na primeira
+  execução de cada; exploração, Bíblia, toque, layout, painel e analytics aprovados; `tsc` limpo; 472 de 472 testes; 46
+  de 46 mutações acusadas; dados iguais à fonte.
+- **Carregamento não aprovado:** 4 de 7 e, repetido, 5 de 7. Dois cenários falham sempre, antes e depois das missões;
+  um terceiro falhou por um limite de 15 s numa execução e passou na outra. Sem GPU real não separo instabilidade deste
+  renderizador de defeito do jogo. Fica como pendência declarada, não como "passou".
+- O rótulo "Conversar com Simão", do Codex, sai 3,6 px do mesmo botão: registrado na PR para ele.
+
+Uso real da sessão: medido no fim desta rodada, no bloco seguinte do diário.
