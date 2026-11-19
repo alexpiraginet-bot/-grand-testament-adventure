@@ -61,6 +61,11 @@ CC0. Panorama fotográfico contemporâneo; não representa um registro de Cafarn
 Derivados LDR em `public/textures/sky/`, com origem e hashes no `LICENSE.json`.
 https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky · https://polyhaven.com/license
 
+Paredes de pedra e reboco do kit de casas R17 (`public/textures/houses-r17/`): feitos pelo código deste repositório
+(`tools/build_house_textures.mjs`), sem download nem serviço de geração; catálogo e hashes em
+`src/data/house-materials-r17.json`. Registrados como MIT, a confirmar por Alex. São materiais artísticos, não
+levantamento da alvenaria de Cafarnaum. O kit ainda não está no jogo (`docs/CASAS-R17.md`).
+
 ## Malhas 3D
 
 Geradas no Tripo pela conta do Alex, com licença própria. **Não estão neste repositório público**, não ficam sob a MIT

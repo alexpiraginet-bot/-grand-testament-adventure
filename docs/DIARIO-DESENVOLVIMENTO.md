@@ -1378,3 +1378,60 @@ A sessão foi interrompida em 15/11 com a última bateria em andamento e retomad
 - O rótulo "Conversar com Simão", do Codex, sai 3,6 px do mesmo botão: registrado na PR para ele.
 
 Uso real da sessão: medido no fim desta rodada, no bloco seguinte do diário.
+
+### 19/11/2026 — R17: kit de casas feito por código (protótipo, fora da vila)
+
+Pedido de Alex, no meio da espera de uma conferência: "Consegue criar casas mais realistas e diferentes para popular a
+cidade toda?". Resposta dada antes de começar: sim, com limites (sem malhas esculpidas novas: os créditos Tripo
+acabaram e nada se compra; "realista" aqui é arquitetura coerente, não pedra esculpida) e com a regra de mostrar
+imagens antes de qualquer casa entrar na vila, porque as casas são do Codex.
+
+**O que existe agora, e onde.** Só arquivos novos: `src/house-kit.ts` (geometria pura, seis tipos de casa, três
+acabamentos), `tools/build_house_textures.mjs` (pedra e reboco gerados por código, 12 arquivos),
+`src/house-kit-viewer.ts` + `tools/casas/index.html` (página de revisão fora do jogo), `tools/shoot_casas.mjs`,
+`tools/build_house_report.mjs`, `test/house-kit.test.ts`, `docs/CASAS-R17.md` e a tabela gerada
+`docs/CASAS-R17-NUMEROS.md`. **Nenhum arquivo do Codex foi tocado e nenhuma casa do kit está no jogo.**
+
+**O que mudou de ideia no caminho.** A primeira versão já dava imagens aceitáveis. Ao escrever os testes nos 158
+lotes reais, 6 de 9 falharam, e parte era defeito do kit, não do teste: triângulos dobrados na borda do reboco,
+frestas entre peças que só se encostavam, tampas de cilindro com textura borrada. Dois testes novos ("ninguém vê
+através da casa" e "vista de fora, a primeira face está virada para quem olha") e uma varredura em 420 lotes
+sintéticos acharam mais: paredes no mesmo plano se atravessando, porta fora do cômodo, poste na frente da porta, casa
+que mudava a cada construção. A lista completa, com a causa e a correção de cada um, e as tentativas rejeitadas de
+textura, está em `docs/CASAS-R17.md`.
+
+**Verificação executada na árvore do commit.**
+
+- `npm run build`: passou. Tipos limpos, 485 de 485 testes (eram 472; os 13 novos são do kit), os dois builds.
+- Mutação: 28 de 28 quebras do kit acusadas pelos testes.
+- `build_house_textures.mjs --check` e `build_house_report.mjs --check`: iguais ao código.
+- Nenhum arquivo do build do jogo nomeia o kit. As texturas novas (1.468.706 bytes) vão para `dist/` por estarem em
+  `public/`, sem que o jogo as peça.
+- 16 imagens da página de revisão (12 em 1280×800, 4 em 390×844), sem erro de página, olhadas uma a uma. Ficam em
+  `shots/casas-r17/`, fora do Git, com o recorte da parede rasante ao sol.
+- Tempo para desenhar e montar a vila inteira em Node nesta máquina: mediana de 181 ms em 7 execuções (150 a 439 ms),
+  com outra carga rodando ao mesmo tempo. Não é medida de navegador nem de celular.
+
+**Não verificado.** O kit dentro do jogo: quadros por segundo, memória de GPU, colisão, câmera, missões. Celular
+físico. Rigor arqueológico de laje, terraço, escada, alpendre e reboco, que são composição minha sem fonte conferida.
+
+**Pendências que são de Alex.** Se o kit substitui as três malhas, convive com elas ou fica de fora; quem integra;
+licença dos materiais gerados (estão como MIT); tipos a tirar ou a tornar raros.
+
+#### Uso real da sessão Claude (`tools/session_usage.py`, respostas até 14:02:46 UTC de 19/11)
+
+| Grupo | Modelo | Respostas | Equivalente em preço de API |
+|---|---|---:|---:|
+| principal | claude-fable-5-2 | 896 | US$ 285,36 |
+| principal | claude-opus-5-5 | 635 | US$ 82,85 |
+| subagente | claude-fable-5-2 | 24 | US$ 7,60 |
+| subagente | claude-haiku-5-5 | 7 | sem preço na tabela |
+| workflow | claude-opus-5-5 | 1.109 | US$ 103,79 |
+| **Total da sessão** | | | **US$ 479,60** |
+
+Desde a medição de 15/11 às 20:49:49 UTC (US$ 428,91): 131 respostas do Fable na conversa principal, US$ 50,69. Esse
+intervalo cobre o fecho da R16 em 19/11 e o kit de casas; a ferramenta não separa os dois. Atividade estimada da
+sessão: 16,66 h (era 13,8 h), por intervalos de até 5 minutos entre respostas; inclui espera de navegador e não é hora
+humana nem de GPU. As respostas depois das 14:02:46 (commits, push e relatório) não estão nesta conta. É comparação com
+preço de API, não cobrança: a sessão roda num plano. Nenhum gasto novo, nenhuma geração Tripo, nenhum download de
+pesos, nenhum subagente nesta rodada, laboratório R14 intocado.
