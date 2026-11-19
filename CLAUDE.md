@@ -1,5 +1,22 @@
 # Grand Testament Adventure — continuidade local
 
+R17 (19/11): Alex perguntou por casas mais realistas e diferentes para a vila toda.
+Há um kit de casas feito por código (`src/house-kit.ts`), **fora do jogo**: nenhuma
+casa do kit está na vila e `village-houses.ts` (do Codex) não mudou. Ler
+`docs/CASAS-R17.md` e a tabela gerada `docs/CASAS-R17-NUMEROS.md` antes de mexer.
+Entrar na vila depende da palavra de Alex e de combinar com o Codex. A pedra é
+textura estilizada; laje, terraço, escada, alpendre e reboco são composição sem
+fonte conferida. Revisar em `tools/casas/index.html`, nunca digitar números.
+
+R16 (15/11): por pedido de Alex, vinte missões depois do ensino (Marcos 1:30 a
+4:35), branch `claude/quirky-hamilton-bt0y7w`, PR #10. Ler `docs/JORNADA-R16.md`
+e a tabela gerada `docs/JORNADA-R16-MISSOES.md` antes de evoluir missões, lugares
+ou a Bíblia do jogo. Cada oração na tela é recorte literal da BLIVRE; nenhuma
+fala autoral foi escrita. Nenhuma pessoa dessas passagens está desenhada, e seis
+missões (curas, expulsões, uma controvérsia) aguardam a revisão editorial de
+Alex. Os lugares são calculados no terreno: não digitar coordenadas. A ligação
+em `main.ts`/`hud.ts` está em commit isolado. A travessia de 4:35 não existe.
+
 R13 (13/11): Alex aceitou concentrar a produção numa amostra convincente.
 Branch `codex/demo-direcao-r13`, PR #11. Ler `docs/CONTINUIDADE-R13.md` e
 `docs/QA-CAFARNAUM-R13.md` antes de evoluir solo, fachadas ou água. Os novos

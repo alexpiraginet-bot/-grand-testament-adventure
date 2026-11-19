@@ -20,6 +20,8 @@ async function run(name, ctxOpts) {
   const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   const ctx = await browser.newContext(ctxOpts);
   const page = await ctx.newPage();
+  // a software renderer can take longer than Playwright's 30 s for a click or a screenshot: that is the tool's limit, not the game's
+  page.setDefaultTimeout(600000);
   const errors = [], warnings = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); else if (m.type() === "warning") warnings.push(m.text().slice(0, 200)); });
@@ -152,8 +154,12 @@ async function run(name, ctxOpts) {
     const a = center(actR);
     await finger("touchStart", a.x, a.y); await finger("touchEnd");                 // a real tap, not the debug hook
   } else {
-    assert.equal(await g(() => document.getElementById("act").hidden), true, "no round button on PC");
-    assert.equal(await g(() => document.getElementById("prompt").hidden), false, "E prompt on PC");
+    // R15: the round button is offered on a PC as well (it can be clicked), beside the E prompt, with the same word
+    const pc = await g(() => ({ act: document.getElementById("act").hidden, word: document.getElementById("actt").textContent, prompt: document.getElementById("prompt").hidden }));
+    assert.deepEqual(pc, { act: false, word: label, prompt: false }, "round button and E prompt on PC, saying the same thing");
+    const actR = await rect("#act");
+    for (const s of [".radarbox", ".mission", "#prompt"]) assert.ok(!overlap(actR, await rect(s)), `action button clear of ${s}`);
+    r.action = { rect: actR };
     await page.screenshot({ path: `${OUT}/${name}-3-prompt.png` });
     await page.keyboard.press("KeyE");
   }

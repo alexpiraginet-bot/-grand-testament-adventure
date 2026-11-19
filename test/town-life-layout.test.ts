@@ -3,45 +3,14 @@
 // The fittings' meshes are stand-in boxes of the catalogued sizes: placement reads only their bounds.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import * as THREE from "three/webgpu";
-import { Terrain, decodeHeights } from "../src/terrain.ts";
-import { buildingPoint, distanceToSegment, insideObstacle, missionRoutes, settlementLayout, type Building, type Obstacle } from "../src/world-layout.ts";
-import { houseObstacle, type HouseShape } from "../src/village-house-placement.ts";
-import { facadeHousePlacements } from "../src/village-facade-layout.ts";
-import { settlementDetails } from "../src/settlement-details.ts";
-import { villageDetailsR13 } from "../src/village-detail-r13.ts";
+import { buildingPoint, distanceToSegment, insideObstacle, type Obstacle } from "../src/world-layout.ts";
+import { MARGIN, beach, lots, read, routes, scene, start, t } from "./fixtures/town-scene.ts";
 import { npcCanTraverse } from "../src/npc-navigation.ts";
 import type { Fala, Vec2 } from "../src/missions.ts";
 import { TEACHING, beginTeaching, freshTeaching, stepTeaching, teachingLines, teachingView, type TeachingData, type TeachingEvent } from "../src/teaching-journey.ts";
 import { TOWN_LIFE, distanceToBox, townLife, townNpcGround, type TownLifeInput } from "../src/town-life-layout.ts";
 
-const read = (path: string) => readFileSync(new URL(`../${path}`, import.meta.url));
-const t = new Terrain(JSON.parse(read("public/world/cafarnaum.json").toString()), decodeHeights(JSON.parse(read("public/world/cafarnaum-heights.json").toString())));
-const catalog = JSON.parse(read("src/data/tripo-assets.json").toString());
 const data: TeachingData = JSON.parse(read("src/data/mc-ensino.json").toString());
-const routes = missionRoutes(t), lots = settlementLayout(t, routes, 0, 0), P = t.meta.points;
-const start = { x: P.start[0], z: P.start[1] }, beach = { x: P.beach[0], z: P.beach[1] };
-const MARGIN = 60;                                    // main.ts movementMargin
-
-/** The town's colliders as village-houses.ts builds them for a ground of `segments` (256 desktop, 192 low). */
-function scene(segments: number): { plans: Building[]; boxes: Obstacle[] } {
-  const shapes: HouseShape[] = ["casa-basalto-a", "casa-basalto-b", "casa-basalto-c"].map((id) => ({ bounds: catalog.assets[id].bounds }));
-  const standIn = (id: string) => {
-    const b = catalog.assets[id].bounds, s = b.max.map((v: number, i: number) => v - b.min[i]);
-    const g = new THREE.BoxGeometry(s[0], s[1], s[2]);
-    g.translate((b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2);
-    return new THREE.Mesh(g, new THREE.MeshStandardMaterial());
-  };
-  const placements = facadeHousePlacements(t, lots, shapes, routes, segments);
-  const plans = placements.map((p) => p.plan), boxes = placements.map(houseObstacle);
-  const authored = new Set(placements.filter((p) => p.sample && (p.plan.variant !== 1 || p.correctedFront)).map((p) => p.plan));
-  const details = settlementDetails(t, plans.filter((p) => !authored.has(p)), routes, boxes, standIn("muro-pedra"));
-  const wood = { map: new THREE.Texture(), normalMap: new THREE.Texture(), roughnessMap: new THREE.Texture() };
-  const facade = villageDetailsR13(t, placements, routes, [...boxes, ...details.boxes], wood, { net: standIn("rede-amontoada"), rocks: standIn("pedras-basalto") }, segments);
-  boxes.push(...facade.boxes, ...details.boxes);
-  return { plans, boxes };
-}
 const town = scene(256);
 const input: TownLifeInput = { terrain: t, start, beach, routes, plans: town.plans, boxes: town.boxes, margin: MARGIN };
 const life = townLife(input)!;
@@ -215,5 +184,8 @@ test("the teaching step is lived on the real place: down the street at the hero'
   assert.equal(v.objective, "Siga para a casa de Simão e de André");
   assert.deepEqual(v.goal, life.onward!.at);
   assert.ok(Math.abs(v.dist! - Math.hypot(pos.x - life.onward!.at.x, pos.z - life.onward!.at.z)) < 1e-9);
-  assert.equal(teachingView(s, place, data, lines, life.onward!.at, false)!.goal, null, "at the house the radar has nowhere left to point");
+  // at the house the step notices it once and the radar has nowhere left to point
+  pos = { ...life.onward!.at }; events.length = 0; frame();
+  assert.deepEqual(events.map((e) => e.type), ["onward"]);
+  assert.equal(teachingView(s, place, data, lines, pos, false)!.goal, null);
 });

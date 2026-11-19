@@ -4,8 +4,9 @@
 // not a physical phone. Waits are on game state, so it also passes on a software renderer (under 1 fps).
 //   npm run build && npx vite preview --port 4173 &   then   node tools/check_roam.mjs [url] [outdir]
 import { createRequire } from "node:module";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import assert from "node:assert/strict";
+import { STORY_STEPS } from "../src/story-steps.ts";
 const { chromium } = createRequire(import.meta.url)(process.env.PLAYWRIGHT_PATH || "playwright");
 
 const URL_ = process.argv[2] ?? "http://localhost:4173/";
@@ -13,11 +14,18 @@ const OUT = process.argv[3] ?? "shots/roam";
 mkdirSync(OUT, { recursive: true });
 const report = { url: URL_, note: "Missions reached by debug teleport and action; Chromium emulation, not a physical phone.", runs: {} };
 const LONG = { timeout: 600000, polling: 150 };
+// the two clauses the teaching step shows, derived from the data as the game derives them (teaching-journey.ts)
+const ENSINO = JSON.parse(readFileSync(new URL("../src/data/mc-ensino.json", import.meta.url), "utf8"));
+const CLAUSES = [ENSINO.versiculos["Mark.1.21"].split(";").slice(1).join(";").trim(), ENSINO.versiculos["Mark.1.22"].split(",")[0].trim()];
 
+let current = null;      // the run in progress, so a failure can picture the screen it stopped at
 async function run(name, ctxOpts) {
   const browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined });
   const ctx = await browser.newContext(ctxOpts);
   const page = await ctx.newPage();
+  // a software renderer can take longer than Playwright's 30 s for a click or a screenshot: that is the tool's limit, not the game's
+  page.setDefaultTimeout(600000);
+  current = { name, page, browser };
   const errors = [], warnings = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 300)); else if (m.type() === "warning") warnings.push(m.text().slice(0, 300)); });
@@ -150,8 +158,67 @@ async function run(name, ctxOpts) {
   r.cine = await g(() => { const c = window.__gta.cine(); return { why: c.why, shot: !!c.shot }; });
   await page.screenshot({ path: `${OUT}/${name}-3-fala.png` });
   await page.waitForFunction(() => window.__gta.roam().phase === "free", null, LONG);
+
+  // R15: the region is open and the step after the boat has the screen first (teaching-journey.ts): the way to the
+  // place where the town gathers. No reading is asked for: the objective is there without the Bible being opened.
+  await page.waitForFunction(() => document.getElementById("mk").textContent === "CAFARNAUM · ENSINAMENTOS" && document.getElementById("sub").hidden, null, LONG);
+  assert.equal(await text("#objt"), "Vá ao lugar onde a cidade se reúne");
+  assert.match(await text("#dist"), /^\d+ m$/);
+  const life = await g(() => { const l = window.__gta.teaching().layout; return { court: l.court.at, onward: l.onward?.at ?? null }; });
+  assert.ok(life.onward, "this village has a house for Mark 1:29");
+  // the region's edge is still announced while the step has the screen (it was dropped by the first integration)
+  const rim = await g(() => window.__gta.meta.size / 2 - 60 - 20);
+  await tp(0, -rim, 0);
+  await page.waitForFunction(() => document.querySelector(".journey-body").textContent.startsWith("Aqui termina"), null, LONG);
+  assert.equal(await text(".journey-body"), "Aqui termina a região desta versão. Volte em direção a Cafarnaum.");
+  assert.equal(await text("#mk"), "CAFARNAUM · ENSINAMENTOS", "the notice comes through the step's own panel");
+  // in the yard the button offers the teaching, and one real press (E, or a tap on the hand) begins it
+  await tp(life.court.x, life.court.z + 2, 0);
+  await page.waitForFunction(() => { const a = window.__gta.actions(); return window.__gta.teaching().state.phase === "ready" && a.shown.to === "mission" && a.shown.label === "Ensinar"; }, null, LONG);
+  if (touch) await page.tap("#act", { timeout: 300000 });
+  // (the click only gives the canvas the keyboard; on a software renderer it can wait many seconds for a frame)
+  else { await page.locator("#c").click({ position: { x: Math.floor(ctxOpts.viewport.width * 0.55), y: Math.floor(ctxOpts.viewport.height * 0.45) }, timeout: 600000 }); await page.keyboard.press("KeyE"); }
+  const clause = (i) => page.waitForFunction((i) => { const s = window.__gta.teaching().state, sub = document.getElementById("sub");
+    return s.phase === "line" && s.index === i && !sub.hidden && { text: document.getElementById("subt").textContent, ref: document.getElementById("subr").textContent }; }, i, LONG).then((h) => h.jsonValue());
+  assert.deepEqual(await clause(0), { text: `“${CLAUSES[0]}”`, ref: "BÍBLIA LIVRE · MARCOS 1:21" });
+  await page.screenshot({ path: `${OUT}/${name}-4a-ensino.png` });
+  assert.deepEqual(await clause(1), { text: `“${CLAUSES[1]}”`, ref: "BÍBLIA LIVRE · MARCOS 1:22" });
+  await page.waitForFunction(() => window.__gta.teaching().state.phase === "done", null, LONG);
+  // lived: the next verse is announced whole and the house it names becomes the objective
+  await page.waitForFunction(() => document.getElementById("objt").textContent === "Siga para a casa de Simão e de André", null, LONG);
+  assert.match(await text("#dist"), /^\d+ m$/);
+  await page.screenshot({ path: `${OUT}/${name}-4b-destino.png` });
+  // R16: at the house the story after the teaching takes the screen (story-journey.ts), at its first step. Its
+  // twenty steps are played by tools/check_story_r16.mjs; here, that it opens and that nothing was lived yet.
+  await tp(life.onward.x, life.onward.z, 0);
+  await page.waitForFunction(() => window.__gta.teaching().state.onwardSeen === true, null, LONG);
+  await page.waitForFunction(() => document.getElementById("mk").textContent === "JORNADA · 1 DE 20" && document.getElementById("sub").hidden
+    && window.__gta.story().state.phase === "ready", null, LONG);
+  assert.equal(await text("#objt"), STORY_STEPS[0].doing);
+  assert.equal(await g(() => window.__gta.actions().shown.label), STORY_STEPS[0].action);
+  r.teaching = await g(() => { const t = window.__gta.teaching(); return { phase: t.state.phase, storage: t.storage, record: Object.fromEntries(Object.entries(t.record.encounters).map(([k, v]) => [k, v.stage])) }; });
+  assert.deepEqual(r.teaching, { phase: "done", storage: "ok", record: { "ensino-cafarnaum": "completed", "casa-marcos-1-29": "completed" } });
+  await page.screenshot({ path: `${OUT}/${name}-4c-jornada.png` });
+  // The region's exploration has the screen again once the story was lived. Here its twenty facts are written into
+  // this browser's own world record, as a player who lived them has them, and the game is entered again the way such
+  // a player does ("Explorar a região"): no step is offered and the panel is the exploration's.
+  r.storyFacts = await g((ids) => {
+    const key = Object.keys(localStorage).find((k) => /^gta:world-state:v1:[^:]+$/.test(k));
+    const record = JSON.parse(localStorage.getItem(key));
+    for (const id of ids) record.encounters[id] = { stage: "completed", at: Date.now() };
+    localStorage.setItem(key, JSON.stringify(record));
+    return Object.keys(record.encounters).length;
+  }, STORY_STEPS.map((s) => s.id));
+  assert.equal(r.storyFacts, 22, "the teaching's two facts and the story's twenty");
+  await load();
+  await press("#novo");
+  await page.waitForFunction(() => window.__gta.roam().phase === "free" && window.__gta.story().state.phase === "end", null, LONG);
   await page.waitForFunction(() => document.getElementById("mk").textContent === "EXPLORAÇÃO LIVRE" && document.getElementById("sub").hidden, null, LONG);
-  // free: one place is still to be found, so the panel and the radar point to it
+  assert.equal(await g(() => window.__gta.story().view), null, "the story has nothing left to say");
+  assert.equal(await g(() => window.__gta.teaching().view), null, "the step has nothing left to say");
+  // back where the walk began, as before R15: one place is still to be found, so the panel and the radar point to it
+  await tp(P.start[0], P.start[1] + 10, head(P.beach, P.start));
+  await page.waitForFunction(() => document.getElementById("objt").textContent === "Encontre os lugares da região", null, LONG);
   assert.equal(await text("#objt"), "Encontre os lugares da região");
   assert.match(await text("#dist"), /^\d+ m$/);
   await page.waitForFunction(() => document.querySelector(".journey-label").textContent === "Orientação", null, LONG);
@@ -216,7 +283,25 @@ async function run(name, ctxOpts) {
   await browser.close();
 }
 
-await run("celular", { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
-await run("pc", { viewport: { width: 1280, height: 800 } });
+try {
+  await run("celular", { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1 });
+  await run("pc", { viewport: { width: 1280, height: 800 } });
+} catch (e) {
+  // What the screen and the game looked like when the check stopped, so a failure can be read without rerunning it
+  // (the artifact-on-failure habit of the ECC e2e-testing skill). The report is written either way.
+  const failed = { run: current?.name ?? null, error: String(e?.message ?? e).slice(0, 1200) };
+  try {
+    failed.state = await current.page.evaluate(() => { const G = window.__gta, t = (s) => document.querySelector(s)?.textContent ?? null;
+      return { mission: G?.state?.mission ?? null, phase: G?.state?.phase ?? null, roam: G?.roam?.().phase ?? null, teaching: G?.teaching?.().state.phase ?? null,
+        mk: t("#mk"), objective: t("#objt"), dist: t("#dist"), journey: t(".journey-body"), line: t("#subt") }; });
+    failed.screenshot = `${current.name}-FALHA.png`;
+    await current.page.screenshot({ path: `${OUT}/${failed.screenshot}` });
+  } catch (inner) { failed.artifactError = String(inner).slice(0, 300); }
+  report.failed = failed;
+  writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));
+  console.error(JSON.stringify({ ok: false, failed }, null, 1));
+  await current?.browser.close().catch(() => {});
+  process.exit(1);
+}
 writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 1));
 console.log(JSON.stringify({ ok: true, runs: Object.keys(report.runs) }));

@@ -113,12 +113,12 @@ export class Hud {
     if($('subr').textContent!=='SIMÃO · NARRATIVA DO JOGO')$('subr').textContent='SIMÃO · NARRATIVA DO JOGO';
   }
 
-  teaching(v:TeachingView,s:State,pos:Vec2,heading:number,followers:RadarMark[],dt:number,touch:boolean,announce:boolean,storageNotice:string){
+  teaching(v:TeachingView,s:State,pos:Vec2,heading:number,followers:RadarMark[],dt:number,touch:boolean,announce:boolean,storageNotice:string,notice:string|null=null,mark='CAFARNAUM · ENSINAMENTOS'){
     if(this.teachingPhase!==v.phase){this.teachingPhase=v.phase;this.narrativeLeft=7;}
     const routes=v.route.slice(1).map((point,i)=>({ax:v.route[i].x,az:v.route[i].z,bx:point.x,bz:point.z,r:1.5}));
     this.roam({kind:v.line?'line':'free',objective:v.objective,dist:v.dist,line:v.line??(announce?v.announce:null),
-      narrative:v.narrative,guidance:[v.guidance,storageNotice].filter(Boolean).join(' '),routes},s,pos,heading,v.goal,followers,null,dt,touch);
-    $('mk').textContent='CAFARNAUM · ENSINAMENTOS';
+      narrative:v.narrative,guidance:[v.guidance,storageNotice].filter(Boolean).join(' '),routes},s,pos,heading,v.goal,followers,notice,dt,touch);
+    $('mk').textContent=mark;
     $('ref').textContent=v.ref;
     const plateReference=$('plate').querySelector('.r');
     if(plateReference&&plateReference.textContent!==v.ref)plateReference.textContent=v.ref;
@@ -196,7 +196,7 @@ export class Hud {
     this.drawCounter(s.filled);                                     // built here too: exploring may start without a mission
     if (v.kind !== this.roamKind) { this.roamKind = v.kind; this.narrativeLeft = 7; }
     this.narrativeLeft = Math.max(0, this.narrativeLeft - dt);
-    const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line";
+    const narrated = this.narrativeLeft > 0 && !notice && v.kind !== "line" && !!v.narrative;   // no narrative: the guidance shows at once
     const text = v.kind === "line" ? "" : notice ?? (narrated ? v.narrative : closed ? sealedGuidance(touch) : v.guidance);
     this.journey.hidden = !text;
     const label = narrated ? "Narrativa do jogo" : "Orientação";

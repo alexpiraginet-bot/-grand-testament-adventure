@@ -12,6 +12,14 @@ Alteração indicada: os colchetes da BLIVRE (palavras acrescentadas pelos tradu
 conferido). Nenhuma fala mostrada na tela tem colchete. A grafia do arquivo de origem é mantida mesmo onde parece um
 descuido dele (Marcos 1:22 traz "temautoridade"): o jogo cita desse versículo só a oração anterior, sem corrigir o texto.
 
+O mesmo vale para `src/data/mc-caminho.json` (Marcos 1:30–42, 2:1–5, 2:11–17, 3:7, 3:9, 3:13–14, 3:16–19, 4:1 e 4:35: os
+35 versículos que a jornada depois do ensino cita, gerados por `tools/build_story.py` com o SHA-256 da fonte conferido).
+Em 9 deles a BLIVRE traz colchetes, retirados como acima; as palavras ficam (ex.: "Dias depois, [Jesus] entrou" vira
+"Dias depois, Jesus entrou"). Três versículos trazem no arquivo de origem um espaçamento que parece descuido dele
+(Marcos 1:30 "a Jesus .", 1:41 "E Jesus , movido", 2:14 "Segue-me.Então"). A Bíblia do jogo mostra esses versículos
+inteiros como estão na fonte; as orações que o jogo põe na tela (`src/story-steps.ts`) são recortadas de modo que
+nenhuma traga um desses trechos, e um teste confere isso (`test/story-steps.test.ts`).
+
 Na Bíblia do jogo (`src/data/biblia-cronologica.json`, gerado por `tools/build_bible.py`), os versículos dos outros
 momentos da leitura são copiados da BLIVRE **sem alteração**, com os colchetes e a pontuação do arquivo de origem
 (`fontes/blivre/porbr2018_vpl.zip` do Bíblia Conectada, SHA-256 conferido contra `fontes/SHA256SUMS`).
@@ -52,6 +60,11 @@ Céu: Kloofendal 48d Partly Cloudy (Pure Sky), Greg Zaal e Jarod Guest / Poly Ha
 CC0. Panorama fotográfico contemporâneo; não representa um registro de Cafarnaum.
 Derivados LDR em `public/textures/sky/`, com origem e hashes no `LICENSE.json`.
 https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky · https://polyhaven.com/license
+
+Paredes de pedra e reboco do kit de casas R17 (`public/textures/houses-r17/`): feitos pelo código deste repositório
+(`tools/build_house_textures.mjs`), sem download nem serviço de geração; catálogo e hashes em
+`src/data/house-materials-r17.json`. Registrados como MIT, a confirmar por Alex. São materiais artísticos, não
+levantamento da alvenaria de Cafarnaum. O kit ainda não está no jogo (`docs/CASAS-R17.md`).
 
 ## Malhas 3D
 

@@ -1,0 +1,112 @@
+{
+ "schemaVersion": 1,
+ "revision": "house-materials-r17",
+ "generator": "tools/build_house_textures.mjs",
+ "license": "MIT",
+ "author": "Grand Testament Adventure (gerado por código deste repositório)",
+ "note": "Materiais artísticos para uma vila recriada: não são levantamento da alvenaria de Cafarnaum nem fonte.",
+ "materials": {
+  "basalt-wall": {
+   "tileMeters": 2.4,
+   "profiles": {
+    "mobile": {
+     "map": {
+      "url": "textures/houses-r17/basalt-wall-map-512-8e28fbc11865.webp",
+      "bytes": 24260,
+      "sha256": "8e28fbc11865cf6d2b16f8204237158477bf8c81c2b6b713856103650e04261e",
+      "size": 512,
+      "colorSpace": "srgb"
+     },
+     "normalMap": {
+      "url": "textures/houses-r17/basalt-wall-normalMap-512-fcc4f80a7239.webp",
+      "bytes": 138642,
+      "sha256": "fcc4f80a7239f4f8b05bc175233d6535f1b7e5b661f9c72442c4cbad388d3ffc",
+      "size": 512,
+      "colorSpace": "linear"
+     },
+     "roughnessMap": {
+      "url": "textures/houses-r17/basalt-wall-roughnessMap-512-22e1b23284a2.webp",
+      "bytes": 16552,
+      "sha256": "22e1b23284a22e8ec98f4377ddf5c116cf4e9758af1e470dff7fc085932a5e61",
+      "size": 512,
+      "colorSpace": "linear"
+     }
+    },
+    "desktop": {
+     "map": {
+      "url": "textures/houses-r17/basalt-wall-map-1024-965041106390.webp",
+      "bytes": 59062,
+      "sha256": "96504110639058c759c5070d01f77859959d4075c0649b123386afebdfc90d25",
+      "size": 1024,
+      "colorSpace": "srgb"
+     },
+     "normalMap": {
+      "url": "textures/houses-r17/basalt-wall-normalMap-1024-7e4f1151f3ec.webp",
+      "bytes": 480044,
+      "sha256": "7e4f1151f3ec31bf7a3268730806669b7adde75c9d7f9a577b4708f1afe5c64d",
+      "size": 1024,
+      "colorSpace": "linear"
+     },
+     "roughnessMap": {
+      "url": "textures/houses-r17/basalt-wall-roughnessMap-1024-246f168b6950.webp",
+      "bytes": 36090,
+      "sha256": "246f168b69505fb01c9ef4b1aaf21965f465090fed7eb8e8ae5995339026cc44",
+      "size": 1024,
+      "colorSpace": "linear"
+     }
+    }
+   }
+  },
+  "mud-plaster": {
+   "tileMeters": 2,
+   "profiles": {
+    "mobile": {
+     "map": {
+      "url": "textures/houses-r17/mud-plaster-map-512-aef32c9f37ed.webp",
+      "bytes": 16750,
+      "sha256": "aef32c9f37eddd083dffd9ad404fe4adab1c97ea3f973a898201636081e2d944",
+      "size": 512,
+      "colorSpace": "srgb"
+     },
+     "normalMap": {
+      "url": "textures/houses-r17/mud-plaster-normalMap-512-ba4ae1dd1dd9.webp",
+      "bytes": 131542,
+      "sha256": "ba4ae1dd1dd9c2bc30d0620afd306440798ad3305c38cc0dbd79a7cc71e6173a",
+      "size": 512,
+      "colorSpace": "linear"
+     },
+     "roughnessMap": {
+      "url": "textures/houses-r17/mud-plaster-roughnessMap-512-f9916225b89f.webp",
+      "bytes": 10330,
+      "sha256": "f9916225b89fce184a3a48545d43d969cddb98a47e498690718b9419db8a9c8c",
+      "size": 512,
+      "colorSpace": "linear"
+     }
+    },
+    "desktop": {
+     "map": {
+      "url": "textures/houses-r17/mud-plaster-map-1024-3ca5b9619872.webp",
+      "bytes": 35552,
+      "sha256": "3ca5b96198720b278d032e4031d32643bb13a8847896aef96487c6c12cbeb124",
+      "size": 1024,
+      "colorSpace": "srgb"
+     },
+     "normalMap": {
+      "url": "textures/houses-r17/mud-plaster-normalMap-1024-f4327a69118e.webp",
+      "bytes": 495968,
+      "sha256": "f4327a69118ec35995feec5be80694c4bd87bf27e71492d0693cd0b6895d7a1b",
+      "size": 1024,
+      "colorSpace": "linear"
+     },
+     "roughnessMap": {
+      "url": "textures/houses-r17/mud-plaster-roughnessMap-1024-e4c07194aa04.webp",
+      "bytes": 23914,
+      "sha256": "e4c07194aa04bafff0415480ca290f79710ba266af9815e59d8953fa64404a33",
+      "size": 1024,
+      "colorSpace": "linear"
+     }
+    }
+   }
+  }
+ }
+}

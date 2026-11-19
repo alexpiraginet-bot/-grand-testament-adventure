@@ -11,7 +11,8 @@
 // (main.ts, world.ts) is Codex's and is not touched from here.
 import type { Vec2 } from "./missions.ts";
 import { buildingPoint, distanceToSegment, type Building, type Obstacle, type Segment } from "./world-layout.ts";
-import { NPC_MOTION, npcCanTraverse, npcCrossesBox, type NpcGround } from "./npc-navigation.ts";
+import { NPC_MOTION, npcCanTraverse, npcCrossesBox, npcStandable, type NpcGround } from "./npc-navigation.ts";
+import type { Lane, Spot } from "./npc-population.ts";
 import type { TeachingPlace } from "./teaching-journey.ts";
 
 export type TownGround = { heightAt(x: number, z: number): number; slopeAt(x: number, z: number): number; inside(x: number, z: number, margin?: number): boolean };
@@ -78,7 +79,7 @@ export function distanceToBox(x: number, z: number, b: Obstacle): number {
 }
 
 /** The colliders indexed in cells, so a query looks only at the boxes around it. */
-function boxIndex(boxes: readonly Obstacle[], cell = 16) {
+export function boxIndex(boxes: readonly Obstacle[], cell = 16) {
   const cells = new Map<string, Obstacle[]>();
   for (const b of boxes) {
     const r = Math.hypot(b.hx, b.hz);
@@ -278,4 +279,63 @@ export function townLife(input: TownLifeInput): TownLife | null {
     onward: chosen,
     pois, keepClear,
   };
+}
+
+/** Level design for where people stand and walk. rim: how far from the yard's centre the listeners' ring is, inside
+ * the free ground and around whoever stands in the middle; rimSpots: how many places on it; offLine: a standing
+ * person keeps this far from the line of a street, so the passage stays free; pairGap: metres between two people
+ * talking; laneSide: how far from a street's line a walker keeps, leaving its middle to the player. */
+export const TOWN_PLACES = { rim: 4.6, rimSpots: 8, offLine: 1.9, pairGap: 1.15, laneSide: 0.8, shoreBack: 3.2 } as const;
+
+/** Where the town's people stand and walk, on the same ground and colliders as the layout: a ring of places around
+ * the yard (those who wait and listen), pairs beside the street (two people talking), places by the shore for
+ * whoever has the net clip, and the two walks (the street to the yard, the village lane to the shore). Every spot
+ * passes the follower's own standing rules; one that does not is simply not offered. The positions are the game's. */
+export function townPlaces(input: TownLifeInput, life: TownLife): { spots: Spot[]; lanes: Lane[] } {
+  const P = TOWN_PLACES, ground = townNpcGround(input.terrain, input.boxes, input.margin ?? 60);
+  const street = life.street.points, c = life.court.at;
+  const lines: Segment[] = [...input.routes, ...street.slice(1).map((b, i) => ({ ax: street[i].x, az: street[i].z, bx: b.x, bz: b.z, r: 0 }))];
+  const offLines = (p: Vec2) => lines.every((s) => distanceToSegment(p.x, p.z, s) >= P.offLine);
+  const facing = (a: Vec2, b: Vec2) => Math.atan2(b.x - a.x, -(b.z - a.z));
+  const spots: Spot[] = [];
+  const ok = (p: Vec2) => npcStandable(ground, p) && offLines(p) && spots.every((s) => dist(s.at, p) >= 1);
+  // the ring around the yard, each place looking at its centre
+  for (let k = 0; k < P.rimSpots; k++) {
+    const a = (k * 2 * Math.PI) / P.rimSpots, at = { x: c.x + Math.sin(a) * P.rim, z: c.z + Math.cos(a) * P.rim };
+    if (ok(at)) spots.push({ id: `patio-${k + 1}`, at, facing: facing(at, c), use: "wait" });
+  }
+  // pairs beside the street: at a third and two thirds of it, on whichever side has room
+  let walked = 0, pair = 0;
+  const marks = [life.street.length / 3, (life.street.length * 2) / 3];
+  for (let i = 0; i + 1 < street.length; i++) {
+    const a = street[i], b = street[i + 1], l = dist(a, b), ux = (b.x - a.x) / (l || 1), uz = (b.z - a.z) / (l || 1);
+    for (const mark of marks) {
+      if (mark < walked || mark >= walked + l) continue;
+      const u = mark - walked;
+      search: for (const side of [1, -1]) for (let off = P.offLine + 0.3; off <= P.offLine + 2.4; off += 0.3) {
+        const mid = { x: a.x + ux * u - uz * off * side, z: a.z + uz * u + ux * off * side };
+        const one = { x: mid.x - (ux * P.pairGap) / 2, z: mid.z - (uz * P.pairGap) / 2 }, two = { x: mid.x + (ux * P.pairGap) / 2, z: mid.z + (uz * P.pairGap) / 2 };
+        if (!ok(one) || !ok(two)) continue;
+        pair++;
+        spots.push({ id: `rua-${pair}a`, at: one, facing: facing(one, two), use: "wait", pair: `rua-${pair}b` },
+          { id: `rua-${pair}b`, at: two, facing: facing(two, one), use: "wait", pair: `rua-${pair}a` });
+        break search;
+      }
+    }
+    walked += l;
+  }
+  // by the shore, back from the waterline and off the lane: for whoever has the net clip
+  const last = input.routes.find((s) => Math.hypot(s.bx - input.beach.x, s.bz - input.beach.z) < 0.01);
+  if (last) {
+    const l = Math.hypot(last.bx - last.ax, last.bz - last.az) || 1, ux = (last.bx - last.ax) / l, uz = (last.bz - last.az) / l;
+    [-1, 1].forEach((side, k) => {
+      const at = { x: input.beach.x - ux * P.shoreBack - uz * (P.offLine + 1.2) * side, z: input.beach.z - uz * P.shoreBack + ux * (P.offLine + 1.2) * side };
+      if (ok(at)) spots.push({ id: `margem-${k + 1}`, at, facing: facing(at, input.beach), use: "net" });
+    });
+  }
+  const village = input.routes.findIndex((s) => Math.hypot(s.bx - input.beach.x, s.bz - input.beach.z) < 0.01);
+  const lane = (village >= 0 ? input.routes.slice(0, village + 1) : []).flatMap((s, i) => (i ? [{ x: s.bx, z: s.bz }] : [{ x: s.ax, z: s.az }, { x: s.bx, z: s.bz }]));
+  const lanes: Lane[] = [{ id: "rua-do-patio", points: street.map((p) => ({ ...p })), side: P.laneSide }];
+  if (lane.length >= 2) lanes.push({ id: "rua-da-vila", points: lane, side: P.laneSide });
+  return { spots, lanes };
 }

@@ -32,12 +32,17 @@ export type TeachingData = {
 
 /** This step's id in the world record (world-state.ts). Stable: saved progress refers to it. */
 export const TEACHING_ID = "ensino-cafarnaum";
+/** The id under which the record keeps that the house of Mark 1:29 was reached (the same id as its point of
+ * interest in town-life-layout.ts). */
+export const TEACHING_ONWARD_ID = "casa-marcos-1-29";
 export const TEACHING_VERSES = { begins: "Mark.1.21", response: "Mark.1.22" } as const;
 /** Level design, not text. radius: how close to the spot the action is offered; slack: how far past it the offer
  * holds, so it does not flicker at the edge; leave: walking this far past the radius while the lines are on screen
  * ends them (he left the place: nothing is kept, and it can be begun again); onward: how close counts as having
- * reached the place the text goes to next. */
-export const TEACHING = { radius: 6, slack: 1.5, leave: 6, onward: 12 } as const;
+ * reached the place the text goes to next. afterDone / afterOnward: game seconds the step still has something to
+ * say once it was lived and there is no house to go to, or once the house was reached; after that it gives the
+ * screen back to the exploration of the region (the places to find, the notice at the region's edge). */
+export const TEACHING = { radius: 6, slack: 1.5, leave: 6, onward: 12, afterDone: 30, afterOnward: 12 } as const;
 /** The button's word. */
 export const TEACHING_ACTION = "Ensinar";
 
@@ -64,6 +69,10 @@ export type TeachingState = {
   lineLeft: number;
   /** Game seconds lived with the step open. */
   time: number;
+  /** Once lived: he has been to the house the text goes to next. */
+  onwardSeen: boolean;
+  /** Once lived: the game time until which the step still speaks after there is nowhere left to send him. */
+  until: number;
 };
 
 export type TeachingEvent =
@@ -73,6 +82,7 @@ export type TeachingEvent =
   | { type: "line"; fala: Fala }              // a clause came on screen
   | { type: "interrupted" }                   // he walked away while the clauses were on screen
   | { type: "done" }                          // lived, once
+  | { type: "onward" }                        // he reached the house the text goes to next, once
   | { type: "save"; stage: StableStage };     // a fact to keep (recordTeaching)
 export type TeachingStep = { next: TeachingState; events: TeachingEvent[] };
 
@@ -97,12 +107,13 @@ export function onwardPlaceName(d: Pick<TeachingData, "depois">): string | null 
   return /vieram à (casa de [^,.;]+)/.exec(d.depois?.texto ?? "")?.[1].trim() ?? null;
 }
 
-export const freshTeaching = (): TeachingState => ({ phase: "off", intro: true, index: 0, line: null, lineLeft: 0, time: 0 });
+export const freshTeaching = (): TeachingState => ({ phase: "off", intro: true, index: 0, line: null, lineLeft: 0, time: 0, onwardSeen: false, until: 0 });
 
 /** The step as a reload finds it: at the last saved fact. Lived stays lived; begun but not lived opens again without
- * its opening words; never mid-clause. It stays "off" until beginTeaching: main.ts opens it when the region does. */
-export function restoreTeaching(saved: StableStage | null): TeachingState {
-  if (saved === "completed") return { ...freshTeaching(), phase: "done", intro: false };
+ * its opening words; never mid-clause. It stays "off" until beginTeaching: main.ts opens it when the region does.
+ * `onward` is the saved fact of the house (TEACHING_ONWARD_ID): reached before, it is not pointed at again. */
+export function restoreTeaching(saved: StableStage | null, onward: StableStage | null = null): TeachingState {
+  if (saved === "completed") return { ...freshTeaching(), phase: "done", intro: false, onwardSeen: onward !== null };
   return { ...freshTeaching(), intro: saved === null };
 }
 
@@ -124,7 +135,13 @@ export function stepTeaching(s: TeachingState, place: TeachingPlace, lines: read
   input: { pos: Vec2; action: boolean }, dt: number): TeachingStep {
   if (!(dt > 0) || s.phase === "off") return same(s);
   const time = s.time + dt, d = dist(input.pos, place.court);
-  if (s.phase === "done") return { next: { ...s, time }, events: [] };
+  if (s.phase === "done") {
+    // lived: the only thing left is to notice, once, that he reached the house the text goes to next
+    if (!s.onwardSeen && place.onward && dist(input.pos, place.onward) <= TEACHING.onward) {
+      return { next: { ...s, time, onwardSeen: true, until: time + TEACHING.afterOnward }, events: [{ type: "onward" }] };
+    }
+    return { next: { ...s, time }, events: [] };
+  }
   if (!lines?.length) return s.phase === "walk" ? { next: { ...s, time }, events: [] }
     : { next: { ...s, time, phase: "walk", line: null, lineLeft: 0, index: 0 }, events: [] };
   if (s.phase === "walk") {
@@ -141,13 +158,15 @@ export function stepTeaching(s: TeachingState, place: TeachingPlace, lines: read
   if (left > 0) return { next: { ...s, time, lineLeft: left }, events: [] };
   const following = lines[s.index + 1];
   if (following) return { next: { ...s, time, index: s.index + 1, line: following, lineLeft: readingTime(following.texto) }, events: [{ type: "line", fala: following }] };
-  return { next: { ...s, time, phase: "done", line: null, lineLeft: 0, index: 0 }, events: [{ type: "done" }, { type: "save", stage: "completed" }] };
+  return { next: { ...s, time, phase: "done", line: null, lineLeft: 0, index: 0, until: time + TEACHING.afterDone },
+    events: [{ type: "done" }, { type: "save", stage: "completed" }] };
 }
 
 /** The world record after these events. Stages only go forward there, so a repeated event keeps the record as it is
  * (the same object comes back: nothing to write). */
 export function recordTeaching(world: WorldState, events: readonly TeachingEvent[], now: number): WorldState {
-  return events.reduce((w, e) => (e.type === "save" ? recordStage(w, TEACHING_ID, e.stage, now) : w), world);
+  return events.reduce((w, e) => (e.type === "save" ? recordStage(w, TEACHING_ID, e.stage, now)
+    : e.type === "onward" ? recordStage(w, TEACHING_ONWARD_ID, "completed", now) : w), world);
 }
 
 /** What is still ahead of him on the street, from the nearest point of it to its end. Like the journey's dotted
@@ -189,21 +208,26 @@ export type TeachingView = {
   route: Vec2[];
 };
 
-/** The view of the step for a player at `pos`; null while it is not open. */
+/** The view of the step for a player at `pos`. Null while it is not open, and null again once it was lived and has
+ * nothing left to say (the house was reached, or there is none, and the closing words had their time): the screen
+ * then belongs to the exploration of the region again. */
 export function teachingView(s: TeachingState, place: TeachingPlace, d: TeachingData, lines: readonly Fala[] | null,
   pos: Vec2, touch: boolean): TeachingView | null {
   if (s.phase === "off") return null;
   const base = { phase: s.phase, ref: d.ref_pt, action: null, line: null, announce: null, narrative: "", scene: "", route: [] as Vec2[] };
   if (s.phase === "done") {
     const name = onwardPlaceName(d), at = name ? place.onward : null;
-    const far = at ? dist(pos, at) : null;
-    const there = far !== null && far <= TEACHING.onward;
-    return { ...base, ref: d.depois.ref_pt, goal: at && !there ? at : null, dist: at && !there ? far : null,
-      objective: name && at ? `Siga para a ${name}` : "Explore a cidade",
-      announce: { texto: d.depois.texto, ref: d.depois.ref_pt },
-      narrative: `O que ainda se passa na sinagoga (${d.a_seguir.ref_pt}) não é encenado nesta versão.`,
-      guidance: there ? "Esta é a casa que o jogo escolheu para o versículo. A cena ainda está em preparação."
-        : at ? "O radar aponta a casa que o jogo escolheu para o versículo. A cena de lá ainda está em preparação."
+    const done = { ...base, ref: d.depois.ref_pt, announce: { texto: d.depois.texto, ref: d.depois.ref_pt },
+      narrative: `O que ainda se passa na sinagoga (${d.a_seguir.ref_pt}) não é encenado nesta versão.` };
+    // still somewhere to send him: the house the text goes to next
+    if (at && !s.onwardSeen) {
+      return { ...done, goal: at, dist: dist(pos, at), objective: `Siga para a ${name}`,
+        guidance: "O radar aponta a casa que o jogo escolheu para o versículo. A cena de lá ainda está em preparação." };
+    }
+    // nowhere left to send him: the closing words for a while, then the region's exploration takes the screen back
+    if (!(s.time < s.until)) return null;
+    return { ...done, goal: null, dist: null, objective: at ? `Siga para a ${name}` : "Explore a cidade",
+      guidance: at ? "Esta é a casa que o jogo escolheu para o versículo. A cena ainda está em preparação."
         : "A continuação da história ainda está em preparação." };
   }
   if (!lines?.length) {

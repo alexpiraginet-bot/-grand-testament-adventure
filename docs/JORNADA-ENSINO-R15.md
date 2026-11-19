@@ -46,7 +46,11 @@ teachingStage(s): StableStage | null
 streetAhead(street, pos): Vec2[]                   // o que falta da rua, para o radar
 ```
 
-Fases: `off → walk ⇄ ready → line → done`. Sair do pátio em `ready` tira a oferta (`left`); afastar-se mais de
+Fases: `off → walk ⇄ ready → line → done`. Depois de `done`, o passo aponta a casa de Marcos 1:29 até o jogador
+chegar a 12 m dela (evento `onward`, uma vez), diz por 12 s de jogo que a cena ainda não existe e então
+`teachingView` volta a devolver `null`: a tela é de novo da exploração da região. Numa vila sem essa casa, as
+palavras finais ficam 30 s de jogo e a devolução é a mesma. A chegada à casa é um fato próprio do registro do mundo
+(`casa-marcos-1-29`); `restoreTeaching(salvo, casaSalva?)` recebe-o como segundo argumento opcional. Sair do pátio em `ready` tira a oferta (`left`); afastar-se mais de
 12 m do ponto durante as orações interrompe (`interrupted`) sem guardar nada, e pode recomeçar. Segurar ou repetir o
 botão não reinicia oração nem conclui duas vezes. `dt <= 0` (painel aberto, aba oculta) não move nada.
 
@@ -77,13 +81,42 @@ Regras que o teste confere a cada 0,1 m da rua: herói não bloqueado pela regra
 terra seca (≥ 0,3 m acima do lago), dentro da margem jogável de 60 m, ≥ 1,3 m livres (raio conservador do burro,
 0,91 m, mais margem) e percorrível pelo seguidor com as regras de `npc-navigation.ts`.
 
-`keepClear` (rua + pátio) serve só para vegetação e props; não passar a `houses()` nem à máscara de caminho do solo.
+`keepClear` (rua + pátio) descreve o chão a manter livre. Não passar a `houses()` nem à máscara de caminho do solo.
+
+**Achado depois da integração (14/11, 22:39 UTC):** `props()` em `world.ts` usa a lista que recebe para duas coisas.
+Uma é manter a vegetação fora dos segmentos, que era a intenção. A outra é servir de eixo para espalhar árvores,
+arbustos, pedras e capim “ao longo das rotas” (`alongRoutes`). Ao receber `[...keep, ...life.keepClear]`, como o
+`main.ts` integrado faz, a vegetação é redistribuída: um terço dos sorteios passa a cair nos quatro segmentos novos.
+Medido em Node com uma cópia fiel de `alongRoutes` e das regras de árvore e de pedra (as duas sem termo de ruído),
+sobre os colisores reconstruídos, com qualidade 1:
+
+| | Só as rotas da missão (R13) | Rotas + `keepClear` (integrado) |
+|---|---:|---:|
+| Árvores além da vila (z > 120), de 125 | 78 | 46 |
+| Pedras além da vila, de 420 | 362 | 277 |
+| Pedras a até 60 m do pátio | 45 | 110 |
+| Pedras dentro dos 7 m do pátio | 2 | 0 |
+| Sorteios perdidos no segmento de comprimento zero (pátio) | 0 | 22 e 73 |
+
+Nenhuma posição inválida é criada (o segmento de comprimento zero dá `NaN`, que as regras rejeitam). O pátio fica
+livre, como pretendido, mas a caminhada até a margem perde vegetação e a rua do pátio ganha pedras. A correção é
+separar as duas funções da lista em `props()` (um parâmetro só de exclusão), em arquivos que são do Codex nesta
+rodada: não alterei. Arbustos, juncos e capim usam ruído e não foram medidos; o efeito é do mesmo tipo.
 `pois`: `quarteirao-inicial`, `passagem`, `patio-ensino`, `margem`, `casa-marcos-1-29`, todos com a nota
 “Posição escolhida pelo jogo”.
 
-**Limite da validação:** os colisores do teste são reconstruídos em Node como `village-houses.ts` faz, com caixas
-do tamanho catalogado no lugar das malhas de muro, rede e pedras. Vegetação não tem colisor e não entra; uma árvore
-pode nascer no pátio se `props()` não receber `keepClear`. A conferência no jogo real fica para a ligação.
+**Limite da validação em Node:** os colisores do teste são reconstruídos como `village-houses.ts` faz, com caixas
+do tamanho catalogado no lugar das malhas de muro, rede e pedras. Vegetação não tem colisor e não entra.
+
+**Conferência no jogo integrado (14/11, 22:39 UTC, `tools/check_town_life_r15.mjs`):** com a `main` da PR #14 unida
+a este branch (`e95035a`), o jogo foi aberto com `?debug=1` em 1280×800 e em 390×844 com toque emulado, sem jogar.
+O layout que o jogo calculou com o `town.boxes` real é **igual** ao de Node com os colisores reconstruídos: pátio em
+(−39; 85) com 13,3 m livres, rua de 58,7 m com 1,45 m livres no ponto mais estreito, casa de índice 31. Pela regra de
+movimento do próprio jogo (`__gta.blocked`, sem o corpo do seguidor): 592 amostras da rua, 384 do pátio e o ponto
+da porta, nenhuma bloqueada. A reconstrução dá 368 colisores nesta árvore (eram 370 antes das correções de apoio
+de pedras e redes do Codex). Relatório local: `shots/town-life-r15-e95035a/report.json`, SHA-256
+`f3b6dfd2f94ae67f93706a818c6b43dcd718a2c6c65be436bc1db5a3c4443db8`. Chromium com renderizador por software e
+emulação de viewport; não é celular físico, e nada foi caminhado nem capturado em imagem.
 
 ## Contrato de ligação, para o Codex
 
@@ -128,3 +161,18 @@ aplicadas uma a uma e cada uma derrubou ao menos um teste (ver diário).
 - Não há multidão, ouvintes nem interior: só Simão tem ator aprovado. O aviso de cena fica ligado nessas fases.
 - A Bíblia do jogo ainda não mostra Marcos 1:22; a referência do passo aparece, o painel não foi estendido.
 - Marcos 1:23–28 e a cena da casa (1:29–31) não existem; o jogo diz isso em vez de sugerir que existem.
+
+## Depois da integração: o passo precisa devolver a tela (15/11)
+
+Revisando a integração com a lista de falhas silenciosas do ECC, apareceram duas regressões da exploração livre,
+as duas na passagem de bastão entre este módulo e o laço do jogo:
+
+1. **O painel de exploração nunca mais aparecia.** O laço mostra o painel da exploração só quando não há visão do
+   ensino, e `teachingView` devolvia uma visão enquanto o passo estivesse aberto, vivido ou não. Desde a R15 a região
+   aberta não dizia mais quais lugares faltam encontrar, quantos foram achados nem para que lado fica o mais próximo.
+   Corrigido neste módulo (commit `b2974f9`): ver “Fases” acima.
+2. **O aviso do limite da região sumia.** `hud.teaching` passava `null` no lugar do aviso. Corrigido com o aviso
+   atravessando o painel do ensino (`hud.ts` e `main.ts`, duas linhas cada, em commit isolado para o Codex revisar).
+
+No mesmo commit isolado: o laço passa a casa salva a `restoreTeaching` e avisa no console quando a vila não tem
+pátio ou rua seguros (`townLife` nulo), em vez de o passo simplesmente não existir sem deixar rastro.

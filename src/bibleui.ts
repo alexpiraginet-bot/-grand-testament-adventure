@@ -2,7 +2,7 @@
 // pauses the game and is how the player learns the next step: main.ts is told which step was read. Everything shown
 // comes from the data: the passage's verses from the episode file, the reading order from biblia-cronologica.json.
 import "./bible.css";
-import { verseStates, type BibleEntry, type BibleMoment, type BibleStep, type VerseState } from "./bible.ts";
+import { rangeRef, verseRuns, verseStates, type BibleEntry, type BibleMoment, type BibleStep, type VerseState } from "./bible.ts";
 import type { EpisodeData } from "./missions.ts";
 
 export type BibleOptions = {
@@ -90,9 +90,13 @@ export function setupBible(o: BibleOptions) {
         const head = el("div", "bible-entry-head");
         head.append(el("span", "bible-tag", step ? "Você está aqui" : "Vivida"), el("strong", undefined, e.titulo), el("span", "bible-where", `${e.lugar} · ${e.ref}`));
         li.append(head);
-        for (const k of Object.keys(o.episode.versiculos)) {
-          const state = states.get(k);
-          if (state) li.append(verseLine(number(k), o.episode.versiculos[k], state));
+        // the passage's verses, in runs: when it has gaps or goes on into another chapter, each run carries its
+        // reference, so a verse number is never read under the wrong chapter
+        const runs = verseRuns(Object.keys(o.episode.versiculos).filter((k) => states.has(k)));
+        for (const run of runs) {
+          const ref = runs.length > 1 ? rangeRef(o.episode, run[0], run[run.length - 1]) : null;
+          if (ref) li.append(el("p", "bible-run", ref));
+          for (const k of run) li.append(verseLine(number(k), o.episode.versiculos[k], states.get(k)));
         }
       } else {
         const m = e.moment, details = el("details"), summary = el("summary");
